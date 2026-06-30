@@ -1,0 +1,71 @@
+@page "/storefront/cart"
+@implements IDisposable
+@inject CartService Cart
+@inject ToastService Toasts
+@inject NavigationManager Nav
+
+<PageTitle>Cart</PageTitle>
+
+<PageHeader Eyebrow="Storefront" Title="Cart" Description="Review your items before placing the order." />
+
+@if (Cart.Lines.Count == 0)
+{
+    <p class="empty">Your cart is empty. <a href="/storefront">Browse products</a>.</p>
+}
+else
+{
+    <table class="atrium-table cart-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th class="num">Price</th>
+                <th>Quantity</th>
+                <th class="num">Subtotal</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var line in Cart.Lines)
+            {
+                <tr>
+                    <td>@line.Product.Name</td>
+                    <td class="num">$@line.Product.Price.ToString("N0")</td>
+                    <td>
+                        <div class="stepper">
+                            <button class="stepper__btn" @onclick="() => Cart.SetQuantity(line.Product.Id, line.Quantity - 1)" aria-label="Decrease quantity">&minus;</button>
+                            <span class="stepper__n">@line.Quantity</span>
+                            <button class="stepper__btn" @onclick="() => Cart.SetQuantity(line.Product.Id, line.Quantity + 1)" aria-label="Increase quantity">+</button>
+                        </div>
+                    </td>
+                    <td class="num">$@((line.Product.Price * line.Quantity).ToString("N0"))</td>
+                    <td class="num">
+                        <button class="btn btn--ghost btn--sm" @onclick="() => Cart.Remove(line.Product.Id)">Remove</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="cart-summary">
+        <div class="cart-summary__total">
+            <span>Total</span>
+            <strong>$@Cart.Total.ToString("N0")</strong>
+        </div>
+        <Button Variant="ButtonVariant.Accent" OnClick="PlaceOrder">Place order</Button>
+    </div>
+}
+
+@code {
+    private void PlaceOrder()
+    {
+        Toasts.Show($"Order placed — ${Cart.Total:N0}", ToastVariant.Success);
+        Cart.Clear();
+        Nav.NavigateTo("/storefront");
+    }
+
+    protected override void OnInitialized() => Cart.Changed += Refresh;
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Cart.Changed -= Refresh;
+}

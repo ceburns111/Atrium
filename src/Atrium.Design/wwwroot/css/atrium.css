@@ -280,8 +280,8 @@ button {
     width: 40px;
     height: 40px;
     border-radius: var(--r-md);
-    background: var(--accent-soft);
-    color: var(--accent-ink);
+    background: color-mix(in srgb, var(--mono, var(--accent)) 14%, var(--surface));
+    color: var(--mono, var(--accent-ink));
     font-family: var(--font-display);
     font-weight: 600;
     font-size: var(--text-md);
@@ -509,6 +509,185 @@ a.card:hover {
 .empty {
     color: var(--muted);
     font-size: var(--text-sm);
+}
+
+/* ---------- Storefront: filters, products, cart ---------- */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+}
+.chip {
+    height: 32px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-full);
+    background: var(--surface);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition:
+        background var(--dur) var(--ease),
+        color var(--dur) var(--ease),
+        border-color var(--dur) var(--ease);
+}
+.chip:hover {
+    background: var(--surface-2);
+}
+.chip--on {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+}
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+    gap: var(--space-4);
+}
+.product {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+}
+.product__thumb {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    margin-bottom: var(--space-2);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+    color: var(--faint);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+}
+.product__name {
+    font-weight: 600;
+    color: var(--ink);
+}
+.product__blurb {
+    flex: 1;
+    font-size: var(--text-sm);
+    color: var(--muted);
+}
+.product__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-2);
+}
+.product__price {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--ink);
+}
+.stepper {
+    display: inline-flex;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+}
+.stepper__btn {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    background: var(--surface);
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: background var(--dur) var(--ease);
+}
+.stepper__btn:hover {
+    background: var(--surface-2);
+}
+.stepper__n {
+    min-width: 32px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-size: var(--text-sm);
+}
+.cart-table {
+    margin-bottom: var(--space-5);
+}
+.cart-summary {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-5);
+}
+.cart-summary__total {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--muted);
+}
+.cart-summary__total strong {
+    font-family: var(--font-mono);
+    font-size: var(--text-md);
+    color: var(--ink);
+}
+
+/* ---------- Toasts ---------- */
+.toast-host {
+    position: fixed;
+    bottom: var(--space-5);
+    right: var(--space-5);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+.toast {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 240px;
+    max-width: 360px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--r-md);
+    background: var(--ink);
+    color: #fff;
+    box-shadow: var(--shadow-md);
+    font-size: var(--text-sm);
+    animation: toast-in var(--dur) var(--ease);
+}
+.toast--success {
+    background: var(--success);
+}
+.toast--danger {
+    background: var(--danger);
+}
+.toast__msg {
+    flex: 1;
+}
+.toast__close {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    opacity: 0.7;
+    cursor: pointer;
+    font-size: var(--text-md);
+    line-height: 1;
+}
+.toast__close:hover {
+    opacity: 1;
+}
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
 }
 
 /* ---------- Responsive: sidebar becomes a drawer ---------- */

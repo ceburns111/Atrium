@@ -1,3 +1,4 @@
+using Atrium.Design;
 using Atrium.Portal.Components;
 using Atrium.Portal.Modularity;
 
@@ -5,6 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+
+// Design-system services available to every module.
+builder.Services.AddScoped<ToastService>();
 
 // Discover UI modules, let each register its own services, and expose the catalog to the shell + router.
 // The host never names a module: a project reference is all it takes for one to light up.

@@ -19,7 +19,7 @@ else
         @foreach (var module in Catalog.Modules)
         {
             <a class="module-card" href="@module.BasePath">
-                <div class="module-card__mono">@module.Name[..1]</div>
+                <div class="module-card__mono" style="@MonoStyle(module)">@module.Name[..1]</div>
                 <div class="module-card__name">@module.Name</div>
                 <div class="module-card__desc">@module.Description</div>
                 <div class="module-card__foot">
@@ -29,4 +29,10 @@ else
             </a>
         }
     </div>
+}
+
+@code {
+    // Tint the monogram with the module's own accent; falls back to the host accent.
+    private static string? MonoStyle(Atrium.Abstractions.IModule module) =>
+        module.Accent is null ? null : $"--mono:{module.Accent}";
 }

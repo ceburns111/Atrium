@@ -20,6 +20,9 @@ public interface IModule
     /// <summary>The route prefix the module owns, e.g. "/storefront".</summary>
     string BasePath { get; }
 
+    /// <summary>Optional brand accent (hex) for the module's identity in the shell; falls back to the host accent.</summary>
+    string? Accent => null;
+
     /// <summary>Navigation entries the module contributes to the shell.</summary>
     IEnumerable<NavItem> NavItems { get; }
 
