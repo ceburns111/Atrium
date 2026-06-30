@@ -1,0 +1,26 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+artifacts/
+
+# IDE / tooling
+.vs/
+.idea/
+*.user
+*.suo
+
+# .NET
+project.lock.json
+*.nupkg
+*.snupkg
+msbuild.log
+msbuild.binlog
+
+# Aspire / local secrets
+**/appsettings.*.local.json
+.aspire/
+
+# OS
+.DS_Store
+Thumbs.db

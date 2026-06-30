@@ -1,0 +1,17 @@
+<Project>
+  <!--
+    CSharpier ("Prettier for C#") is wired into every project in the solution from this single
+    file, so it applies to all current projects and any new one added later. The pinned CLI tool
+    lives in .config/dotnet-tools.json (run `dotnet tool restore`, then `dotnet csharpier format .`).
+
+    CSharpier.MsBuild runs on build. We set CSharpier_Check=true so the build FAILS on unformatted
+    code instead of silently rewriting files mid-build — CI and local builds catch drift the same way.
+  -->
+  <ItemGroup>
+    <PackageReference Include="CSharpier.MsBuild" Version="1.3.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <CSharpier_Check>true</CSharpier_Check>
+  </PropertyGroup>
+</Project>
