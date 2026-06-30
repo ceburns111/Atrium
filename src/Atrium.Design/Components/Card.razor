@@ -1,0 +1,17 @@
+@namespace Atrium.Design
+
+@if (Href is not null)
+{
+    <a href="@Href" class="card @Class" @attributes="Extra">@ChildContent</a>
+}
+else
+{
+    <div class="card @Class" @attributes="Extra">@ChildContent</div>
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public IDictionary<string, object>? Extra { get; set; }
+}

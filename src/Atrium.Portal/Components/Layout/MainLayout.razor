@@ -1,19 +1,28 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager Nav
 
-<div class="page">
-    <div class="sidebar">
+<div class="app-shell @(_navOpen ? "nav-open" : null)">
+    <aside class="app-sidebar">
         <NavMenu />
-    </div>
+    </aside>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+    <header class="app-topbar">
+        <button class="btn btn--ghost btn--sm menu-btn" @onclick="ToggleNav" aria-label="Toggle navigation">Menu</button>
+        <nav class="crumbs" aria-label="Breadcrumb">
+            <a class="crumbs__root" href="">Atrium</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__here">@Section</span>
+        </nav>
+    </header>
 
-        <article class="content px-4">
+    <main class="app-main">
+        <div class="app-content">
             @Body
-        </article>
+        </div>
     </main>
+
+    <div class="nav-backdrop" @onclick="CloseNav"></div>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
@@ -21,3 +30,32 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private bool _navOpen;
+
+    protected override void OnInitialized() => Nav.LocationChanged += OnLocationChanged;
+
+    private void ToggleNav() => _navOpen = !_navOpen;
+
+    private void CloseNav() => _navOpen = false;
+
+    // Close the mobile drawer on navigation and refresh the breadcrumb.
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _navOpen = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    // The current top-level section, derived from the route, e.g. "/storefront/cart" -> "Storefront".
+    private string Section
+    {
+        get
+        {
+            var segments = new Uri(Nav.Uri).AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            return segments.Length == 0 ? "Home" : char.ToUpperInvariant(segments[0][0]) + segments[0][1..];
+        }
+    }
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}

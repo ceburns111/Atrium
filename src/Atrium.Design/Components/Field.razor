@@ -1,0 +1,26 @@
+@namespace Atrium.Design
+
+<div class="field @Class">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="field__label" for="@For">@Label</label>
+    }
+    @ChildContent
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <span class="field__error">@Error</span>
+    }
+    else if (!string.IsNullOrEmpty(Hint))
+    {
+        <span class="field__hint">@Hint</span>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? For { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

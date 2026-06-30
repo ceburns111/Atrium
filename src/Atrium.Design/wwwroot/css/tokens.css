@@ -1,0 +1,72 @@
+/* Atrium design tokens — the single source of truth for color, type, spacing, and motion.
+   Everything else in the system is expressed in these variables; consumers never hard-code values. */
+:root {
+    /* Typeface roles: display (character), sans (UI body), mono (structural micro-labels). */
+    --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+    --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+    /* Type scale — UI base sits a touch under 16px, the SaaS convention for dense, calm screens. */
+    --text-xs: 0.75rem;
+    --text-sm: 0.8125rem;
+    --text-base: 0.9375rem;
+    --text-md: 1.0625rem;
+    --text-lg: 1.375rem;
+    --text-xl: 1.9375rem;
+    --leading-tight: 1.15;
+    --leading-normal: 1.55;
+    --tracking-label: 0.08em;
+
+    /* Neutral ramp — warm-cool zinc on near-white paper. The shell lives entirely here. */
+    --paper: #fbfbfa;
+    --surface: #ffffff;
+    --surface-2: #f4f4f3;
+    --ink: #18181b;
+    --ink-2: #3f3f46;
+    --muted: #71717a;
+    --faint: #a1a1aa;
+    --line: #e7e7e4;
+    --line-strong: #d6d6d1;
+
+    /* Brand accent — deep atrium teal-green (glass + greenery). Used sparingly: focus, links, active nav. */
+    --accent: #117b68;
+    --accent-ink: #0c5a4c;
+    --accent-soft: #e6f2ef;
+
+    /* Status — muted and harmonized with the neutral ramp, never alarming. */
+    --success: #16785a;
+    --success-soft: #e6f1ec;
+    --warning: #8a5a0f;
+    --warning-soft: #f6efe0;
+    --danger: #a23b3b;
+    --danger-soft: #f6e7e7;
+
+    /* Radius */
+    --r-sm: 6px;
+    --r-md: 8px;
+    --r-lg: 12px;
+    --r-full: 999px;
+
+    /* Spacing — 8px rhythm, 4px for fine adjustments. */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+
+    /* Elevation — intentionally faint; hairline borders carry most of the structure. */
+    --shadow-sm: 0 1px 2px rgba(24, 24, 27, 0.04);
+    --shadow-md: 0 4px 16px -4px rgba(24, 24, 27, 0.1);
+
+    /* Motion — snappy, single easing. */
+    --ease: cubic-bezier(0.2, 0, 0, 1);
+    --dur: 140ms;
+
+    /* Layout */
+    --sidebar-w: 16rem;
+    --topbar-h: 3.5rem;
+    --content-max: 1140px;
+}

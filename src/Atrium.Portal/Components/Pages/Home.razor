@@ -3,21 +3,30 @@
 
 <PageTitle>Atrium</PageTitle>
 
-<h1>Atrium</h1>
-<p>A modular host. Each app below is a self-contained module the host discovered at startup.</p>
+<PageHeader Eyebrow="Workspace"
+            Title="Atrium"
+            Description="A modular host. Each app below is a self-contained module the host discovered at startup — add a new one and it appears here, no host changes." />
+
+<div class="section-label">Apps</div>
 
 @if (Catalog.Modules.Count == 0)
 {
-    <p>No modules discovered.</p>
+    <p class="empty">No modules discovered yet.</p>
 }
 else
 {
-    <ul class="modules">
+    <div class="module-grid">
         @foreach (var module in Catalog.Modules)
         {
-            <li>
-                <a href="@module.BasePath"><strong>@module.Name</strong></a> — @module.Description
-            </li>
+            <a class="module-card" href="@module.BasePath">
+                <div class="module-card__mono">@module.Name[..1]</div>
+                <div class="module-card__name">@module.Name</div>
+                <div class="module-card__desc">@module.Description</div>
+                <div class="module-card__foot">
+                    <span class="module-card__path">@module.BasePath</span>
+                    <span class="module-card__go">Open &rarr;</span>
+                </div>
+            </a>
         }
-    </ul>
+    </div>
 }

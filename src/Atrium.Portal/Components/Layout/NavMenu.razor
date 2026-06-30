@@ -1,24 +1,27 @@
 @inject Atrium.Portal.Modularity.ModuleCatalog Catalog
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Atrium</a>
-    </div>
+<div class="brand">
+    @* Custom "skylight" mark — a light-well viewed top-down — not a borrowed icon set. *@
+    <svg viewBox="0 0 28 28" class="brand__mark" fill="none" aria-hidden="true">
+        <rect x="3" y="3" width="22" height="22" rx="6" stroke="currentColor" stroke-width="2" />
+        <rect x="10" y="10" width="8" height="8" rx="2" fill="currentColor" />
+    </svg>
+    <span class="brand__name">Atrium</span>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+<nav class="nav">
+    <NavLink class="nav__link" href="" Match="NavLinkMatch.All">Home</NavLink>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">Home</NavLink>
-        </div>
+    @if (Catalog.Modules.Count > 0)
+    {
+        <div class="nav__label">Apps</div>
         @* Navigation is contributed by discovered modules, not hard-coded. *@
         @foreach (var item in Catalog.Modules.SelectMany(m => m.NavItems))
         {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="@item.Path">@item.Title</NavLink>
-            </div>
+            <NavLink class="nav__link" href="@item.Path">@item.Title</NavLink>
         }
-    </nav>
-</div>
+    }
+
+    <div class="nav__spacer"></div>
+    <div class="nav__foot">@Catalog.Modules.Count module@(Catalog.Modules.Count == 1 ? "" : "s") loaded</div>
+</nav>

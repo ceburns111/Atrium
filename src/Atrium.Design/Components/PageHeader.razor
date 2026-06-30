@@ -1,0 +1,26 @@
+@namespace Atrium.Design
+
+<header class="page-header">
+    <div>
+        @if (!string.IsNullOrEmpty(Eyebrow))
+        {
+            <div class="page-header__eyebrow">@Eyebrow</div>
+        }
+        <h1 class="page-header__title">@Title</h1>
+        @if (!string.IsNullOrEmpty(Description))
+        {
+            <p class="page-header__desc">@Description</p>
+        }
+    </div>
+    @if (Actions is not null)
+    {
+        <div class="page-header__actions">@Actions</div>
+    }
+</header>
+
+@code {
+    [Parameter] public string? Eyebrow { get; set; }
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+}
