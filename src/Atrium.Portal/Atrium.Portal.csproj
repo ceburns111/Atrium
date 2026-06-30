@@ -2,6 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Atrium.Abstractions\Atrium.Abstractions.csproj" />
     <ProjectReference Include="..\Atrium.Design\Atrium.Design.csproj" />
+    <ProjectReference Include="..\Atrium.Modules.Hello\Atrium.Modules.Hello.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

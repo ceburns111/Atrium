@@ -1,7 +1,23 @@
-﻿@page "/"
+@page "/"
+@inject Atrium.Portal.Modularity.ModuleCatalog Catalog
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Atrium</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Atrium</h1>
+<p>A modular host. Each app below is a self-contained module the host discovered at startup.</p>
 
-Welcome to your new app.
+@if (Catalog.Modules.Count == 0)
+{
+    <p>No modules discovered.</p>
+}
+else
+{
+    <ul class="modules">
+        @foreach (var module in Catalog.Modules)
+        {
+            <li>
+                <a href="@module.BasePath"><strong>@module.Name</strong></a> — @module.Description
+            </li>
+        }
+    </ul>
+}

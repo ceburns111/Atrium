@@ -1,0 +1,14 @@
+@page "/hello"
+@inject HelloService Hello
+
+<PageTitle>Hello module</PageTitle>
+
+<h1>Hello module</h1>
+
+<p>@Hello.Greeting</p>
+
+<p>
+    This page lives in <code>Atrium.Modules.Hello</code>. The host found it by reflection, called
+    <code>RegisterServices</code> (which is why <code>HelloService</code> injected), and added the
+    assembly to the router — no host code references this module by name.
+</p>
