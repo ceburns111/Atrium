@@ -2,7 +2,7 @@ using System.Data;
 using Dapper;
 using Microsoft.Data.SqlClient;
 
-namespace Atrium.Services.Storefront;
+namespace Atrium.Services.Storefront.Reports;
 
 /// <summary>Dapper-backed analytics reads over the order tables (sproc-only, like the order store).</summary>
 public sealed class ReportRepository(SqlConnection db) : IReportRepository

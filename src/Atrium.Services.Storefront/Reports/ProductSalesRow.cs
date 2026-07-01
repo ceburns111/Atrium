@@ -1,4 +1,4 @@
-namespace Atrium.Services.Storefront;
+namespace Atrium.Services.Storefront.Reports;
 
 /// <summary>Per-product sales totals from <c>dbo.usp_Report_SalesByProduct</c>; re-bucketed into
 /// categories by the reports endpoint using the Catalog product-&gt;category map.</summary>

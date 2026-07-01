@@ -1,7 +1,7 @@
 using Atrium.Contracts;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace Atrium.Services.Catalog;
+namespace Atrium.Services.Catalog.Catalog;
 
 /// <summary>
 /// The catalog HTTP surface, organized minimal-API style: one MapGroup, handlers as named static

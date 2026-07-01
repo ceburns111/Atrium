@@ -12,6 +12,7 @@ alternative we rejected. Format is a trimmed [MADR](https://adr.github.io/madr/)
 | [0004](0004-token-propagation-and-option-b.md) | Access token via claim into the Blazor circuit (with option B as the exit) | Accepted (with known debt) |
 | [0005](0005-slice-calls-core.md) | App verticals compose core services over HTTP with bearer relay | Accepted |
 | [0006](0006-shared-contracts-then-nuget.md) | Contracts as a shared project now, versioned NuGet later | Accepted |
+| [0007](0007-feature-folders-and-repository-testing.md) | Organize service internals by feature; keep repository interfaces, integration-test them | Accepted |
 
 These records are point-in-time. If the code and an ADR disagree, the code wins — open a new ADR that
 supersedes the old one rather than editing history.

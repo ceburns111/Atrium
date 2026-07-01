@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Atrium.Contracts;
 
-namespace Atrium.Services.Storefront;
+namespace Atrium.Services.Storefront.Catalog;
 
 /// <summary>
 /// Internal client the Storefront vertical uses to call the Catalog core service (service-to-service).

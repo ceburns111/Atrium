@@ -1,5 +1,5 @@
 using Atrium.Contracts;
-using Atrium.Services.Catalog;
+using Atrium.Services.Catalog.Catalog;
 using Microsoft.Data.SqlClient;
 using CatalogDb = Atrium.Services.Catalog.Data.DatabaseInitializer;
 

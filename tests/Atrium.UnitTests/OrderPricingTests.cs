@@ -1,5 +1,5 @@
 using Atrium.Contracts;
-using Atrium.Services.Storefront;
+using Atrium.Services.Storefront.Orders;
 
 namespace Atrium.UnitTests;
 

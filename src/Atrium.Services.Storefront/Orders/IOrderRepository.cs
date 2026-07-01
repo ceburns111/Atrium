@@ -1,6 +1,6 @@
 using Atrium.Contracts;
 
-namespace Atrium.Services.Storefront;
+namespace Atrium.Services.Storefront.Orders;
 
 public interface IOrderRepository
 {

@@ -1,7 +1,7 @@
 using Atrium.Contracts;
 using Riok.Mapperly.Abstractions;
 
-namespace Atrium.Services.Catalog;
+namespace Atrium.Services.Catalog.Catalog;
 
 /// <summary>
 /// Maps the internal <see cref="ProductRow"/> to the public <see cref="ProductDto"/>. Mapperly generates

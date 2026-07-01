@@ -3,7 +3,7 @@ using Atrium.Contracts;
 using Dapper;
 using Microsoft.Data.SqlClient;
 
-namespace Atrium.Services.Storefront;
+namespace Atrium.Services.Storefront.Orders;
 
 /// <summary>
 /// Dapper-backed order store over stored procedures. Order creation inserts the header and each line

@@ -1,6 +1,6 @@
 using Atrium.Contracts;
 
-namespace Atrium.Services.Catalog;
+namespace Atrium.Services.Catalog.Catalog;
 
 /// <summary>The data seam the endpoints depend on — keeps handlers ignorant of Dapper and the sprocs.</summary>
 public interface ICatalogRepository

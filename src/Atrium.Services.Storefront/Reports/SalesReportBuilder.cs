@@ -1,6 +1,6 @@
 using Atrium.Contracts;
 
-namespace Atrium.Services.Storefront;
+namespace Atrium.Services.Storefront.Reports;
 
 /// <summary>
 /// Pure aggregation for the sales report, lifted out of <see cref="ReportsEndpoints"/> so it can be

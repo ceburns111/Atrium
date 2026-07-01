@@ -1,6 +1,6 @@
 using Atrium.Contracts;
 
-namespace Atrium.Services.Storefront;
+namespace Atrium.Services.Storefront.Orders;
 
 /// <summary>
 /// Turns the requested items into priced order lines, lifted out of <see cref="OrdersEndpoints"/> so

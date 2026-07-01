@@ -1,4 +1,4 @@
-namespace Atrium.Services.Storefront;
+namespace Atrium.Services.Storefront.Reports;
 
 /// <summary>Read model for storefront analytics — aggregates this vertical's own order tables.</summary>
 public interface IReportRepository

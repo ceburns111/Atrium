@@ -1,4 +1,4 @@
-namespace Atrium.Services.Catalog;
+namespace Atrium.Services.Catalog.Catalog;
 
 /// <summary>The row shape returned by <c>dbo.usp_Product_GetList</c> — note <c>CategoryName</c>,
 /// joined from Categories. Mapped to the public <c>ProductDto</c> by <see cref="CatalogMapper"/>.</summary>

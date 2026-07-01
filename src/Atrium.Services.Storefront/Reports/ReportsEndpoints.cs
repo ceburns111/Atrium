@@ -1,7 +1,8 @@
 using Atrium.Contracts;
+using Atrium.Services.Storefront.Catalog;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace Atrium.Services.Storefront;
+namespace Atrium.Services.Storefront.Reports;
 
 /// <summary>
 /// The storefront analytics surface: aggregate sales bucketed into product categories. Order data is

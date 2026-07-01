@@ -3,7 +3,7 @@ using Atrium.Contracts;
 using Dapper;
 using Microsoft.Data.SqlClient;
 
-namespace Atrium.Services.Catalog;
+namespace Atrium.Services.Catalog.Catalog;
 
 /// <summary>
 /// Dapper-backed repository. Every read goes through a stored procedure (no inline SQL here); the

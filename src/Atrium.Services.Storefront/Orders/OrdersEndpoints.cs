@@ -1,7 +1,8 @@
 using Atrium.Contracts;
+using Atrium.Services.Storefront.Catalog;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace Atrium.Services.Storefront;
+namespace Atrium.Services.Storefront.Orders;
 
 /// <summary>
 /// The Storefront vertical's HTTP surface (minimal-API style): create and list the signed-in user's

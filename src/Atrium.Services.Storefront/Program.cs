@@ -1,5 +1,7 @@
-using Atrium.Services.Storefront;
+using Atrium.Services.Storefront.Catalog;
 using Atrium.Services.Storefront.Data;
+using Atrium.Services.Storefront.Orders;
+using Atrium.Services.Storefront.Reports;
 
 var builder = WebApplication.CreateBuilder(args);
 

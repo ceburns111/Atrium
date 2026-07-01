@@ -1,4 +1,4 @@
-using Atrium.Services.Catalog;
+using Atrium.Services.Catalog.Catalog;
 using Atrium.Services.Catalog.Data;
 
 var builder = WebApplication.CreateBuilder(args);
