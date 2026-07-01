@@ -28,23 +28,32 @@ Always: `dotnet csharpier format .` → `dotnet build Atrium.slnx -v q` must be 
 
 Then, by item type:
 
-- **Code items** (anything changing `.cs`/`.razor`/config that affects runtime): `dotnet test Atrium.slnx`
-  — **all** unit + integration green (integration needs Docker). **AND** a Playwright agent-driven QA
-  pass, screenshot-verified against the intended behavior, on the running stack. Only then commit.
-- **Docs items** (Markdown only, no runtime change): there is nothing to unit- or Playwright-test —
-  substitute **build-clean + an accuracy self-review**: re-read the real code the doc describes and
-  confirm every path, command, class, and route named actually exists. Then commit.
+- **Code items** (anything changing `.cs`/`.razor`/config that affects runtime): `dotnet test
+  Atrium.slnx` — **all** unit + integration green (integration needs Docker). Then a Playwright
+  agent-driven QA pass, screenshot-verified, **if the stack is up**. If the stack can't be started, do
+  **not** block: commit anyway with an explicit **"browser-unverified — stack unavailable"** line in the
+  commit body + `LOG.md`. Honest notes beat a stalled queue (the user reverts if needed).
+- **Docs items** (Markdown only, no runtime change): nothing to unit- or Playwright-test — substitute
+  **build-clean + an accuracy self-review**: re-read the real code the doc describes and confirm every
+  path, command, class, and route named actually exists. Then commit.
 
 > These guardrail tests exist mainly to keep autonomous agents honest; they may be pruned later. Bias
 > toward a few high-signal checks over exhaustive coverage.
 
-## Autonomy boundary (current)
+## Autonomy boundary (current) — run the whole queue, keep it revertible
 
-**Auto-run + commit unattended: the docs items only (queue 10 → 2 → 3 → 1).** **STOP** before any
-**code** item — item 6 (OTel/Serilog) and the low/tomorrow code items (csharpier config, testuser vs
-customer) — and leave them for a supervised session. Also supervised (need the running stack): the
-**browser-verify of #1 + the Admin modal**, and the **Dialog frontend-design polish** (user wants it
-"centered + cute + better spacing"). Update this section if the user widens the boundary.
+Run the **entire** queue in order, unattended, committing each item. There is **no stop-before-code**
+pause. The safety net is git hygiene, so it is mandatory:
+
+1. **One atomic, single-purpose commit per item** — never bundle two items. So any item reverts alone.
+2. **Docs before code** (the queue order already does this). Do **all** of 10 → 2 → 3 → 1 first.
+3. **Record the clean revert point.** After the last docs item (1) commits, write its hash into `LOG.md`
+   and `STATUS.md` as `SAFE-REVERT-POINT (last docs commit)` *before* touching any code item. That's the
+   hash the user resets to if the autonomous code is jacked up but the docs are good.
+4. **Do not auto-implement item 4** (API docs) — it needs the user's viewer choice; present the
+   recommendation in `QUEUE.md` and skip it.
+5. The **Dialog "cute"/spacing polish** is subjective — a best-effort `frontend-design` pass is fine
+   (reversible CSS), but flag it in `LOG.md` for the user's eye; don't treat it as done.
 
 ## Cadence & limits (honest)
 

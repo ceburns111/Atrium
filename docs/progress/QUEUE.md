@@ -22,25 +22,30 @@ Execution order for tonight/hi: **10 → 2 → 3 → 1 → 6**, then low/tomorro
 - [ ] **1 · README.md per project** (doc). One README per `src/*` project: what it is, its role in the
       topology, key types, how it's run/tested. Short and accurate; link to `docs/ARCHITECTURE.md`.
 
-## STOP here for a supervised session (code / needs stack)
+## Code phase — after ALL docs commit (run unattended; record SAFE-REVERT-POINT first)
 
-- [~] **6 · OpenTelemetry spans + structured logging (Serilog)** (code). Add Serilog + OTel tracing
-      across services/gateway/portal. Gate = full unit+integration+Playwright + confirm traces/logs emit
-      on the running stack. **Do not auto-commit unattended.**
-- [~] **Browser-verify #1 + Admin modal** (supervised). Restart stack on the new build; verify the
+Before starting this phase, write the last docs commit hash into `LOG.md` + `STATUS.md` as
+`SAFE-REVERT-POINT`. One atomic commit per item. Gate = build-clean + unit/integration green + Playwright
+if the stack is up (else commit with a "browser-unverified" note — see `README.md`).
+
+- [ ] **4 · API docs — built-in OpenAPI + Redoc** (code; **decided 2026-07-01**). Enable
+      `Microsoft.AspNetCore.OpenApi` per service: `AddOpenApi()` + `MapOpenApi()` → each serves
+      `/openapi/v1.json` (makes the existing `.WithTags` meaningful). Then a light **Redoc** page per
+      service (Redoc standalone from CDN, `spec-url` → that service's `/openapi/v1.json`). Per-service
+      docs, **no Swashbuckle**, no Scalar. Verify the JSON + Redoc render for Catalog and Storefront.
+- [ ] **6 · OpenTelemetry spans + structured logging (Serilog)** (code). Add Serilog + OTel tracing
+      across services/gateway/portal. Gate = build + unit/integration + confirm traces/logs emit on the
+      running stack (or note browser/stack-unverified). Atomic commit.
+
+## Supervised (best-effort unattended, but flag for the user's eye)
+
+- [~] **Browser-verify #1 + Admin modal** (needs stack). Restart stack on the new build; verify the
       session-expired panel on a forced 401, and the modal (open via New/Edit, save both paths,
-      Esc/X/Cancel, focus return, narrow viewport). Screenshot per atrium-ui.
-- [~] **Dialog frontend-design polish** (supervised). User feedback: the modal should read as a small,
-      centered, "cute" dialog with better spacing. Run a `frontend-design` pass once visible.
-
-## Parked — needs a decision
-
-- [ ] **4 · API docs — Scalar *or alternative*** (user doesn't love Scalar; discuss first). Options to
-      weigh: **built-in .NET OpenAPI + Scalar** (modern, what's current), **Swagger UI** (familiar,
-      heavier), **Redoc** (clean read-only reference), or **just serve the OpenAPI JSON** and skip a UI.
-      Recommendation to present: enable `Microsoft.AspNetCore.OpenApi` document generation on each service
-      (cheap, standards-based) and pick the viewer separately — so the doc source isn't coupled to the UI.
-      **Needs user pick before it enters the run.**
+      Esc/X/Cancel, focus return, narrow viewport). Screenshot per atrium-ui. Log findings; don't
+      "fix-and-forget" anything subjective.
+- [~] **Dialog frontend-design polish** (subjective). User wants the modal to read as a small, centered,
+      "cute" dialog with better spacing. A reversible `frontend-design` CSS pass is OK, but **flag it in
+      LOG for the user to eyeball** — don't mark it done.
 
 ## Low / tomorrow
 

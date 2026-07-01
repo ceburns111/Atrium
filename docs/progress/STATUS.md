@@ -16,8 +16,12 @@ build-clean + accuracy self-review (docs item). Commit, then advance to item 2.
 
 ## Autonomy boundary
 
-Auto-run + commit the **docs** items only (10, 2, 3, 1). **STOP before item 6** and all code/supervised
-items. See `README.md`.
+**Run the whole queue, unattended, don't stop at code.** One atomic commit per item; docs (10,2,3,1)
+first, then code (6, then low/tomorrow). **After item 1 commits, record its hash here + in LOG as
+`SAFE-REVERT-POINT` before starting any code** — that's the user's clean revert line. Skip item 4 (needs
+their viewer pick). See `README.md` for the full rule.
+
+`SAFE-REVERT-POINT (last docs commit):` _not reached yet — fill in after item 1._
 
 ## Stack / environment
 
@@ -27,8 +31,8 @@ items. See `README.md`.
 
 ## Blockers
 
-- None for the docs batch.
-- Item 4 (API docs) is **parked pending a user decision** on Scalar vs alternatives (see `QUEUE.md`).
+- None. Item 4 (API docs) is **decided** (2026-07-01): built-in OpenAPI + Redoc, per service, no
+  Swashbuckle/Scalar — it runs in the code phase. Nothing is parked.
 
 ## Pending (supervised, for when the user is back)
 
