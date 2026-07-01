@@ -42,8 +42,9 @@ each consumer needs it in a different place.
   Catalog returns 401. The clients now translate that 401 into a typed `SessionExpiredException`
   (`Atrium.Design`), which a shell-level `SessionErrorBoundary` around the module body turns into a
   "your session has expired — sign in again" panel, instead of tearing down the circuit with the
-  generic unhandled-error UI. This is graceful **handling** of expiry, not a fix for it — the real fix
-  is refresh (option B → `Duende.AccessTokenManagement`). Workaround remains: sign in again.
+  generic unhandled-error UI ([ADR-0008](0008-graceful-session-expiry-handling.md)). This is graceful
+  **handling** of expiry, not a fix for it — the real fix is refresh (option B →
+  `Duende.AccessTokenManagement`). Workaround remains: sign in again.
 - **Stale cookie across restarts.** Cookies are per-host, not per-port, so an old Portal cookie
   carrying a dead token can 500 the storefront after an Aspire restart until you re-login.
 

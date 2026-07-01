@@ -27,16 +27,22 @@ side by side. Namespaces follow the folders.
 ```
 Atrium.Services.Storefront/
   Program.cs
-  Orders/    OrdersEndpoints, OrderPricing, OrderRepository, IOrderRepository, OrderRow
-  Reports/   ReportsEndpoints, SalesReportBuilder, ReportRepository, IReportRepository, ProductSalesRow
+  Orders/    OrdersEndpoints, OrderPricing, OrderRepository (+ IOrderRepository), OrderRow
+  Reports/   ReportsEndpoints, SalesReportBuilder, ReportRepository (+ IReportRepository), ProductSalesRow
   Catalog/   StorefrontCatalogClient          ← the shared slice→core client, used by both features
   Data/      DbUp initializer + embedded SQL scripts
 
 Atrium.Services.Catalog/
   Program.cs
-  Catalog/   CatalogEndpoints, CatalogRepository, ICatalogRepository, CatalogMapper, ProductRow
+  Catalog/   CatalogEndpoints, CatalogRepository (+ ICatalogRepository), CatalogMapper, ProductRow
   Data/      DbUp initializer + embedded SQL scripts
 ```
+
+> **Update (post-reorg):** the repository interfaces are no longer separate files. Each single-implementation
+> interface (`ICatalogRepository`, `IOrderRepository`, `IReportRepository`) is now **co-located directly
+> above its implementing class** in `CatalogRepository.cs` / `OrderRepository.cs` / `ReportRepository.cs`.
+> The DIP seam is kept (interface still declared); the standalone interface file — pure ceremony for a
+> one-implementation seam — is gone. Pure move, no behaviour change.
 
 Guidelines applied, in the spirit of "**not strict**":
 
@@ -106,7 +112,8 @@ Given that, why keep the interfaces at all? Two honest reasons — neither of wh
   trees; the opposite of the vertical-slice grain the rest of the system uses.
 - **Drop the repository interfaces.** Defensible on "less abstraction" grounds, but breaks the
   convention most .NET reviewers expect and removes the fake-a-repo option for near-zero real gain —
-  the interfaces cost one file each.
+  and co-locating each interface above its class (see the update note above) already removes the only
+  concrete cost, the extra file.
 - **Extract a shared `DatabaseInitializer` library.** Couples two independently-deployable services to
   remove ~40 duplicated lines; wrong trade at this size.
 - **Mock repositories in unit tests instead of Testcontainers.** Lower-fidelity — tests the mock, not
