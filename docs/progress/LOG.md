@@ -107,6 +107,12 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
   blocked; admin → both work. **Two follow-ups spun out of the review:** (a) item 9 — clean Forbidden view
   (authenticated wrong-role user currently hits RedirectToLogin bounce); (b) Reports read endpoint is NOT
   admin-gated server-side yet (Storefront service has no "admin" policy; needs live claim-mapping check).
+- `7c38f53` — **Item 9 (Forbidden view)** done. Shell `NotAuthorized` branches on auth state:
+  authenticated-wrong-role → clean `Forbidden` page (mirrors `NotFound`, non-routable, atrium-ui);
+  unauthenticated → `RedirectToLogin` (unchanged). Fixes the login-bounce item 8 made reachable.
+  **Self-reviewed, not a separate Tier-1 subagent** (proportionate to a 5-line branch + static page on
+  already-reviewed auth architecture). Build 0W/0E, test 22/22. Live check (morning): testuser→`/admin`
+  shows Forbidden (no loop).
 
 - `bc7afd7` — **Item 4 (OpenAPI + Redoc)** done. `Microsoft.AspNetCore.OpenApi` 10.0.9 (per-csproj) on
   Catalog + Storefront: `AddOpenApi()` (DI, unconditional) + Dev-only, anonymous `MapOpenApi()`

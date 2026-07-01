@@ -12,14 +12,12 @@ DONE — both Tier-1 APPROVE WITH NOTES, live-check deferred. Original auto-run 
 DONE this stretch: #7 application logging (`153b6bc`, Tier-1); csharpier fluent-chain item CLOSED (not
 feasible); customer-login INVESTIGATED → refined as item 8.
 
-**Item #8 (role-gate Admin/Reports from customers) is NEXT** — implement now (item 7 has committed, files
-free). Plan in QUEUE item 8: page `[Authorize(Roles="admin")]` on Admin `Products.razor` + Reports
-`Dashboard.razor`; role-aware `NavItem` (`RequiredRole`) + shell filter; check Reports read endpoint is
-admin-gated server-side. Portal `RoleClaimType="role"` supports it; NO realm change needed. Tier-1 (auth);
-build+test verifiable but **needs a live testuser-vs-admin login in the morning to confirm gating**.
+DONE since: #8 role-gate Admin/Reports (`a3a366d`, Tier-1 APPROVE) and #9 Forbidden view (`7c38f53`,
+self-reviewed). **NEXT: a focused static UI ungraceful-scenarios audit** (report only, no code) — the last
+confidently-doable unsupervised item — then write the root wake-up summary and stop.
 
-Then: a focused static **UI ungraceful-scenarios audit** (report only, no code) if confidently valuable.
-SUPERVISED / leave for morning: all live checks, Dialog aesthetic polish, skill keep/discard.
+SUPERVISED / leave for morning: all live checks (item-4 docs, item-6 traces, item-7 log emission, item-8
+role gating, item-9 Forbidden), Dialog aesthetic polish, skill keep/discard, server-side Reports admin-gate.
 
 When out of confidently-doable work: write a prominent **root-level wake-up summary doc** (user request)
 and stop cleanly, STATUS pointing at the supervised remainder.
