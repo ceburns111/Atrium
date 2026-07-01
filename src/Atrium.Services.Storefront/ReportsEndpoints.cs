@@ -32,20 +32,7 @@ public static class ReportsEndpoints
             p => p.Category
         );
 
-        // Order rows only carry the product name, so map each back to its category (unknowns -> "Other").
-        var byCategory = sales
-            .GroupBy(s => categoryByProduct.GetValueOrDefault(s.ProductName, "Other"))
-            .Select(g => new CategorySalesDto(g.Key, g.Sum(s => s.Revenue), g.Sum(s => s.Units)))
-            .OrderByDescending(c => c.Revenue)
-            .ToList();
-
-        return TypedResults.Ok(
-            new SalesReportDto(
-                byCategory.Sum(c => c.Revenue),
-                orderCount,
-                byCategory.Sum(c => c.Units),
-                byCategory
-            )
-        );
+        // The bucketing is a pure function (see SalesReportBuilder) so it can be unit-tested alone.
+        return TypedResults.Ok(SalesReportBuilder.Build(sales, orderCount, categoryByProduct));
     }
 }

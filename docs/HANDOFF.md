@@ -12,7 +12,7 @@ Atrium is a modular-monolith **Blazor Server portal** (rebuild of CozenDemo, whi
 **Storefront app vertical** (its own DB), authenticated by **Keycloak**. Backend is **Dapper + stored
 procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 
-## Status: Phases 0–6 done, committed. Next: Phase 7 (Tests + polish).
+## Status: Phases 0–6 done + Phase 7 tests, committed. Next: Phase 7 polish (optional).
 
 | Phase | State | Commit |
 |---|---|---|
@@ -25,7 +25,8 @@ procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 | 4c Storefront vertical (own DB) + slice→core | ✅ | `cb0f5c4` |
 | 5 Admin + Reports modules (admin-role writes, real reports) | ✅ | `3d40061` |
 | 6 Docs (ARCHITECTURE + 6 ADRs + BEYOND-THE-DEMO) | ✅ | `653911d` |
-| 7 Tests + polish | ▢ next | — |
+| 7 Tests (curated 3-unit + 2-integration suite) | ✅ | _this commit_ |
+| 7 Polish (responsive/focus/loading pass) | ▢ next (optional) | — |
 
 (The TaskList tool is session-scoped — it starts empty each session; recreate tasks for the phase you pick up.)
 
@@ -52,6 +53,14 @@ cd /Users/ted/code/Atrium/src/Atrium.Portal && dotnet run --launch-profile http 
 **Build / format** (csharpier check runs on build, so format first):
 ```
 cd /Users/ted/code/Atrium && dotnet csharpier format . && dotnet build Atrium.slnx -v q
+```
+
+**Test.** Unit tests need nothing; integration tests spin a real SQL Server via Testcontainers, so
+**Docker must be running** for them.
+```
+dotnet test tests/Atrium.UnitTests/Atrium.UnitTests.csproj          # 15 fast tests, no Docker
+dotnet test tests/Atrium.IntegrationTests/Atrium.IntegrationTests.csproj   # 4 tests, needs Docker (~11s)
+dotnet test Atrium.slnx                                              # everything
 ```
 
 ## Solution layout (all under `src/`)
@@ -160,10 +169,36 @@ The "the rest" docs from `ATRIUM-PLAN.md` §"The rest", written as three deliver
   deploy), each shown growing additively out of what exists.
 - Also removed stale `src/Atrium.Modules.Hello/` build cruft (source was already gone).
 
-## Picking up Phase 7 (Tests + polish)
+## Phase 7 tests done — what landed
 
-Adapt/port tests; responsive + focus + loading-state pass across the three modules. See
-`ATRIUM-PLAN.md` Phase 7.
+A deliberately **curated** suite (not a port of CozenDemo's SqlKata tests, which don't apply — Atrium
+uses sprocs). **Five tests, each a distinct concept**, split fast-unit vs slow-integration:
+
+- **`tests/Atrium.UnitTests`** (15 cases, no Docker):
+  - **U1 `CartServiceTests`** — the circuit-scoped cart as an in-memory state machine (add/increment,
+    set-qty-0 removes, Total/Count math).
+  - **U2 `SalesReportBuilderTests`** — pure sales aggregation: category bucketing, `"Other"` fallback,
+    revenue-desc ordering, rolled-up totals.
+  - **U3 `OrderPricingTests`** — server-authoritative pricing (price comes from the catalog, never the
+    request) + guards (empty / unknown product / non-positive qty).
+- **`tests/Atrium.IntegrationTests`** (4 cases, **needs Docker** — Testcontainers SQL Server):
+  - **I1 `CatalogRepositoryTests`** — real DB path: DbUp provisions schema+seed+sprocs, `CatalogRepository`
+    runs the sprocs via Dapper, Mapperly maps the row back; also asserts the `THROW 50001` category
+    error path surfaces as a `SqlException`.
+  - **I2 `OrderRepositoryTests`** — the multi-sproc write **transaction** (header + N lines committed
+    together) and the read that regroups flat header×line rows back into one `OrderDto`.
+- **Refactor for testability:** extracted two pure functions from minimal-API endpoints —
+  `SalesReportBuilder` (from `ReportsEndpoints`) and `OrderPricing` (from `OrdersEndpoints`) — behavior
+  unchanged, now unit-testable without HTTP/DB. Shared container via a collection fixture
+  (`SqlServerFixture`); each integration class provisions its own database on it.
+- **Verified:** `dotnet test Atrium.slnx` → 19/19 pass (unit 15, integration 4 in ~11s); full
+  `dotnet build` clean, 0 warnings.
+
+## Picking up Phase 7 polish (optional)
+
+Responsive + focus + loading-state pass across the three modules (see `ATRIUM-PLAN.md` Phase 7). Not
+started — the tests were the priority. Use the `frontend-design` skill for aesthetic direction and the
+`.claude/skills/atrium-ui` skill for consistency.
 
 Workflow reminder (from prior phases): write code → `dotnet build` → run via `aspire run` → verify with
 Playwright → `code-simplifier`/`/code-review` pass → commit per phase (Co-Authored-By trailer).

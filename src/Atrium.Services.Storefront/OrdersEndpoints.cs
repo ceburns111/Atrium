@@ -25,33 +25,19 @@ public static class OrdersEndpoints
         CancellationToken ct
     )
     {
-        if (request.Items.Count == 0)
-        {
-            return TypedResults.BadRequest("The order has no items.");
-        }
-
-        // Price every line from the authoritative catalog, not from the client.
+        // Price every line from the authoritative catalog, not from the client (see OrderPricing).
         var products = (await catalog.GetProductsAsync(ct)).ToDictionary(p => p.Id);
-        var lines = new List<OrderLineDto>();
-        foreach (var item in request.Items)
+        var (lines, error) = OrderPricing.PriceOrder(request.Items, products);
+        if (error is not null)
         {
-            if (!products.TryGetValue(item.ProductId, out var product))
-            {
-                return TypedResults.BadRequest($"Unknown product {item.ProductId}.");
-            }
-            if (item.Quantity <= 0)
-            {
-                return TypedResults.BadRequest(
-                    $"Quantity for product {item.ProductId} must be positive."
-                );
-            }
-            lines.Add(new OrderLineDto(product.Name, product.Price, item.Quantity));
+            return TypedResults.BadRequest(error);
         }
 
         var userName = http.User.Identity?.Name ?? "unknown";
-        var orderId = await repository.CreateAsync(userName, lines, ct);
-        var total = lines.Sum(l => l.UnitPrice * l.Quantity);
-        return TypedResults.Ok(new OrderDto(orderId, DateTime.UtcNow, total, lines));
+        // error was null, so lines is populated.
+        var orderId = await repository.CreateAsync(userName, lines!, ct);
+        var total = lines!.Sum(l => l.UnitPrice * l.Quantity);
+        return TypedResults.Ok(new OrderDto(orderId, DateTime.UtcNow, total, lines!));
     }
 
     private static async Task<Ok<IReadOnlyList<OrderDto>>> GetOrders(

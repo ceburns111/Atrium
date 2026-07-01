@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- These tests hit a real DB; they don't exercise cancellation, so threading a token through
+         every Dapper call would be noise. -->
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2" />
+    <PackageReference Include="Testcontainers.MsSql" Version="4.12.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <!-- Reference the real services under test: their repositories, sprocs (embedded), and the DbUp
+       DatabaseInitializer are exactly what these tests exercise against a live SQL Server. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Atrium.Services.Catalog\Atrium.Services.Catalog.csproj" />
+    <ProjectReference Include="..\..\src\Atrium.Services.Storefront\Atrium.Services.Storefront.csproj" />
+  </ItemGroup>
+</Project>

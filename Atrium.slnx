@@ -11,4 +11,8 @@
     <Project Path="src/Atrium.Services.Catalog/Atrium.Services.Catalog.csproj" />
     <Project Path="src/Atrium.Services.Storefront/Atrium.Services.Storefront.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Atrium.IntegrationTests/Atrium.IntegrationTests.csproj" />
+    <Project Path="tests/Atrium.UnitTests/Atrium.UnitTests.csproj" />
+  </Folder>
 </Solution>
