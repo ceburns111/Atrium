@@ -12,11 +12,12 @@ public static class CatalogEndpoints
 {
     public static void MapCatalogEndpoints(this IEndpointRouteBuilder app)
     {
-        // Every catalog read requires an authenticated caller (a valid Keycloak JWT).
+        // The group requires an authenticated caller by default; the storefront is browsable signed-out,
+        // so each read opts back out with .AllowAnonymous() (that metadata wins over the group policy).
         var catalog = app.MapGroup("/catalog").WithTags("Catalog").RequireAuthorization();
 
-        catalog.MapGet("/products", GetProducts);
-        catalog.MapGet("/categories", GetCategories);
+        catalog.MapGet("/products", GetProducts).AllowAnonymous();
+        catalog.MapGet("/categories", GetCategories).AllowAnonymous();
 
         // Writes are back-office only: on top of the group's auth, they require the admin realm role.
         catalog.MapPost("/products", CreateProduct).RequireAuthorization("admin");

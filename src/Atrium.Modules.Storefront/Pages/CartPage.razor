@@ -1,5 +1,5 @@
 @page "/storefront/cart"
-@attribute [Authorize]
+@using Microsoft.AspNetCore.Components.Authorization
 @implements IDisposable
 @inject CartService Cart
 @inject ToastService Toasts
@@ -55,7 +55,17 @@ else
             <span>Total</span>
             <strong>$@Cart.Total.ToString("N0")</strong>
         </div>
-        <Button Variant="ButtonVariant.Accent" OnClick="PlaceOrder" Disabled="_placing">@(_placing ? "Placing…" : "Place order")</Button>
+        <AuthorizeView>
+            <Authorized>
+                <Button Variant="ButtonVariant.Accent" OnClick="PlaceOrder" Disabled="_placing">@(_placing ? "Placing…" : "Place order")</Button>
+            </Authorized>
+            <NotAuthorized>
+                <Notice Title="Sign in to check out"
+                        Body="Sign in or create an account to place your order — your cart will be waiting.">
+                    <a class="btn btn--accent" href="/account/login?returnUrl=%2Fstorefront%2Fcart">Sign in</a>
+                </Notice>
+            </NotAuthorized>
+        </AuthorizeView>
     </div>
 }
 
