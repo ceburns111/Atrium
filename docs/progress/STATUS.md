@@ -12,12 +12,23 @@ DONE — both Tier-1 APPROVE WITH NOTES, live-check deferred. Original auto-run 
 DONE this stretch: #7 application logging (`153b6bc`, Tier-1); csharpier fluent-chain item CLOSED (not
 feasible); customer-login INVESTIGATED → refined as item 8.
 
-DONE since: #8 role-gate Admin/Reports (`a3a366d`, Tier-1 APPROVE) and #9 Forbidden view (`7c38f53`,
-self-reviewed). **NEXT: a focused static UI ungraceful-scenarios audit** (report only, no code) — the last
-confidently-doable unsupervised item — then write the root wake-up summary and stop.
+**RUN COMPLETE — wound down cleanly (2026-07-01).** All confidently-doable unsupervised work is done and
+committed on `overnight/2026-07-01`. `main` is untouched. See **`GOOD-MORNING.md`** at the repo root for the
+full wake-up summary.
 
-SUPERVISED / leave for morning: all live checks (item-4 docs, item-6 traces, item-7 log emission, item-8
-role gating, item-9 Forbidden), Dialog aesthetic polish, skill keep/discard, server-side Reports admin-gate.
+Delivered tonight: docs items 10/2/3/1; code items 4 (OpenAPI+Redoc), 6 (OTel+Serilog), 7 (app logging),
+8 (role-gate Admin/Reports), 9 (Forbidden view) — every code item Tier-1 reviewed; plus the UI audit report,
+the csharpier feasibility finding (not feasible), and the customer-login investigation.
+
+**Nothing left that I can do unsupervised.** Everything remaining NEEDS the user or the live stack:
+- **Live verification pass** (bring up `aspire run`): items 4/6/7/8/9 — see each LOG entry's morning check.
+- **Skill keep/discard:** `docs/progress/SKILL-REVIEW.md` (3 skills authored).
+- **UI audit triage:** `docs/audits/ui-ungraceful-scenarios.md` (1 High needs idempotency judgment).
+- **Subjective/needs-judgment:** Dialog aesthetic polish; server-side Reports admin-gate (needs live
+  claim-mapping check); Forbidden/NotFound off-brand polish (audit Low finding).
+- Then **review + merge** `overnight/2026-07-01` → `main`.
+
+`SAFE-REVERT-POINT = a25c62f` (docs end; `git reset --hard a25c62f` drops all code, keeps all docs).
 
 When out of confidently-doable work: write a prominent **root-level wake-up summary doc** (user request)
 and stop cleanly, STATUS pointing at the supervised remainder.

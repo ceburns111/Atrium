@@ -114,6 +114,16 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
   already-reviewed auth architecture). Build 0W/0E, test 22/22. Live check (morning): testuser→`/admin`
   shows Forbidden (no loop).
 
+- `86cbe00` — **UI ungraceful-scenarios audit** done (report, no code). `docs/audits/ui-ungraceful-scenarios.md`
+  — 1 High / 4 Medium / 5 Low, each file:line + fix + severity. Orchestrator spot-checked the High
+  (`CartPage.PlaceOrder` try/finally-no-catch → dup-order risk) and a Medium (`Shop.OnInitializedAsync` no
+  try/catch) against the code — accurate. Findings intentionally NOT auto-fixed: they need user triage /
+  judgment (the High one needs idempotency thinking, not a blind catch). Read-only; no code changed.
+- **RUN WOUND DOWN HERE — out of confidently-doable unsupervised work (2026-07-01).** Everything remaining
+  is supervised/live: all live checks (items 4/6/7/8/9), Dialog aesthetic polish, server-side Reports
+  admin-gate (needs live claim-mapping), the audit findings' triage, skill keep/discard. Wrote the
+  root-level wake-up summary (`GOOD-MORNING.md`) and stopped cleanly. See STATUS.md.
+
 - `bc7afd7` — **Item 4 (OpenAPI + Redoc)** done. `Microsoft.AspNetCore.OpenApi` 10.0.9 (per-csproj) on
   Catalog + Storefront: `AddOpenApi()` (DI, unconditional) + Dev-only, anonymous `MapOpenApi()`
   (`/openapi/v1.json`) and a Redoc `/docs` page (CDN standalone), mapped outside the bearer-only groups.

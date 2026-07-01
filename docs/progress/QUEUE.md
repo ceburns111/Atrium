@@ -61,7 +61,9 @@ Bring the stack up on the new build (`cd src/Atrium.AppHost && aspire run`), the
 
 ## Low / tomorrow
 
-- [~] Audit UI for ungraceful scenarios (the #1 session-expiry work is the first instance). (code)
+- [x] Audit UI for ungraceful scenarios — **report at `docs/audits/ui-ungraceful-scenarios.md`** (`86cbe00`).
+      1 High / 4 Medium / 5 Low, each file:line + fix. Findings left for user triage (High = CartPage
+      PlaceOrder missing `catch` → needs idempotency judgment, not a blind fix). (code → report)
 - [x] csharpier: break fluent call chains one-per-line — **NOT FEASIBLE (verified 2026-07-01, csharpier
       1.3.0).** CSharpier's chain breaking is width-driven and non-configurable: a short chain stays inline,
       a long one breaks by its own heuristics (not uniformly one-per-line), and unknown config keys are
