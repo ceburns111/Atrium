@@ -1,8 +1,16 @@
 /* The native <dialog> carries default chrome (border, padding, centering); we strip it and style the
    inner panel with the same surface language as .card. */
 .dialog {
+    /* Center on the viewport. The global `* { margin: 0 }` reset zeroes the UA `margin: auto` that a
+       native <dialog> relies on to center, and we can't count on the UA's :modal positioning either,
+       so pin position + inset explicitly and let auto margins center on both axes. (No ancestor in the
+       shell establishes a containing block, so `fixed` here means the viewport.) */
+    position: fixed;
+    inset: 0;
+    margin: auto;
     width: 100%;
     max-width: min(32rem, calc(100vw - 2 * var(--space-5)));
+    max-height: calc(100dvh - 2 * var(--space-5));
     padding: 0;
     border: none;
     background: transparent;
