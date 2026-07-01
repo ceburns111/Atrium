@@ -21,11 +21,12 @@ gate → **C** basic payment/checkout → **D** architecture + UI-flow mermaid d
 
 ## Next concrete action
 
-**Item A DONE** (`afb89eb`, SAFE-REVERT-POINT). Start **item B** (anonymous storefront + checkout sign-in
-gate) — auth surface, **Tier-1 mandatory**. Dispatch an implementer for the two halves (anon catalog
-browsing: AllowAnonymous the GET catalog routes + token-optional `CatalogClient` + drop page `[Authorize]`;
-checkout gate: keep `POST orders` auth'd, show a sign-in `Notice`/`AuthorizeView` on the cart when
-anonymous). Then a **separate Tier-1 adversarial reviewer** (auth) before the orchestrator gate + commit.
+**Items A (`afb89eb`) + B (`7ab96e5`) DONE.** Start **item C** — basic payment/checkout **+ cart
+persistence** (Tier-1). Dispatch an implementer to (1) persist the cart to `localStorage` (JS interop,
+prerender-guarded) so it survives the B sign-in round-trip, and (2) add a simulated payment step
+(`Field`-based card form, client-validated, no real gateway, no PAN/CVC storage) between cart review and
+`OrdersClient.CreateAsync`. Prefer no DB/sproc/contract change. Then Tier-1 review (order-flow) → gate →
+commit. **Flag payment as simulated** in the LOG + commit body.
 
 ## Autonomy boundary
 

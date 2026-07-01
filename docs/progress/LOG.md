@@ -172,3 +172,25 @@ merged to `main`. Source of the new items: `TODO.md` "🆕 New work" + "## Last"
   markup byte-for-byte identical, factored into a shared local `RenderFragment` (only refactor); no module
   names hard-coded. Gate: csharpier no-op, build 0W/0E, `dotnet test` 23/23. Anonymous + `testuser` now see
   only the Storefront card; `admin` sees all three. **Live login (testuser/admin/anon) = supervised.**
+- `7ab96e5` — **Item B (anonymous storefront + checkout sign-in gate)** done. Two halves: (1) anon browse —
+  Catalog GET `/products` + `/categories` now `.AllowAnonymous()` (writes keep `.RequireAuthorization("admin")`);
+  `Shop.razor` + `CartPage.razor` drop `[Authorize]`; `CatalogClient` needed no change (the `Authorize`
+  extension already guards on empty token). (2) checkout gate — `CartPage` wraps the place-order control in
+  `<AuthorizeView>`: anon sees a `Notice` "Sign in to check out" → `/account/login?returnUrl=%2Fstorefront%2Fcart`;
+  `POST /storefront/orders` stays `.RequireAuthorization()` (unchanged, the real boundary). New HTTP
+  integration tests (`EndpointAuthorizationTests`, `WebApplicationFactory`): anon GET catalog → 200, anon
+  POST orders → 401. Implementer (high confidence) + **Tier-1 adversarial review: APPROVE WITH NOTES** —
+  reviewer verified vs code: AllowAnonymous overrides the group policy for only the two GETs, writes stay
+  admin-only, server checkout gate intact (401 before handler, not a DB false-pass), token guard exists,
+  `OrdersPage` still `[Authorize]` (order history not opened), `dotnet list --vulnerable` = none.
+  - **Orchestrator caught a gate violation the implementer missed:** adding `Mvc.Testing` transitively
+    pulled the **vulnerable `Microsoft.OpenApi` 2.0.0** (NU1903, high sev) → build went 0→2 warnings. The
+    implementer wrongly called it "pre-existing"; my baseline was 0 warnings. Root cause: services get
+    OpenApi from the ASP.NET Core shared framework (not audited); the test project pulls it as a real NuGet
+    transitive (audited). **Fix: pinned `Microsoft.OpenApi` 2.9.0 in the test project** → build 0W/0E again.
+  - **Known UX gap (not security) → folded into item C:** `CartService` is `AddScoped` (per-circuit), so the
+    anon cart empties across the full-page OIDC sign-in. Item C now also persists the cart to localStorage.
+  - **Non-blocking review notes (for the user):** the test harness sets a process-wide env var without
+    cleanup (harmless — distinct conn names); `CartPage` hand-writes a `.btn` anchor for the sign-in link
+    (renders fine; matches `Shop.razor`'s existing link-as-button pattern).
+  - Gate: csharpier no-op, build 0W/0E, `dotnet test` **25/25**. **Live anon→signin→checkout = supervised.**

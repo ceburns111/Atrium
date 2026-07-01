@@ -33,8 +33,17 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
       only Storefront; admin sees all three. Do **not** hard-code module names in the shell. Gate = build
       + test green. Live login (testuser vs admin vs anon) = supervised.
 
-- [ ] **B · Storefront visible to anonymous; checkout prompts sign-in** (code, **auth** — Tier-1
-      mandatory). Depends on nothing; blocks C. **Two halves:**
+- [x] **B · Storefront visible to anonymous; checkout prompts sign-in** (code, **auth**) — `7ab96e5`.
+      Catalog GET reads `.AllowAnonymous()` (writes keep `admin`); Shop/Cart drop `[Authorize]`; cart shows
+      a sign-in `Notice` (AuthorizeView) to anon; `POST orders` gate unchanged. +2 HTTP auth tests
+      (anon GET 200 / anon POST 401). Pinned `Microsoft.OpenApi` 2.9.0 (killed a new NU1903 from
+      Mvc.Testing). **Tier-1 review: APPROVE WITH NOTES** (server gate + admin writes verified intact).
+      **Known UX gap → moved to C:** the per-circuit cart empties across the full-page sign-in round-trip.
+      Non-blocking notes for the user: test harness sets a process-wide env var (no cleanup); `CartPage`
+      sign-in link hand-writes a `.btn` anchor (matches Shop's existing pattern). Gate 0W/0E, 25/25.
+
+      <details><summary>original spec</summary>
+      **Two halves:**
       1. **Anonymous browsing.** Today the Catalog reads sit under
          `.MapGroup("/catalog").RequireAuthorization()` (`CatalogEndpoints.cs:16`); the gateway is a pure
          pass-through (no auth of its own). And `Shop.razor` / product pages carry `@attribute
@@ -53,8 +62,14 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
          on the cart with items intact and can place the order.
       Gate = build + test green (add/adjust a unit or integration test proving anon GET catalog works and
       anon POST orders is rejected). Live pass (anon browse → sign in → checkout) = supervised.
+      </details>
 
-- [ ] **C · Basic payment form / checkout process** (code — Tier-1). Depends on **B**. "Basic, but enough
+- [ ] **C · Basic payment form / checkout process (+ cart persistence)** (code — Tier-1). Depends on **B**.
+      **Cart persistence (carried from B):** the anon cart is `AddScoped` (per-circuit) and empties across
+      the full-page OIDC sign-in. A real checkout keeps the cart, so persist it to `localStorage` via a
+      small JS-interop helper and hydrate `CartService` on init — guard `IJSRuntime` for prerender
+      (`OnAfterRenderAsync` / interop-safe timing, per ADR-0010's interop lessons). Result: anon adds items
+      → checkout → sign-in → cart intact → pay/place order. "Basic, but enough
       to fluff out the diagrams." **Plan (kept honest + contained):** insert a **payment step** between
       cart review and order placement, gated behind sign-in (from B). A `Payment.razor` (or a Dialog)
       using the `Field` primitives collects cardholder name, card number, expiry, CVC + a billing summary;
