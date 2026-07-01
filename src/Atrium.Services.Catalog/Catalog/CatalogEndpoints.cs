@@ -1,5 +1,6 @@
 using Atrium.Contracts;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
 
 namespace Atrium.Services.Catalog.Catalog;
 
@@ -37,12 +38,16 @@ public static class CatalogEndpoints
     private static async Task<Results<Ok<ProductDto>, BadRequest<string>>> CreateProduct(
         CreateProductRequest request,
         ICatalogRepository repository,
+        ILoggerFactory loggerFactory,
         CancellationToken ct
     )
     {
         var error = await Validate(request.Name, request.Category, request.Price, repository, ct);
         if (error is not null)
         {
+            loggerFactory
+                .CreateLogger(typeof(CatalogEndpoints))
+                .LogWarning("Product create rejected: {Reason}", error);
             return TypedResults.BadRequest(error);
         }
         // Create always yields a row (the sproc guards the category), so the result is non-null.
@@ -53,16 +58,24 @@ public static class CatalogEndpoints
         int id,
         UpdateProductRequest request,
         ICatalogRepository repository,
+        ILoggerFactory loggerFactory,
         CancellationToken ct
     )
     {
+        var logger = loggerFactory.CreateLogger(typeof(CatalogEndpoints));
         var error = await Validate(request.Name, request.Category, request.Price, repository, ct);
         if (error is not null)
         {
+            logger.LogWarning("Product {ProductId} update rejected: {Reason}", id, error);
             return TypedResults.BadRequest(error);
         }
         var product = await repository.UpdateProductAsync(id, request, ct);
-        return product is null ? TypedResults.NotFound() : TypedResults.Ok(product);
+        if (product is null)
+        {
+            logger.LogInformation("Product {ProductId} update matched no existing product", id);
+            return TypedResults.NotFound();
+        }
+        return TypedResults.Ok(product);
     }
 
     // Shared validation for writes: a real name, a positive price, and a category that actually exists.

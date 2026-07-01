@@ -1,6 +1,7 @@
 using Atrium.Contracts;
 using Atrium.Services.Catalog.Catalog;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging.Abstractions;
 using CatalogDb = Atrium.Services.Catalog.Data.DatabaseInitializer;
 
 namespace Atrium.IntegrationTests;
@@ -22,13 +23,14 @@ public sealed class CatalogRepositoryTests : IAsyncLifetime
     // Runs once per test; DbUp is idempotent (migrations journaled, sprocs CREATE OR ALTER).
     public ValueTask InitializeAsync()
     {
-        CatalogDb.Initialize(_connectionString);
+        CatalogDb.Initialize(_connectionString, NullLogger.Instance);
         return ValueTask.CompletedTask;
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-    private CatalogRepository NewRepository() => new(new SqlConnection(_connectionString));
+    private CatalogRepository NewRepository() =>
+        new(new SqlConnection(_connectionString), NullLogger<CatalogRepository>.Instance);
 
     [Fact]
     public async Task Create_then_list_round_trips_the_row_with_its_category_name()

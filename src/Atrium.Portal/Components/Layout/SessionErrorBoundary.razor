@@ -35,10 +35,18 @@ else
 
     protected override Task OnErrorAsync(Exception exception)
     {
-        // Session expiry is expected (the access token has no refresh), so it isn't an error to log.
-        // Everything else is a genuine fault — log it server-side, since we now render a card instead
-        // of letting it crash the circuit into the browser console.
-        if (exception is not SessionExpiredException)
+        // Session expiry is expected (the access token has no refresh): note it at Information so an
+        // operator can see re-login prompts without it looking like a fault. Everything else is a
+        // genuine fault — log it server-side, since we now render a card instead of letting it crash
+        // the circuit into the browser console.
+        if (exception is SessionExpiredException)
+        {
+            Logger.LogInformation(
+                "Session expired; prompting re-login from {Path}.",
+                new Uri(Nav.Uri).PathAndQuery
+            );
+        }
+        else
         {
             Logger.LogError(exception, "Unhandled exception surfaced to the session error boundary.");
         }

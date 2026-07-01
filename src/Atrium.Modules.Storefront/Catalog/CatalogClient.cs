@@ -1,7 +1,9 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Atrium.Contracts;
 using Atrium.Design;
+using Microsoft.Extensions.Logging;
 
 namespace Atrium.Modules.Storefront.Catalog;
 
@@ -11,7 +13,11 @@ namespace Atrium.Modules.Storefront.Catalog;
 /// user's access token (captured by the shell into <see cref="AccessTokenHolder"/>, which shares this
 /// component-resolved scope) so the request is authorized end to end.
 /// </summary>
-public sealed class CatalogClient(HttpClient http, AccessTokenHolder tokens)
+public sealed class CatalogClient(
+    HttpClient http,
+    AccessTokenHolder tokens,
+    ILogger<CatalogClient> logger
+)
 {
     public Task<IReadOnlyList<ProductDto>> GetProductsAsync(
         string? category = null,
@@ -39,9 +45,41 @@ public sealed class CatalogClient(HttpClient http, AccessTokenHolder tokens)
             );
         }
         using var response = await http.SendAsync(request, ct);
+        LogIfUnsuccessful(logger, request, response);
         response.ThrowIfSessionExpired();
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(ct)
             ?? throw new InvalidOperationException();
+    }
+
+    // Structured Warning at the downstream seam: session expiry (401) vs. any other non-success. No auth
+    // header or token is logged — only method, path and status.
+    private static void LogIfUnsuccessful(
+        ILogger logger,
+        HttpRequestMessage request,
+        HttpResponseMessage response
+    )
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            logger.LogWarning(
+                "Session expired: {Method} {RequestUri} returned 401",
+                request.Method,
+                request.RequestUri
+            );
+        }
+        else
+        {
+            logger.LogWarning(
+                "Downstream {Method} {RequestUri} returned {StatusCode}",
+                request.Method,
+                request.RequestUri,
+                (int)response.StatusCode
+            );
+        }
     }
 }

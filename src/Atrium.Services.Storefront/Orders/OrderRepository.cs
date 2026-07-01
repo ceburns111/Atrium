@@ -2,6 +2,7 @@ using System.Data;
 using Atrium.Contracts;
 using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 
 namespace Atrium.Services.Storefront.Orders;
 
@@ -20,7 +21,8 @@ public interface IOrderRepository
 /// Dapper-backed order store over stored procedures. Order creation inserts the header and each line
 /// inside one transaction owned here; reads group the flat sproc rows into <see cref="OrderDto"/>.
 /// </summary>
-public sealed class OrderRepository(SqlConnection db) : IOrderRepository
+public sealed class OrderRepository(SqlConnection db, ILogger<OrderRepository> logger)
+    : IOrderRepository
 {
     public async Task<int> CreateAsync(
         string userName,
@@ -63,6 +65,12 @@ public sealed class OrderRepository(SqlConnection db) : IOrderRepository
         }
 
         await transaction.CommitAsync(ct);
+        logger.LogInformation(
+            "Order {OrderId} created with {LineCount} line(s) totaling {OrderTotal}",
+            orderId,
+            lines.Count,
+            total
+        );
         return orderId;
     }
 

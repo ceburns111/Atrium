@@ -52,7 +52,7 @@ var app = builder.Build();
 var connectionString =
     app.Configuration.GetConnectionString("catalogdb")
     ?? throw new InvalidOperationException("Connection string 'catalogdb' was not configured.");
-DatabaseInitializer.Initialize(connectionString);
+DatabaseInitializer.Initialize(connectionString, app.Logger);
 
 // One structured log event per request (method, path, status, elapsed); early so it wraps handlers.
 app.UseAtriumRequestLogging();

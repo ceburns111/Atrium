@@ -2,6 +2,7 @@ using System.Data;
 using Atrium.Contracts;
 using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 
 namespace Atrium.Services.Catalog.Catalog;
 
@@ -30,7 +31,8 @@ public interface ICatalogRepository
 /// <see cref="SqlConnection"/> is the Aspire-injected "catalogdb". Product rows are mapped to DTOs by
 /// the source-generated <see cref="CatalogMapper"/>.
 /// </summary>
-public sealed class CatalogRepository(SqlConnection db) : ICatalogRepository
+public sealed class CatalogRepository(SqlConnection db, ILogger<CatalogRepository> logger)
+    : ICatalogRepository
 {
     public async Task<IReadOnlyList<ProductDto>> GetProductsAsync(
         string? category,
@@ -63,8 +65,9 @@ public sealed class CatalogRepository(SqlConnection db) : ICatalogRepository
     public async Task<ProductDto?> CreateProductAsync(
         CreateProductRequest request,
         CancellationToken ct = default
-    ) =>
-        await WriteProductAsync(
+    )
+    {
+        var product = await WriteProductAsync(
             "dbo.usp_Product_Create",
             new
             {
@@ -75,13 +78,24 @@ public sealed class CatalogRepository(SqlConnection db) : ICatalogRepository
             },
             ct
         );
+        if (product is not null)
+        {
+            logger.LogInformation(
+                "Product {ProductId} created in category {Category}",
+                product.Id,
+                product.Category
+            );
+        }
+        return product;
+    }
 
     public async Task<ProductDto?> UpdateProductAsync(
         int id,
         UpdateProductRequest request,
         CancellationToken ct = default
-    ) =>
-        await WriteProductAsync(
+    )
+    {
+        var product = await WriteProductAsync(
             "dbo.usp_Product_Update",
             new
             {
@@ -93,6 +107,12 @@ public sealed class CatalogRepository(SqlConnection db) : ICatalogRepository
             },
             ct
         );
+        if (product is not null)
+        {
+            logger.LogInformation("Product {ProductId} updated", product.Id);
+        }
+        return product;
+    }
 
     // Both write sprocs SELECT the affected row back (empty for an unknown id), so one helper maps both.
     private async Task<ProductDto?> WriteProductAsync(
@@ -101,14 +121,29 @@ public sealed class CatalogRepository(SqlConnection db) : ICatalogRepository
         CancellationToken ct
     )
     {
-        var row = await db.QuerySingleOrDefaultAsync<ProductRow>(
-            new CommandDefinition(
+        try
+        {
+            var row = await db.QuerySingleOrDefaultAsync<ProductRow>(
+                new CommandDefinition(
+                    procedure,
+                    parameters,
+                    commandType: CommandType.StoredProcedure,
+                    cancellationToken: ct
+                )
+            );
+            return row is null ? null : CatalogMapper.ToDto(row);
+        }
+        catch (SqlException ex)
+        {
+            // A sproc THROW (e.g. 50001 for an unknown category) or other DB fault — log and rethrow so
+            // the caller's error handling is unchanged.
+            logger.LogWarning(
+                ex,
+                "Catalog write {Procedure} failed with SQL error {SqlErrorNumber}",
                 procedure,
-                parameters,
-                commandType: CommandType.StoredProcedure,
-                cancellationToken: ct
-            )
-        );
-        return row is null ? null : CatalogMapper.ToDto(row);
+                ex.Number
+            );
+            throw;
+        }
     }
 }

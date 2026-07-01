@@ -1,6 +1,7 @@
 using Atrium.Contracts;
 using Atrium.Services.Storefront.Orders;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging.Abstractions;
 using StorefrontDb = Atrium.Services.Storefront.Data.DatabaseInitializer;
 
 namespace Atrium.IntegrationTests;
@@ -21,13 +22,14 @@ public sealed class OrderRepositoryTests : IAsyncLifetime
 
     public ValueTask InitializeAsync()
     {
-        StorefrontDb.Initialize(_connectionString);
+        StorefrontDb.Initialize(_connectionString, NullLogger.Instance);
         return ValueTask.CompletedTask;
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-    private OrderRepository NewRepository() => new(new SqlConnection(_connectionString));
+    private OrderRepository NewRepository() =>
+        new(new SqlConnection(_connectionString), NullLogger<OrderRepository>.Instance);
 
     [Fact]
     public async Task Create_persists_the_header_and_all_lines_in_one_transaction()
