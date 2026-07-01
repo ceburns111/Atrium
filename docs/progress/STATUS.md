@@ -2,6 +2,18 @@
 
 **Updated:** 2026-07-01 (Run 2 set up; green baseline confirmed).
 
+## ✅ RUN 2 COMPLETE — queue drained, wound down cleanly (2026-07-01)
+
+All seven items (A–G) are done and committed on `feat/storefront-checkout-diagrams`; `main` is untouched.
+Gate green throughout (build 0W/0E, tests **56/56**, Docker up). Wake-up summary: **`GOOD-MORNING.md`** at
+the repo root. **Nothing left that's confidently doable unattended** — everything remaining NEEDS the user
+or the live stack (see "Supervised pass" in `QUEUE.md`): live login/anon/checkout verification, and the
+subjective dark-mode / image look (E/F/G). Then review + merge the branch → `main`.
+
+Commits: A `afb89eb` · B `7ab96e5` · C `da4abba` · D `6c015d0` · E `cbf4fb2` · F `3ab697a` · G `b332388`
+(+ per-item bookkeeping commits). **`SAFE-REVERT-POINT = afb89eb`** (drops the B–G auth/checkout/diagram/
+theme phase, keeps the card fix + setup).
+
 ## Where we are
 
 **Run 2 — storefront / checkout / diagrams.** New autonomous queue, branch

@@ -154,8 +154,15 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
       shipping something off-brand. Gate = build + test green. Mark `[~]`.
       </details>
 
-- [ ] **G · Dark-mode button colors are broken** (code/CSS — follow-up to E, from user feedback +
-      screenshot 2026-07-01). **Symptom:** in dark mode the **accent/primary button** (e.g. Admin Edit-product
+- [~] **G · Dark-mode button colors** (code/CSS — follow-up to E) — `b332388`. **Fixed the invisible-Save
+      bug; final look still wants an eyeball.** Root cause: `.btn--primary` (and `.btn--accent`, `.chip--on`,
+      `.toast`) hard-coded `color:#fff` over a `var(--ink)`/accent fill that inverts in dark → near-white
+      button + white text. Fixed with theme-aware tokens: primary/chip/toast label → `var(--paper)`; accent
+      label → new `--on-accent` (white light / dark ink in dark); primary hover → `color-mix` (was `#000`).
+      No component CSS forked; no hard-coded color values remain in `atrium.css`. Gate 0W/0E, 56/56.
+
+      <details><summary>original report</summary>
+      From user feedback + screenshot 2026-07-01. **Symptom:** in dark mode the **accent/primary button** (e.g. Admin Edit-product
       "Save") renders **pale/washed-out with near-invisible text** (should be the teal `--accent` fill with
       legible ink); the **ghost button** ("Cancel") text is **too faint**. Runs **after F** (both touch
       `Atrium.Design` — no concurrent edits). **Plan:** inspect the `.btn` / `.btn--accent` / `.btn--ghost`
@@ -164,6 +171,7 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
       label meets contrast; primary/secondary buttons too. **Tokens only** (don't fork component CSS unless a
       token genuinely can't express it). Verify every `.btn` variant in BOTH themes. Gate = build + test
       green; **the look still needs the user's eye** → mark `[~]`. (Same dark-mode caveat as E.)
+      </details>
 
 ---
 

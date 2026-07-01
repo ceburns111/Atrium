@@ -257,3 +257,21 @@ merged to `main`. Source of the new items: `TODO.md` "🆕 New work" + "## Last"
 - **User feedback (live, 2026-07-01, + screenshot):** dark-mode button colors are broken — the accent
   "Save" button is pale/washed with near-invisible text and the ghost "Cancel" label is too faint. Added as
   **item G** (follow-up to E). Held until F committed (both touch `Atrium.Design`). Next up.
+- `b332388` — **Item G (dark-mode button/label contrast)** done — **fixed directly by the orchestrator**
+  (small, well-scoped token bug; a subagent would add no value). Root cause: `.btn--primary` used
+  `background: var(--ink)` with a **hard-coded `color: #fff`** — in dark `--ink` is near-white, so the Save
+  button was a near-white block with white (invisible) text. A **scan for hard-coded `#fff`/`#000` in
+  `atrium.css`** found the same latent bug in `.btn--accent` (white on the lighter dark accent, ~2:1),
+  `.chip--on` (selected filter), and `.toast`. Fixed all four with **theme-aware tokens**: primary/chip/toast
+  label → `var(--paper)` (flips with the theme; also keeps every status-toast variant legible since their
+  fills invert dark↔bright); accent label → a **new `--on-accent` token** (`#fff` light / `#08211b` dark,
+  where the luminous dark accent needs a dark label to clear AA); primary hover → `color-mix(... --ink 85%,
+  --paper)` (was a hard `#000` that turned the near-white dark button black). No component CSS forked; **zero
+  hard-coded color values remain in `atrium.css`** (verified by grep). Ghost/secondary buttons were checked
+  and already correct in both themes. Gate: build 0W/0E, `dotnet test` 56/56. **Marked `[~]`** — the
+  invisible-Save correctness bug is fixed by the contrast math, but the overall dark look still wants an
+  in-browser eyeball (with E/F). **Live look = supervised.**
+
+### ✅ RUN 2 COMPLETE (2026-07-01)
+Queue A–G drained on `feat/storefront-checkout-diagrams`; `main` untouched; gate green throughout. Wound
+down cleanly, wrote `GOOD-MORNING.md`. Remaining work is all supervised (live/visual) — see `QUEUE.md`.
