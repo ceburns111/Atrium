@@ -139,3 +139,27 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
   - **Non-blocking notes (reviewer, for later):** (1) Redoc CDN is pinned to `latest` — pin a concrete
     `redoc@2.x` for reproducibility. (2) `/docs` `MapGet` has no `.ExcludeFromDescription()`, so it appears
     as an untagged operation in the spec — add it for a clean doc. Neither is a blocker; left for the user.
+
+---
+
+## 2026-07-01 — Run 2 (storefront / checkout / diagrams) · Opus 4.8
+
+New autonomous queue on branch `feat/storefront-checkout-diagrams`, created off the unmerged
+`fix/modal-center-and-reports-gate` (which carries the reports-gate + centered-modal work). Run 1 above is
+merged to `main`. Source of the new items: `TODO.md` "🆕 New work" + "## Last".
+
+- **Baseline confirmed:** branch cut off `fix/modal-center-and-reports-gate`; `dotnet build` 0W/0E;
+  `dotnet test` **23/23** (unit + integration, Docker up); csharpier 1.3.0 no-op. Green — cleared to run.
+- **Pre-work commit `7f2f7dc`** — committed the pre-existing module drift-audit report
+  (`docs/audits/module-drift-findings.md`, untracked in the working tree at run start). Read-only report,
+  not one of the six queue items; 3 Low cosmetic findings left for user triage.
+- **Planning done via one Explore mapper** (read-only) — mapped exact integration points for all six items:
+  `Home.razor` (unfiltered `Catalog.Modules` cards) + `NavMenu.razor:19–33` (the `AuthorizeView`/`RequiredRole`
+  pattern to copy) + `NavItem.RequiredRole` (exists); Catalog reads under `.MapGroup("/catalog")
+  .RequireAuthorization()` with a pure pass-through gateway (so anon browse = AllowAnonymous the GETs +
+  token-optional `CatalogClient` + drop page `[Authorize]`; `CartService` is `AddScoped`/per-circuit so anon
+  cart already works; `POST orders` stays gated = the checkout gate); no payment step exists today;
+  `tokens.css` is already dark-ready (all CSS vars); `docs/ARCHITECTURE.md` + 10 ADRs are ASCII-only (no
+  mermaid yet). Wrote `QUEUE.md` (items A–F, ordered A→B→C→D→E→F with rationale) + refreshed `STATUS.md`.
+- **Queue set up. Next: item A** (role-gate the home app cards). One atomic commit per item; deterministic
+  gate only; live/login/visual checks deferred to a supervised pass. E/F are best-effort + flagged.

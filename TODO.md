@@ -36,13 +36,18 @@ Full detail: `docs/progress/` (STATUS / QUEUE / LOG) and `GOOD-MORNING.md`.
       Playwright (interactive circuit + self-signed cert). Needs a real browser or an E2E harness.
 
 ## Clean Up 
-- [ ] Implement cleanup findings (dead code, overeingineering, ui module slop and inconsistency)
-- [ ] Review for code drit
+- [ ] Implement fixers for drift audit findings
 - [ ] Update project specific tools/skills
 
+
 ## 🆕 New work
-- [ ] Payment form
-- [ ] Architecture diagrams (explain the platform properly)
+- [ ] Hide app cards on home if user cannot access them ie testuser cannot acces /admin or /reports but still sees cards for those apps on the homepage
+- [ ] Storefront should be visible to anonymous -- checkout should tell the user the need to login or create account to continue
+      - It then testuser then would signin and be able to checkout properly.
+- [ ] Create a Payment form/full checkout process (basic, but enough to help fluff out the diagrams a bit)
+- [ ] Create Architecture diagrams (explain the platform properly) as well as the UI flows
+
+## Last
 - [ ] Dark mode
 - [ ] Find store images
 

@@ -1,85 +1,59 @@
 # STATUS — read me first
 
-**Updated:** 2026-07-01 (overnight run resumed; baseline green at `335b2a2`).
+**Updated:** 2026-07-01 (Run 2 set up; green baseline confirmed).
 
 ## Where we are
 
-Run resumed on branch `overnight/2026-07-01`. Baseline green (build 0W/0E, tests 22/22, Docker up).
-**ALL DOCS DONE** (10/2/3/1). **CODE phase:** #4 OpenAPI+Redoc (`bc7afd7`) + #6 OTel/Serilog (`d51a902`)
-DONE — both Tier-1 APPROVE WITH NOTES, live-check deferred. Original auto-run queue **DRAINED**.
+**Run 2 — storefront / checkout / diagrams.** New autonomous queue, branch
+`feat/storefront-checkout-diagrams` (created off the unmerged `fix/modal-center-and-reports-gate`, which
+carries the reports-gate + centered-modal fixes). `main` stays pristine for the user to review/merge.
 
-**Continuing unsupervised (user: keep going with anything confidently doable, 2026-07-01).**
-DONE this stretch: #7 application logging (`153b6bc`, Tier-1); csharpier fluent-chain item CLOSED (not
-feasible); customer-login INVESTIGATED → refined as item 8.
+**Run 1 (2026-07-01 overnight) is DONE and merged to `main`** — ADR sweep, new-app guide, AGENTS.md +
+authoring skills, per-project READMEs, OpenAPI/Redoc, OTel/Serilog, application logging, role-gating,
+Forbidden view, UI audit. Detail lives in `LOG.md` (append-only) + `GOOD-MORNING.md`. Not re-litigated here.
 
-**RUN COMPLETE — wound down cleanly (2026-07-01).** All confidently-doable unsupervised work is done and
-committed on `overnight/2026-07-01`. `main` is untouched. See **`GOOD-MORNING.md`** at the repo root for the
-full wake-up summary.
+**Baseline (this run):** branch created; `dotnet build` 0W/0E; `dotnet test` **23/23**; Docker up;
+csharpier 1.3.0 no-op. Green — cleared to run the queue.
 
-Delivered tonight: docs items 10/2/3/1; code items 4 (OpenAPI+Redoc), 6 (OTel+Serilog), 7 (app logging),
-8 (role-gate Admin/Reports), 9 (Forbidden view) — every code item Tier-1 reviewed; plus the UI audit report,
-the csharpier feasibility finding (not feasible), and the customer-login investigation.
-
-**Nothing left that I can do unsupervised.** Everything remaining NEEDS the user or the live stack:
-- **Live verification pass** (bring up `aspire run`): items 4/6/7/8/9 — see each LOG entry's morning check.
-- **Skill keep/discard:** `docs/progress/SKILL-REVIEW.md` (3 skills authored).
-- **UI audit triage:** `docs/audits/ui-ungraceful-scenarios.md` (1 High needs idempotency judgment).
-- **Subjective/needs-judgment:** Dialog aesthetic polish; server-side Reports admin-gate (needs live
-  claim-mapping check); Forbidden/NotFound off-brand polish (audit Low finding).
-- Then **review + merge** `overnight/2026-07-01` → `main`.
-
-`SAFE-REVERT-POINT = a25c62f` (docs end; `git reset --hard a25c62f` drops all code, keeps all docs).
-
-When out of confidently-doable work: write a prominent **root-level wake-up summary doc** (user request)
-and stop cleanly, STATUS pointing at the supervised remainder.
-
-### Skill-authoring capability (NEW, 2026-07-01)
-User authorized unattended skill authoring under `.claude/skills/**` — grant in `.claude/settings.local.json`
-(`autoMode.allow`, scoped to skills only; gitignored). Every auto-authored skill MUST be logged in
-`docs/progress/SKILL-REVIEW.md` for the user's morning keep/discard review. The grant does NOT extend to
-`settings.json`, hooks, or other `.claude` config — those stay supervised.
+**Queue (see `QUEUE.md`):** **A** home-card role-gating → **B** anonymous storefront + checkout sign-in
+gate → **C** basic payment/checkout → **D** architecture + UI-flow mermaid diagrams → **E** dark mode
+(best-effort) → **F** store images (best-effort). None started yet.
 
 ## Next concrete action
 
-1. `git switch -c overnight/2026-07-01` (off `main`) — all autonomous commits go here, not `main`.
-2. Resume hygiene: `git status` clean? `dotnet build` + `dotnet test` green baseline? Docker up? Record
-   the start commit in `LOG.md`.
-3. Start item **10**: read `docs/adr/` (esp. 0004, 0007) + the four "done this session" commits, then
-   add/update ADRs for graceful session-expiry handling, service-root route nesting, the native-`<dialog>`
-   Dialog primitive, and the co-located repository interfaces. Keep `docs/adr/README.md` in sync. Gate =
-   build-clean + accuracy check (docs). Commit, advance to item 2.
+Start **item A** (hide home app cards the user can't access): dispatch an implementer subagent to add a
+`RequiredRole` to `IModule` (Admin/Reports → `"admin"`, Storefront → null) and wrap the role-gated cards in
+`Home.razor` in `<AuthorizeView Roles="@module.RequiredRole">`, mirroring `NavMenu.razor:19–33`. Orchestrator
+re-runs the gate (csharpier + build + test), commits atomically, updates STATUS/LOG/QUEUE, advances to B.
 
 ## Autonomy boundary
 
-**Run the whole queue, unattended, don't stop at code.** One atomic commit per item; docs (10,2,3,1)
-first, then code (6, then low/tomorrow). **After item 1 commits, record its hash here + in LOG as
-`SAFE-REVERT-POINT` before starting any code** — that's the user's clean revert line. Skip item 4 (needs
-their viewer pick). See `README.md` for the full rule.
+Run the whole queue unattended on `feat/storefront-checkout-diagrams`, one atomic single-purpose commit per
+item, thin-orchestrator + one implementer subagent per item, escalation/backoff per `README.md`. The gate is
+**deterministic only** (csharpier + build + test) — **no unattended browser/aspire**; all live/login/visual
+checks are the supervised pass in `QUEUE.md`. Items **E** and **F** are subjective/asset-driven → **best-effort
++ flag** (`[~]`, never claim "done"), the same way Run 1 handled the Dialog aesthetic polish.
 
-`SAFE-REVERT-POINT (last docs commit):` **`a25c62f`** — all docs (items 10/2/3/1) are at or before this
-commit. To discard the entire code phase and keep every doc, the user can `git reset --hard a25c62f` on
-`overnight/2026-07-01`. Everything after this is code (items 4, 6, …).
+**Tiering:** A = Tier-1 (auth-adjacent, low-risk). **B = Tier-1 mandatory (auth surface).** C = Tier-1
+(order-flow change). D = Tier-1 accuracy (showcase doc — grep every node/edge). E/F = Tier-0 best-effort.
+
+`SAFE-REVERT-POINT` will be recorded here after item **A** commits (the last pre-B point), so the user can drop
+the whole auth/checkout phase and keep the low-risk card fix if they want.
 
 ## Stack / environment
 
-- **Docker must be up** (integration tests use Testcontainers). The **aspire stack is NOT required**
-  overnight — the loop runs deterministic gates only; all live/browser/trace checks are the supervised
-  morning pass's job.
-- Docs items need neither Docker nor the stack.
-- Branch: `overnight/2026-07-01` (create on first resume). `main` stays pristine.
+- **Docker up** (integration tests use Testcontainers). **Aspire stack NOT required** — deterministic gate
+  only; live checks are the supervised pass.
+- Branch: `feat/storefront-checkout-diagrams`. `main` pristine.
 
 ## Blockers
 
-- None. Item 4 (API docs) is **decided** (2026-07-01): built-in OpenAPI + Redoc, per service, no
-  Swashbuckle/Scalar — it runs in the code phase. Nothing is parked.
-
-## Pending (supervised, for when the user is back)
-
-- Browser-verify the session-expired panel (#1) + the Admin modal on a fresh build.
-- `frontend-design` polish on the Dialog (user wants centered/cute/better-spaced).
-- Item 6 (OTel/Serilog) and the low/tomorrow code items.
+- None yet. Anticipated judgment calls, handled by default (documented in LOG for morning review):
+  - **C payment realism** — simulated payment, no real gateway, no card storage (kept honest).
+  - **F store images** — no unattended web-download of licensed photos; generated on-brand SVG placeholders,
+    flagged for the user to swap in real imagery (or `BLOCKED` if it can't be done cleanly).
 
 ## How to resume
 
-Say "resume the Atrium overnight run"; the agent reads this file, starts a `/loop`, and works `QUEUE.md`
-in order under the gate in `README.md`.
+Say "resume the storefront run"; the agent reads this file, confirms the green baseline on
+`feat/storefront-checkout-diagrams`, and works `QUEUE.md` in order (A→F) under the gate in `README.md`.
