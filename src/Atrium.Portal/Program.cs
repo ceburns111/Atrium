@@ -44,7 +44,13 @@ builder
         options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
     })
-    .AddCookie()
+    .AddCookie(options =>
+    {
+        // A wrong-role user reaching a role-gated route by full-page GET (deep-link / refresh /
+        // bookmark) is denied at the endpoint (403); send them to the clean Forbidden page instead
+        // of the default /Account/AccessDenied, which isn't a route and falls through to "Not Found".
+        options.AccessDeniedPath = "/forbidden";
+    })
     .AddOpenIdConnect(options =>
     {
         options.Authority = keycloakAuthority;
