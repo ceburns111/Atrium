@@ -22,7 +22,7 @@ procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 | 4a Catalog + gateway + Aspire | ✅ | `5617961` |
 | 4b Keycloak OIDC + secured catalog + token propagation | ✅ | `c1e73d6` |
 | 4c Storefront vertical (own DB) + slice→core | ✅ | `cb0f5c4` |
-| 5 Admin + Reports modules (admin-role writes, real reports) | ✅ | — |
+| 5 Admin + Reports modules (admin-role writes, real reports) | ✅ | `3d40061` |
 | 6 Docs ("the rest") | ▢ next | — |
 | 7 Tests + polish | ▢ | — |
 
