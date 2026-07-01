@@ -1,5 +1,6 @@
 #:sdk Aspire.AppHost.Sdk@13.4.6
 #:package Aspire.Hosting.SqlServer@13.4.6
+#:package Aspire.Hosting.Keycloak@13.4.6-preview.1.26319.6
 #:project ../Atrium.Services.Catalog/Atrium.Services.Catalog.csproj
 #:project ../Atrium.Gateway/Atrium.Gateway.csproj
 #:project ../Atrium.Portal/Atrium.Portal.csproj
@@ -13,11 +14,16 @@ var builder = DistributedApplication.CreateBuilder(args);
 var sql = builder.AddSqlServer("sql").WithDataVolume();
 var catalogDb = sql.AddDatabase("catalogdb");
 
-// Catalog core service: owns product data, seeded + sprocs applied by DbUp on startup.
+// Keycloak (identity core): imports the atrium realm on startup; fixed port so its URL is stable.
+var keycloak = builder.AddKeycloak("keycloak", 8080).WithDataVolume().WithRealmImport("./realms");
+
+// Catalog core service: owns product data (DbUp seed + sprocs) and validates Keycloak JWTs.
 var catalog = builder
     .AddProject<Projects.Atrium_Services_Catalog>("catalog")
     .WithReference(catalogDb)
+    .WithReference(keycloak)
     .WaitFor(catalogDb)
+    .WaitFor(keycloak)
     .WithHttpHealthCheck("/health");
 
 // Gateway (YARP): the single ingress; routes /catalog/* to the catalog service by discovery.
@@ -26,7 +32,13 @@ var gateway = builder
     .WithReference(catalog)
     .WaitFor(catalog);
 
-// Portal (Blazor Server host): calls the gateway; module HttpClients resolve "https+http://gateway".
-builder.AddProject<Projects.Atrium_Portal>("portal").WithReference(gateway).WaitFor(gateway);
+// Portal (Blazor Server host): OIDC against Keycloak; calls the gateway with the user's bearer token.
+builder
+    .AddProject<Projects.Atrium_Portal>("portal")
+    .WithReference(gateway)
+    .WithReference(keycloak)
+    .WithEnvironment("Keycloak__PortalSecret", "dev-portal-secret")
+    .WaitFor(gateway)
+    .WaitFor(keycloak);
 
 builder.Build().Run();

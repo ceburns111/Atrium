@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @implements IDisposable
 @inject NavigationManager Nav
+@inject Atrium.Design.AccessTokenHolder Tokens
 
 <div class="app-shell @(_navOpen ? "nav-open" : null)">
     <aside class="app-sidebar">
@@ -14,6 +15,16 @@
             <span class="crumbs__sep">/</span>
             <span class="crumbs__here">@Section</span>
         </nav>
+        <div class="topbar__spacer"></div>
+        <AuthorizeView>
+            <Authorized>
+                <span class="topbar__user">@context.User.Identity?.Name</span>
+                <a class="btn btn--ghost btn--sm" href="/account/logout">Sign out</a>
+            </Authorized>
+            <NotAuthorized>
+                <a class="btn btn--secondary btn--sm" href="/account/login">Sign in</a>
+            </NotAuthorized>
+        </AuthorizeView>
     </header>
 
     <main class="app-main">
@@ -36,7 +47,19 @@
 @code {
     private bool _navOpen;
 
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
     protected override void OnInitialized() => Nav.LocationChanged += OnLocationChanged;
+
+    // Capture the signed-in user's access token so module HttpClients can attach it on every request.
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AuthState is not null)
+        {
+            Tokens.AccessToken = (await AuthState).User.FindFirst("access_token")?.Value;
+        }
+    }
 
     private void ToggleNav() => _navOpen = !_navOpen;
 

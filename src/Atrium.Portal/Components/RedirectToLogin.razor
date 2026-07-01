@@ -1,0 +1,10 @@
+@inject NavigationManager Nav
+
+@code {
+    // Send unauthenticated visitors of a protected page to the OIDC challenge, returning here after login.
+    protected override void OnInitialized()
+    {
+        var returnUrl = Uri.EscapeDataString(new Uri(Nav.Uri).PathAndQuery);
+        Nav.NavigateTo($"/account/login?returnUrl={returnUrl}", forceLoad: true);
+    }
+}

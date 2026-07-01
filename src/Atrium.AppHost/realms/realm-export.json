@@ -1,0 +1,85 @@
+{
+  "realm": "atrium",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "roles": {
+    "realm": [
+      { "name": "user", "description": "Standard application user" },
+      { "name": "customer", "description": "Storefront shopper" },
+      { "name": "admin", "description": "Back-office administrator" }
+    ]
+  },
+  "users": [
+    {
+      "username": "testuser",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "User",
+      "email": "testuser@example.com",
+      "credentials": [{ "type": "password", "value": "password", "temporary": false }],
+      "realmRoles": ["user", "customer"]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "User",
+      "email": "admin@example.com",
+      "credentials": [{ "type": "password", "value": "password", "temporary": false }],
+      "realmRoles": ["user", "admin"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "atrium-catalog",
+      "name": "Atrium Catalog (resource server)",
+      "description": "The catalog API as an OAuth resource. Validates tokens whose aud contains this id; never logs in itself (bearerOnly).",
+      "enabled": true,
+      "bearerOnly": true,
+      "publicClient": false
+    },
+    {
+      "clientId": "atrium-portal",
+      "name": "Atrium Portal (confidential)",
+      "description": "The Blazor Server host. Runs the OIDC auth-code flow, holds tokens server-side, hands the browser only an http-only cookie.",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "dev-portal-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["*"],
+      "webOrigins": ["+"],
+      "attributes": { "post.logout.redirect.uris": "+" },
+      "protocolMappers": [
+        {
+          "name": "atrium-catalog-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "atrium-catalog",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "role",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

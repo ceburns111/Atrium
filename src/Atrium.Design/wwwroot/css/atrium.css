@@ -191,6 +191,13 @@ button {
     color: var(--ink);
     font-weight: 500;
 }
+.topbar__spacer {
+    flex: 1;
+}
+.topbar__user {
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+}
 /* Two classes (.btn.menu-btn) to outrank .btn's own display, which is declared later. */
 .btn.menu-btn {
     display: none;

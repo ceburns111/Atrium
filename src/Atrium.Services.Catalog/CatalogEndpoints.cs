@@ -11,7 +11,8 @@ public static class CatalogEndpoints
 {
     public static void MapCatalogEndpoints(this IEndpointRouteBuilder app)
     {
-        var catalog = app.MapGroup("/catalog").WithTags("Catalog");
+        // Every catalog read requires an authenticated caller (a valid Keycloak JWT).
+        var catalog = app.MapGroup("/catalog").WithTags("Catalog").RequireAuthorization();
 
         catalog.MapGet("/products", GetProducts);
         catalog.MapGet("/categories", GetCategories);
