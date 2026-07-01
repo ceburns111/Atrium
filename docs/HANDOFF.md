@@ -99,12 +99,14 @@ dotnet test Atrium.slnx                                              # everythin
 - `Atrium.Portal` — Blazor Server host: module discovery, shell, OIDC login, token capture.
 - `Atrium.Abstractions` — `IModule` + `NavItem` contract.
 - `Atrium.Design` — design-system RCL: `tokens.css` + `atrium.css`, primitives (Button/Card/Badge/
-  PageHeader/Field/ToastHost), `AccessTokenHolder`.
+  PageHeader/Field/ToastHost/**Dialog**), `AccessTokenHolder`, `SessionExpiredException`. `Dialog` is a
+  native-`<dialog>`/`showModal()` modal (scoped CSS + `wwwroot/js/dialog.js`; two-way `Open`).
 - `Atrium.Contracts` — DTOs (Product/Category/Order).
 - `Atrium.Modules.Storefront` — Storefront UI module (Shop, Cart, Orders; CatalogClient, OrdersClient,
   CartService). Amber accent.
-- `Atrium.Modules.Admin` — back-office products table with inline edit + create (AdminCatalogClient →
-  Catalog writes). Indigo accent. Writes are admin-role gated server-side; the page is view-any/write-admin.
+- `Atrium.Modules.Admin` — back-office products table; create + edit happen in a shared modal `Dialog`
+  (AdminCatalogClient → Catalog writes). Indigo accent. Writes are admin-role gated server-side; the page
+  is view-any/write-admin.
 - `Atrium.Modules.Reports` — sales analytics: stat cards + CSS-drawn bar chart (ReportsClient →
   Storefront `/reports/sales`). Violet accent. (Hello module removed — three real modules now prove discovery.)
 - `Atrium.Services.Catalog` — core service: Dapper/sprocs/DbUp/Mapperly, JWT-secured. Product reads for

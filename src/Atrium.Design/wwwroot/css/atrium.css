@@ -537,26 +537,12 @@ a.card:hover {
     border-radius: var(--r-full);
 }
 
-/* ---------- Admin: product create form + editable table ---------- */
-.admin-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-4);
-    margin-bottom: var(--space-5);
-}
-.admin-form__wide {
-    grid-column: 1 / -1;
-}
-.admin-form__actions {
-    grid-column: 1 / -1;
-    display: flex;
-    gap: var(--space-2);
-}
+/* ---------- Admin: product table (create/edit happen in a modal Dialog) ---------- */
 .admin-table__blurb {
     max-width: 34ch;
     color: var(--muted);
 }
-/* Keep the actions column tight so the editable row's inputs get the width. */
+/* Keep the actions column tight so the data columns get the width. */
 .admin-table th:last-child,
 .admin-table td:last-child {
     width: 1%;
@@ -565,19 +551,6 @@ a.card:hover {
 .admin-table__actions {
     display: flex;
     justify-content: flex-end;
-    gap: var(--space-2);
-    /* Never collapse below the buttons' own width — the "width: 1%" above squeezes the column, and in
-       edit mode (Save + Cancel) the flex row would otherwise overflow left onto the Blurb cell. */
-    min-width: max-content;
-}
-.admin-table .num .input {
-    text-align: right;
-}
-/* The two-column create form collapses to one column when there isn't room for two. */
-@media (max-width: 620px) {
-    .admin-form {
-        grid-template-columns: 1fr;
-    }
 }
 
 /* ---------- Reports: stat cards + CSS bar chart ---------- */
