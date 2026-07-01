@@ -7,4 +7,4 @@
             - Can we discuss different ways I could deploy this and pros cons (ie cost, availablity etc of each) 
       - [ ]: MAYBE: Hook up CI/CD with Github and demo deploying a full feature slice aka module and service app
 - [ ]: [DISCUSS FIRST] Add a Customer Support agent chatbot with MFA & Integrate with Azure AI Foundry 
-- [ ]: Integrate Microsoft Test Platform w/ xUnit
+- [x]: Integrate Microsoft Test Platform w/ xUnit — already done (global.json runner = Microsoft.Testing.Platform; both test projects on xunit.v3.mtp-v2; no legacy Microsoft.NET.Test.Sdk). Verified 2026-07-01.

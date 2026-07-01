@@ -275,3 +275,19 @@ merged to `main`. Source of the new items: `TODO.md` "🆕 New work" + "## Last"
 ### ✅ RUN 2 COMPLETE (2026-07-01)
 Queue A–G drained on `feat/storefront-checkout-diagrams`; `main` untouched; gate green throughout. Wound
 down cleanly, wrote `GOOD-MORNING.md`. Remaining work is all supervised (live/visual) — see `QUEUE.md`.
+
+---
+
+## Run 3 — support chatbot slice (branch `feat/support-chatbot`, off `main`)
+
+- **Run start (2026-07-01).** Discussion-led plan agreed (spec: `RUN3-SUPPORT-CHATBOT.md`). Azure deploy
+  **deferred** (supervised, needs user's account). MTP/xUnit found **already done** (`global.json` runner =
+  Microsoft.Testing.Platform; both test projects on `xunit.v3.mtp-v2`; no legacy `Microsoft.NET.Test.Sdk`)
+  → ticked in `TODO.md`, dropped from the queue. Queue = **A** (NavMenu visible-vs-loaded count) → **C0–C5**
+  (Storefront support-agent slice on MAF/AG-UI). Branch created off `main`.
+- **Baseline:** csharpier no-op (71 files), `dotnet build Atrium.slnx` **0W/0E**, `dotnet test` **56/56**
+  (unit + integration under MTP; Docker up). Green — cleared to run.
+- **Working-tree note:** the user moved `ATRIUM-AI-EXTENSIBILITY-DESIGN.md` root→`docs/` (pure move) and
+  added `docs/bugs/CARROTPAD.png` (a stray screenshot) out-of-band during planning. The doc-move is folded
+  into the run-setup commit (spec links updated `../../`→`../`); the PNG is left untracked (the user's,
+  unrelated to Run 3). No `git add -A` during this run.

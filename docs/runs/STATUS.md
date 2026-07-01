@@ -1,29 +1,35 @@
 # STATUS — read me first
 
-**Updated:** 2026-07-01 (Run 2 complete + live-verified; **Run 3 planned, not started**).
+**Updated:** 2026-07-01 (Run 2 merged; **Run 3 IN PROGRESS** on `feat/support-chatbot`).
 
-## ⏭ NEXT: RUN 3 — planned, NOT started (resume here)
+## ▶ RUN 3 — IN PROGRESS (resume here)
 
-The user will **clear context**, then re-engage. **The flow is DISCUSSION-LED, not paste-and-run** (user's
-call, 2026-07-01): first *discuss* the `[DISCUSS FIRST]` items, optionally produce **research/plan docs (NO
-code)**, then an unattended session executes only what's been agreed. **Do NOT autonomously start coding the
-`[DISCUSS FIRST]` items — or writing their plans — before that conversation happens.**
+**Branch:** `feat/support-chatbot` (off `main`). **Baseline (run start):** csharpier no-op, build 0W/0E,
+`dotnet test` **56/56** (MTP runner confirmed), Docker up — green, cleared to run.
 
-**The `TODO.md` backlog (updated 2026-07-01) + unattended-ability:**
-| Item | Status | Unattended? |
-|---|---|---|
-| **NavMenu: "loaded vs visible" module count** — the `nav__foot` shows `@Catalog.Modules.Count … loaded` (e.g. "3 modules loaded") even when a customer/anon only *sees* 1 in the left-nav; add an indicator of how many are visible vs loaded so it isn't misleading. | ready | ✅ full — small, deterministic, role-aware count (mirror the `RequiredRole`/`AuthorizeView` gating already on the cards+nav). |
-| **Microsoft Test Platform + xUnit** | ready | ✅ full — pure code+config; build/test gate catches it. |
-| **Azure deploy via IaC** (+ prereq: user's Azure account w/ cost limits; Qs: can IaC be tested locally? deploy-approach pros/cons — cost/availability; MAYBE GitHub CI/CD) | **[DISCUSS FIRST]** | ❌ discuss → maybe a **research/plan doc (no code)**. No live deploy unattended (needs the user's account/creds/cost setup). |
-| **Support chatbot + MFA + Azure AI Foundry** | **[DISCUSS FIRST]** | ❌ discuss → maybe a plan doc. Foundry/MFA need cloud creds/decisions. |
+**Current item:** **A · NavMenu visible-vs-loaded count** (next to execute). Queue: **A → C0 … C5**.
+Spec: **[`RUN3-SUPPORT-CHATBOT.md`](RUN3-SUPPORT-CHATBOT.md)**. Execute under `README.md` (thin
+orchestrator, one implementer subagent per item, deterministic gate, atomic commit per item). Keep this
+file + `LOG.md` current after every step. **`docs/bugs/CARROTPAD.png` is the user's stray asset — leave
+untracked, never `git add -A`.**
 
-**So the unattended-safe slice = the NavMenu count fix + MTP/xUnit only.** Everything else is gated on the
-discussion; after discussing, the agreed output may be research/plan docs (no code) and/or scoped local
-scaffolding — the user decides then.
+**The [DISCUSS FIRST] discussion happened (2026-07-01).** Outcome + full queue:
+**[`RUN3-SUPPORT-CHATBOT.md`](RUN3-SUPPORT-CHATBOT.md)** ← the run spec.
 
-**Open decision to confirm at run start:**
-- Whether to run the unattended-safe slice **now** vs. **discuss the [DISCUSS FIRST] items first**, then run.
-  (Branch base is settled: **off `main`** — Run 2 is now merged, so `main` is the clean base.)
+**What was decided (so it isn't re-litigated):**
+- **Azure deploy — DEFERRED, not in this run** (user's call). It's a *supervised* effort later (needs the
+  user's Azure account/creds). Agreed direction (ACA via `azd`, Entra/Keycloak split, cost/teardown,
+  CI/CD) is captured in the spec's "Deferred" section.
+- **Support chatbot — IN this run, agreed shape:** slice-first, **MAF/AG-UI (mandatory)** + Azure AI
+  Foundry (cloud) / Foundry Local (dev) / fake (tests); a **Storefront support agent** (`GetOrderStatus`
+  + product lookup) gated by **step-up MFA** (Entra `amr` in cloud; Keycloak-ACR + dev-simulate locally,
+  config-driven). Design basis: `../ATRIUM-AI-EXTENSIBILITY-DESIGN.md`.
+- **MTP + xUnit — ALREADY DONE** (discovered 2026-07-01: `global.json` runner = MTP, `xunit.v3.mtp-v2`,
+  no legacy VSTest SDK). Ticked in `TODO.md`; **not a queue item.**
+
+**The Run 3 queue:** **A** NavMenu visible-vs-loaded count → **C0–C5** the chatbot slice (C0 = MAF/AG-UI
+package spike = **go/no-go**; `BLOCKED` if the preview stack won't wire — **no MEAI substitution
+unattended**). Full specs + gate + guardrails in the spec file.
 
 **Run 2 is MERGED to `main`** (merge commit `09b42b8`, 2026-07-01; `main` green — build 0W/0E, tests 56/56).
 Branch `feat/storefront-checkout-diagrams` can be deleted at leisure. `HANDOFF.md` retirement is still
