@@ -334,3 +334,13 @@ down cleanly, wrote `GOOD-MORNING.md`. Remaining work is all supervised (live/vi
   **0W/0E**, `dotnet test` **57/57** (56 + the new MAF smoke). Implementer confidence: high (its
   "NU1903 pre-existing / independent" claim was partly wrong — it IS pre-existing transitively via
   AspNetCore.OpenApi, but the baseline was 0W, so the run must clear it; done).
+
+### Item C1 — `AgentSurface` on `Atrium.Abstractions` (contract, Tier-0, MAF-free)
+- **Done.** New `src/Atrium.Abstractions/AgentSurface.cs` — `public sealed record AgentSurface(string
+  Name, string Endpoint, string[]? StarterPrompts = null, string? Icon = null)`, mirroring `NavItem`
+  (own file, param-style XML docs, nullable optionals). Added default interface member to `IModule`:
+  `IEnumerable<AgentSurface> AgentSurfaces => [];` (right after `NavItems`) — so every existing module
+  compiles unchanged. **Abstractions stays MAF-free** (orchestrator-verified: csproj references only the
+  two `Microsoft.Extensions.*.Abstractions` packages; no `Microsoft.Agents.AI`/`Microsoft.Extensions.AI`).
+- **Gate (orchestrator re-ran):** csharpier clean (74 files), build **0W/0E**, `dotnet test` **57/57**.
+  Confidence: high. Pure additive contract; nothing to verify live.

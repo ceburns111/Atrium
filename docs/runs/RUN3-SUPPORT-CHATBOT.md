@@ -105,7 +105,7 @@ deferred** (see below) — it is **not** in this run.
   feasible, hosts a trivial AG-UI SSE endpoint. **Deliverable:** the pinned package refs + a one-paragraph
   `LOG.md` note recording the resolved IDs/versions and any API-shape surprises. **If not feasible →
   `BLOCKED:` with the specific failure.** Gate: build green (test optional at this step).
-- [ ] **C1 · `AgentSurface` on `Atrium.Abstractions`.** Add the `AgentSurface` record next to `NavItem`
+- [x] **C1 · `AgentSurface` on `Atrium.Abstractions`.** Add the `AgentSurface` record next to `NavItem`
   and `IEnumerable<AgentSurface> IModule.AgentSurfaces => []` (default empty). **MAF-free** — UI modules
   must declare a surface without depending on the agent framework. Fields per the design doc:
   `Name`, `Endpoint` (gateway-relative, e.g. `/storefront/agent`), `StarterPrompts?`, `Icon?`.

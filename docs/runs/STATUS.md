@@ -7,9 +7,8 @@
 **Branch:** `feat/support-chatbot` (off `main`). **Baseline (run start):** csharpier no-op, build 0W/0E,
 `dotnet test` **56/56** (MTP runner confirmed), Docker up — green, cleared to run.
 
-**Current item:** **C1 · `AgentSurface` on `Atrium.Abstractions`** (next). ✅ **A** (NavMenu count) ·
-✅ **C0 GO** (MAF 1.12.0 + AG-UI preview pinned, fake-driven agent smoke test green; NU1903 cleared
-repo-wide). Queue: **A → C0 … C5**.
+**Current item:** **C2 · SupportAgent + tools + config-driven IChatClient (Storefront service)** (next).
+✅ **A** (NavMenu count) · ✅ **C0 GO** (MAF pinned) · ✅ **C1** (AgentSurface contract). repo-wide). Queue: **A → C0 … C5**.
 
 **★ Real MAF 1.12.0 API shape (verified in C0 — use in C1–C5, docs sketch was wrong):** create via
 `new ChatClientAgent(IChatClient, instructions:, name:, tools: IList<AITool>?)` → `AIAgent`; run via

@@ -29,6 +29,9 @@ public interface IModule
     /// <summary>Navigation entries the module contributes to the shell.</summary>
     IEnumerable<NavItem> NavItems { get; }
 
+    /// <summary>Chat surfaces the module contributes to the shell's assistant launcher. Default: none.</summary>
+    IEnumerable<AgentSurface> AgentSurfaces => [];
+
     /// <summary>
     /// Registers the module's own services into the host container. Called once at startup before the
     /// app is built, so a module is wired exactly like first-party code.
