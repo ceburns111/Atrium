@@ -23,6 +23,9 @@ public interface IModule
     /// <summary>Optional brand accent (hex) for the module's identity in the shell; falls back to the host accent.</summary>
     string? Accent => null;
 
+    /// <summary>Optional role required to access the module. Null = visible to all authenticated users.</summary>
+    string? RequiredRole => null;
+
     /// <summary>Navigation entries the module contributes to the shell.</summary>
     IEnumerable<NavItem> NavItems { get; }
 

@@ -16,6 +16,9 @@ public sealed class ReportsModule : IModule
     // Violet — Reports' own identity, distinct from the shell, Storefront (amber), and Admin (indigo).
     public string? Accent => "#7c3aed";
 
+    // Reports access is gated to the admin role, matching the /reports route and nav entry.
+    public string? RequiredRole => "admin";
+
     public IEnumerable<NavItem> NavItems =>
         [new NavItem("Reports", "/reports", RequiredRole: "admin")];
 
