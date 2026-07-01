@@ -68,7 +68,16 @@ Bring the stack up on the new build (`cd src/Atrium.AppHost && aspire run`), the
       silently ignored — only `printWidth`/`tabWidth`/`useTabs`/`endOfLine` are honored. No option forces
       one-call-per-line. Closing the item; the only lever (`printWidth`) would affect all formatting, not
       just chains. No code change.
-- [ ] **8 · Role-gate Admin/Reports from customers** (code; refined from the `testuser`-vs-`admin` item,
+- [ ] **9 · Clean Forbidden view for authenticated wrong-role users** (code; **spun out of item-8 review,
+      2026-07-01**). Item 8's shell `NotAuthorized` = `<RedirectToLogin />` for all cases; an authenticated
+      customer hitting `/admin` by URL gets a login bounce/loop instead of a clear "no access" page. Branch
+      `NotAuthorized` on `authState.User.Identity.IsAuthenticated`: authenticated → a `Forbidden` page
+      (mirror `Pages/NotFound.razor`, atrium-ui); unauthenticated → `RedirectToLogin` (unchanged). Build+test
+      verifiable; live-confirm the bounce is gone (morning). Tier-1 (auth-adjacent UX).
+- [x] **8 · Role-gate Admin/Reports from customers** (code) — `a3a366d`. Page `[Authorize(Roles="admin")]`
+      + role-aware `NavItem` + shell `AuthorizeView` filter; Tier-1 APPROVE (cascading auth state verified);
+      build+test green; needs live testuser-vs-admin login (morning). Two follow-ups spun out: item 9
+      (Forbidden view) + server-side Reports gating (noted). Refined from the `testuser`-vs-`admin` item,
       2026-07-01). **Investigation done (read-only):** the realm ALREADY defines roles `user`/`customer`/
       `admin`; **`testuser` is a customer** (`["user","customer"]`), `admin` is `["user","admin"]` — both
       personas exist, so **NO realm change / volume reset is needed** (corrects the original assumption).

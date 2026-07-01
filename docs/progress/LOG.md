@@ -96,6 +96,17 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
   weakened). **Applied the one actionable note before commit:** instrumented the previously-missed
   service-to-service `StorefrontCatalogClient`. Gate: csharpier no-op, build 0W/0E, `dotnet test` 22/22.
   Live log-emission = morning check (Aspire Console tab; expected lines noted in the item-7 subagent report).
+- `a3a366d` — **Item 8 (role-gate Admin/Reports)** done. Page `[Authorize(Roles="admin")]` on Admin
+  `Products.razor` + Reports `Dashboard.razor`; `NavItem` gained optional `RequiredRole`; shell `NavMenu`
+  wraps role-gated items in `<AuthorizeView Roles>`. NO realm change (roles/users already exist).
+  Implementer (high confidence) + **Tier-1 review: APPROVE** — critically verified the cascading
+  `AuthenticationState` (`AddCascadingAuthenticationState`, Program.cs:83) reaches `NavMenu` (so links
+  aren't hidden from admins too); page attribute + `AuthorizeView` agree on `IsInRole("admin")`; role
+  strings match the realm exactly; Storefront/Home nav unaffected. Gate: csharpier no-op, build 0W/0E,
+  test 22/22. **Live check (morning):** testuser(customer) → no Admin/Reports nav + `/admin`,`/reports`
+  blocked; admin → both work. **Two follow-ups spun out of the review:** (a) item 9 — clean Forbidden view
+  (authenticated wrong-role user currently hits RedirectToLogin bounce); (b) Reports read endpoint is NOT
+  admin-gated server-side yet (Storefront service has no "admin" policy; needs live claim-mapping check).
 
 - `bc7afd7` — **Item 4 (OpenAPI + Redoc)** done. `Microsoft.AspNetCore.OpenApi` 10.0.9 (per-csproj) on
   Catalog + Storefront: `AddOpenApi()` (DI, unconditional) + Dev-only, anonymous `MapOpenApi()`
