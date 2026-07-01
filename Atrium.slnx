@@ -1,9 +1,12 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Atrium.Abstractions/Atrium.Abstractions.csproj" />
+    <Project Path="src/Atrium.Contracts/Atrium.Contracts.csproj" />
     <Project Path="src/Atrium.Design/Atrium.Design.csproj" />
+    <Project Path="src/Atrium.Gateway/Atrium.Gateway.csproj" />
     <Project Path="src/Atrium.Modules.Hello/Atrium.Modules.Hello.csproj" />
     <Project Path="src/Atrium.Modules.Storefront/Atrium.Modules.Storefront.csproj" />
     <Project Path="src/Atrium.Portal/Atrium.Portal.csproj" />
+    <Project Path="src/Atrium.Services.Catalog/Atrium.Services.Catalog.csproj" />
   </Folder>
 </Solution>

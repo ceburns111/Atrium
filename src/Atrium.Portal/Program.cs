@@ -10,6 +10,10 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 // Design-system services available to every module.
 builder.Services.AddScoped<ToastService>();
 
+// Resolve logical Aspire service names (e.g. "https+http://gateway") on module HttpClients.
+builder.Services.AddServiceDiscovery();
+builder.Services.ConfigureHttpClientDefaults(http => http.AddServiceDiscovery());
+
 // Discover UI modules, let each register its own services, and expose the catalog to the shell + router.
 // The host never names a module: a project reference is all it takes for one to light up.
 var catalog = ModuleLoader.Discover();

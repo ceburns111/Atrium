@@ -1,10 +1,10 @@
-using Atrium.Modules.Storefront.Catalog;
+using Atrium.Contracts;
 
 namespace Atrium.Modules.Storefront.Cart;
 
 public sealed class CartLine
 {
-    public required Product Product { get; init; }
+    public required ProductDto Product { get; init; }
     public int Quantity { get; set; }
 }
 
@@ -22,7 +22,7 @@ public sealed class CartService
     public int Count => _lines.Sum(l => l.Quantity);
     public decimal Total => _lines.Sum(l => l.Product.Price * l.Quantity);
 
-    public void Add(Product product)
+    public void Add(ProductDto product)
     {
         var line = _lines.FirstOrDefault(l => l.Product.Id == product.Id);
         if (line is null)

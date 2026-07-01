@@ -1,5 +1,6 @@
 @page "/storefront"
 @implements IDisposable
+@inject CatalogClient Catalog
 @inject CartService Cart
 @inject ToastService Toasts
 
@@ -15,44 +16,75 @@
 
 <div class="filters">
     <button class="chip @(_category is null ? "chip--on" : null)" @onclick="() => Filter(null)">All</button>
-    @foreach (var category in ProductCatalog.Categories)
+    @foreach (var category in _categories)
     {
-        <button class="chip @(_category == category ? "chip--on" : null)" @onclick="() => Filter(category)">@category</button>
+        <button class="chip @(_category == category.Name ? "chip--on" : null)" @onclick="() => Filter(category.Name)">
+            @category.Name
+        </button>
     }
 </div>
 
-<div class="product-grid">
-    @foreach (var product in Visible)
-    {
-        <div class="product">
-            <div class="product__thumb">@product.Category</div>
-            <div class="product__name">@product.Name</div>
-            <div class="product__blurb">@product.Blurb</div>
-            <div class="product__foot">
-                <span class="product__price">$@product.Price.ToString("N0")</span>
-                <Button Small Variant="ButtonVariant.Secondary" OnClick="() => Add(product)">Add</Button>
+@if (_products is null)
+{
+    <div class="product-grid">
+        @for (var i = 0; i < 8; i++)
+        {
+            <div class="product product--skeleton"></div>
+        }
+    </div>
+}
+else if (_products.Count == 0)
+{
+    <p class="empty">No products in this category.</p>
+}
+else
+{
+    <div class="product-grid">
+        @foreach (var product in _products)
+        {
+            <div class="product">
+                <div class="product__thumb">@product.Category</div>
+                <div class="product__name">@product.Name</div>
+                <div class="product__blurb">@product.Blurb</div>
+                <div class="product__foot">
+                    <span class="product__price">$@product.Price.ToString("N0")</span>
+                    <Button Small Variant="ButtonVariant.Secondary" OnClick="() => Add(product)">Add</Button>
+                </div>
             </div>
-        </div>
-    }
-</div>
+        }
+    </div>
+}
 
 @code {
+    private IReadOnlyList<CategoryDto> _categories = [];
+    private IReadOnlyList<ProductDto>? _products;
     private string? _category;
 
-    private IEnumerable<Product> Visible =>
-        _category is null
-            ? ProductCatalog.Products
-            : ProductCatalog.Products.Where(p => p.Category == _category);
+    protected override async Task OnInitializedAsync()
+    {
+        Cart.Changed += Refresh;
+        _categories = await Catalog.GetCategoriesAsync();
+        await LoadProductsAsync();
+    }
 
-    private void Filter(string? category) => _category = category;
+    private async Task Filter(string? category)
+    {
+        _category = category;
+        await LoadProductsAsync();
+    }
 
-    private void Add(Product product)
+    private async Task LoadProductsAsync()
+    {
+        _products = null;
+        StateHasChanged();
+        _products = await Catalog.GetProductsAsync(_category);
+    }
+
+    private void Add(ProductDto product)
     {
         Cart.Add(product);
         Toasts.Show($"Added {product.Name}", ToastVariant.Success);
     }
-
-    protected override void OnInitialized() => Cart.Changed += Refresh;
 
     private void Refresh() => InvokeAsync(StateHasChanged);
 

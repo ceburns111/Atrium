@@ -587,6 +587,17 @@ a.card:hover {
     font-size: var(--text-sm);
     color: var(--ink);
 }
+.product--skeleton {
+    height: 268px;
+    border-color: transparent;
+    background: var(--surface-2);
+    animation: pulse 1.2s var(--ease) infinite;
+}
+@keyframes pulse {
+    50% {
+        opacity: 0.55;
+    }
+}
 .stepper {
     display: inline-flex;
     align-items: center;

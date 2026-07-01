@@ -11,10 +11,12 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Atrium.Abstractions\Atrium.Abstractions.csproj" />
     <ProjectReference Include="..\Atrium.Design\Atrium.Design.csproj" />
+    <ProjectReference Include="..\Atrium.Contracts\Atrium.Contracts.csproj" />
   </ItemGroup>
 </Project>

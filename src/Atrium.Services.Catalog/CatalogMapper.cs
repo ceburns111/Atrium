@@ -1,0 +1,18 @@
+using Atrium.Contracts;
+using Riok.Mapperly.Abstractions;
+
+namespace Atrium.Services.Catalog;
+
+/// <summary>
+/// Maps the internal <see cref="ProductRow"/> to the public <see cref="ProductDto"/>. Mapperly generates
+/// the mapping code at compile time — no runtime reflection. The <see cref="MapPropertyAttribute"/> renames
+/// <c>CategoryName</c> to <c>Category</c>, proving a real (non-identity) mapping is being generated.
+/// </summary>
+[Mapper]
+public static partial class CatalogMapper
+{
+    [MapProperty(nameof(ProductRow.CategoryName), nameof(ProductDto.Category))]
+    public static partial ProductDto ToDto(ProductRow row);
+
+    public static partial IReadOnlyList<ProductDto> ToDtos(IEnumerable<ProductRow> rows);
+}

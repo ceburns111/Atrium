@@ -1,5 +1,6 @@
 using Atrium.Abstractions;
 using Atrium.Modules.Storefront.Cart;
+using Atrium.Modules.Storefront.Catalog;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,6 +17,13 @@ public sealed class StorefrontModule : IModule
 
     public IEnumerable<NavItem> NavItems => [new NavItem("Storefront", "/storefront")];
 
-    public void RegisterServices(IServiceCollection services, IConfiguration configuration) =>
+    public void RegisterServices(IServiceCollection services, IConfiguration configuration)
+    {
         services.AddScoped<CartService>();
+
+        // The catalog is reached through the gateway; service discovery resolves the logical name.
+        services.AddHttpClient<CatalogClient>(client =>
+            client.BaseAddress = new Uri("https+http://gateway")
+        );
+    }
 }

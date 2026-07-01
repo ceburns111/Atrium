@@ -4,6 +4,10 @@
     <ProjectReference Include="..\Atrium.Design\Atrium.Design.csproj" />
     <ProjectReference Include="..\Atrium.Modules.Hello\Atrium.Modules.Hello.csproj" />
     <ProjectReference Include="..\Atrium.Modules.Storefront\Atrium.Modules.Storefront.csproj" />
+    <ProjectReference Include="..\Atrium.Contracts\Atrium.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="10.7.0" />
   </ItemGroup>
 
   <PropertyGroup>
