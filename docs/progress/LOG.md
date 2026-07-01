@@ -30,3 +30,8 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
   Gate: build 0W/0E; every cited path/class/method/route grep-verified. Orchestrator caught one accuracy
   gap — ADR-0008 claimed 0004 linked back but 0004 had no explicit link; added the bidirectional link
   before commit. Docs only → no live verification needed.
+- `14538c0` — **Item 2 (new-app guide)** done. New `docs/guides/wire-up-a-new-app.md` (407 lines): the
+  end-to-end source-of-truth for adding a vertical, narrating the real Storefront+Catalog code, cross-linked
+  to ADR-0001..0009. Implementer subagent (high confidence), Tier 0. Gate: build 0W/0E; 9 cited paths + 4
+  symbols spot-checked, ARCHITECTURE.md link + csproj glob confirmed. Subagent accurately noted OpenAPI is
+  NOT yet wired (only `.WithTags` exists) — that's item 4's job, not a doc error. Docs only → no live verify.

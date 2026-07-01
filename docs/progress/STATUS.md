@@ -5,8 +5,9 @@
 ## Where we are
 
 Run resumed on branch `overnight/2026-07-01`. Baseline green (build 0W/0E, tests 22/22, Docker up).
-**Item #10 (ADR sweep) DONE** — `ee63214`. **Item #2 ("Wire up a new Atrium app" guide) is NEXT** —
-attempt 1. Docs batch order: ~~10~~ → **2** → 3 → 1, then code (6).
+Items #10 (`ee63214`) and #2 (`14538c0`) DONE. **Item #3 (AGENTS.md + authoring skills) is NEXT** —
+attempt 1. Docs batch order: ~~10~~ → ~~2~~ → **3** → 1, then code (6).
+Item 3 derives from item 2's guide (`docs/guides/wire-up-a-new-app.md`) — must not contradict it.
 
 ## Next concrete action
 

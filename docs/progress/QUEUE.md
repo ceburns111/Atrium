@@ -12,7 +12,7 @@ Execution order for tonight/hi: **10 → 2 → 3 → 1 → 6**, then low/tomorro
       - New ADR: **native-`<dialog>` Dialog primitive** (why `showModal()` over a hand-rolled overlay).
       - Refresh ADR-0007 note about repository interfaces now co-located with their class.
       - Keep the `docs/adr/README.md` index in sync.
-- [ ] **2 · "Wire up a new Atrium app" guide** (doc). End-to-end: how to add a new vertical
+- [x] **2 · "Wire up a new Atrium app" guide** (doc) — `14538c0` (`docs/guides/wire-up-a-new-app.md`). End-to-end: how to add a new vertical
       (service + module + contracts + gateway route + Aspire wiring + auth) on the platform. This is the
       **source of truth**; item 3 derives from it. Walk the real Storefront/Catalog code as the worked example.
 - [ ] **3 · AGENTS.md + authoring skills** (doc). Derive from item 2: an `AGENTS.md` at repo root plus
