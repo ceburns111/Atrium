@@ -242,3 +242,18 @@ merged to `main`. Source of the new items: `TODO.md` "🆕 New work" + "## Last"
   build 0W/0E, `dotnet test` 56/56. **Supervised review spots (flagged for the user):** module accent
   monogram chips (esp. Storefront amber `#b45309` on dark — value lives in the module `.cs`, outside
   `tokens.css`), status badges, shadows/elevation, accent-button hover direction. **Live look = supervised.**
+- `3ab697a` — **Item F (store images)** done as **best-effort `[~]` — NOT "done"** (real curated/licensed
+  photography is a user taste call). New `ProductThumb` primitive in `Atrium.Design`: a deterministic
+  **FNV-1a** hash of the product name (not the per-process-randomized `GetHashCode`) picks a design-token
+  tint (`--accent`/`--success`/`--warning`/`--danger` at 12–16%) and draws an inline-SVG placeholder
+  (initials + hash-positioned motif) — mirrors the Home monogram language, adapts to dark mode (all tokens),
+  no external/network assets. Wired into Shop product cards + cart line items. `role="img"` + label.
+  **Real-image seam:** an optional `ImageUrl` param renders `<img object-fit:cover>` instead, so a future
+  `ProductDto.ImageUrl` is a one-spot swap — the field was intentionally **not** added, and `Atrium.Design`
+  gains no `Contracts` dependency (component takes plain `Name`). **No contract/service/DB/sproc change**
+  (orchestrator-verified via git status). Implementer (medium-high). Gate: csharpier no-op, build 0W/0E
+  (warning count explicitly re-checked), `dotnet test` 56/56. **Supervised:** in-browser look; a reviewer
+  may prefer narrowing the decorative palette off `--warning`/`--danger`; swap in real photography.
+- **User feedback (live, 2026-07-01, + screenshot):** dark-mode button colors are broken — the accent
+  "Save" button is pale/washed with near-invisible text and the ghost "Cancel" label is too faint. Added as
+  **item G** (follow-up to E). Held until F committed (both touch `Atrium.Design`). Next up.

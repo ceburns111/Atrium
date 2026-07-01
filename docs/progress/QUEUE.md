@@ -136,14 +136,34 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
       don't declare "done," mark `[~]`.**
       </details>
 
-- [ ] **F · Find store images** (assets — best-effort, likely needs the user). Storefront products render
-      without imagery. **Honest constraint:** I can't unattended-browse and download real product photos
+- [~] **F · Find store images** (assets — best-effort) — `3ab697a`. **Committed but NOT "done" — real
+      imagery is a user call.** New `ProductThumb` (Atrium.Design): deterministic inline-SVG placeholder from
+      a FNV-1a hash of the product name → design-token tint + initials/motif (mirrors Home monograms,
+      dark-mode-safe, no external assets). Wired into Shop cards + cart lines. Optional `ImageUrl` param =
+      one-spot seam for real images later (no `ProductDto` change). No contract/service/DB change. Gate
+      0W/0E, 56/56. **Supervised:** in-browser look; optionally narrow the decorative palette off
+      `--warning`/`--danger`; swap in curated photography.
+
+      <details><summary>original spec</summary>
+      Storefront products render without imagery. **Honest constraint:** I can't unattended-browse and download real product photos
       (licensing + taste). **Plan (best-effort):** add tasteful, self-contained **generated SVG
       placeholders** keyed deterministically by product/category (e.g. an initial + accent-tinted panel
       from the design tokens) so the storefront isn't image-less, wired through the existing product data
       + `Atrium.Design`. Then **flag** that curated, licensed photography is a user/taste call. If it can't
       be done cleanly without real assets, mark `BLOCKED: needs curated licensed images` rather than
       shipping something off-brand. Gate = build + test green. Mark `[~]`.
+      </details>
+
+- [ ] **G · Dark-mode button colors are broken** (code/CSS — follow-up to E, from user feedback +
+      screenshot 2026-07-01). **Symptom:** in dark mode the **accent/primary button** (e.g. Admin Edit-product
+      "Save") renders **pale/washed-out with near-invisible text** (should be the teal `--accent` fill with
+      legible ink); the **ghost button** ("Cancel") text is **too faint**. Runs **after F** (both touch
+      `Atrium.Design` — no concurrent edits). **Plan:** inspect the `.btn` / `.btn--accent` / `.btn--ghost`
+      rules in `atrium.css` and the color tokens they consume, then fix the **dark token overrides** (or the
+      button↔token mapping) so: accent button = solid legible fill + AA-contrast label in dark; ghost button
+      label meets contrast; primary/secondary buttons too. **Tokens only** (don't fork component CSS unless a
+      token genuinely can't express it). Verify every `.btn` variant in BOTH themes. Gate = build + test
+      green; **the look still needs the user's eye** → mark `[~]`. (Same dark-mode caveat as E.)
 
 ---
 

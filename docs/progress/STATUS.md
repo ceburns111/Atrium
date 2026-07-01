@@ -21,14 +21,13 @@ gate → **C** basic payment/checkout → **D** architecture + UI-flow mermaid d
 
 ## Next concrete action
 
-**Items A–D DONE** (`afb89eb` / `7ab96e5` / `da4abba` / `6c015d0`); **E dark mode `[~]` best-effort**
-(`cbf4fb2`, flagged for visual review). **Last item: F — store images** (best-effort). Dispatch an
-implementer: since real licensed photos can't be sourced unattended, add tasteful **generated SVG
-placeholders** keyed deterministically by product/category (design-token tints) so the storefront isn't
-image-less, wired through the existing product data + `Atrium.Design`; **flag** that curated imagery is a
-user call (or mark `BLOCKED: needs curated licensed images` if it can't be done cleanly). Gate = build +
-test green; mark `[~]`. After F, the queue is drained → wind down: write the wake-up summary + STATUS
-pointing at the supervised remainder.
+**Items A–D DONE** (`afb89eb` / `7ab96e5` / `da4abba` / `6c015d0`); **E `[~]`** (`cbf4fb2`) + **F `[~]`**
+(`3ab697a`) best-effort. **Now item G — dark-mode button colors** (user feedback + screenshot 2026-07-01):
+the accent "Save" button is pale/washed with invisible text and the ghost "Cancel" label is too faint in
+dark mode. Inspect `.btn`/`.btn--accent`/`.btn--ghost` in `atrium.css` + the tokens they consume; fix the
+**dark token overrides** (tokens-first) so every button variant has a legible fill + AA label in BOTH
+themes. Gate = build + test green; look still needs the user's eye → mark `[~]`. After G, wind down: write
+the wake-up summary + STATUS pointing at the supervised remainder.
 
 ## Autonomy boundary
 
