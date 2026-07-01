@@ -26,7 +26,9 @@ host edits** beyond one project reference.
 
 - **Implement `IModule`** (`src/Atrium.Abstractions/IModule.cs`) — copy the shape of
   `StorefrontModule.cs`: `Name`, `Description`, `BasePath` (the route prefix the pages own, e.g.
-  `/widget`), an optional `Accent` hex, `NavItems`, and `RegisterServices(...)`. In `RegisterServices`
+  `/widget`), an optional `Accent` hex, an optional `RequiredRole` (set it — e.g. `"admin"` — to role-gate
+  the module's home card **and** nav link behind an `<AuthorizeView>`; leave null for all users, as
+  Storefront does), `NavItems`, and `RegisterServices(...)`. In `RegisterServices`
   register the module's typed HTTP client(s) pointed at the **gateway**, never a service directly:
   `services.AddHttpClient<WidgetClient>(c => c.BaseAddress = new Uri("https+http://gateway"))`.
 - **Typed HTTP client** (model on `Storefront/Catalog/CatalogClient.cs`): take `HttpClient` +

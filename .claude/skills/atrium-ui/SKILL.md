@@ -64,8 +64,37 @@ The test: if two modules would each write the same thing, it belongs in `Atrium.
 
 ## Concrete primitives & tokens
 
-Filled in once **Phase 2** builds `Atrium.Design`. Until then, follow the planned set from
-`docs/ATRIUM-PLAN.md`: primitives `Button`, `Card`, `DataTable`, `Field`, `Badge`, `PageHeader`,
-`Toast`; tokens for palette (neutrals + one accent + semantic success/danger), 8px spacing scale,
-radius/shadow scale, type scale, and transition timings. **Update this section with the real
-class/component/token names when they land**, so future UI work references reality, not the plan.
+`Atrium.Design` is built — reference these real names, don't reinvent.
+
+**Primitives** (`src/Atrium.Design/Components/`): `Button` (variants `Primary`/`Accent`/`Secondary`/
+`Ghost`, plus `Small`), `Badge` (`Neutral`/`Success`/`Warning`/`Danger`), `Field` (label + hint/error
+form wrapper), `Notice` (whole-region message card — errors, auth gates, empty / not-found), `Dialog`
+(native `<dialog>`/`showModal`, Esc-to-close, focus management — [ADR-0010](../../../docs/adr/0010-native-dialog-primitive.md)),
+`PageHeader` (eyebrow / title / description / actions), `ToastHost` (+ scoped `ToastService`),
+`ThemeToggle` (light/dark), `ProductThumb` (deterministic placeholder image with an `ImageUrl` param as
+the one-spot seam for real photos). Reach for these before writing markup; extend a primitive rather than
+fork a near-copy.
+
+**Tokens** (`src/Atrium.Design/wwwroot/css/tokens.css` — the single source of truth):
+- **Neutrals:** `--paper`, `--surface`, `--surface-2`, `--ink`, `--ink-2`, `--muted`, `--faint`, `--line`, `--line-strong`
+- **Accent:** `--accent`, `--accent-ink`, `--accent-soft`, and `--on-accent` (label color ON an accent fill)
+- **Status:** `--success` / `--warning` / `--danger` (each with a `-soft` tint)
+- **Type:** `--font-display` / `-sans` / `-mono`, `--text-xs..-xl`, `--leading-*`, `--tracking-label`
+- **Space** (8px scale) `--space-1..-8` · **Radius** `--r-sm`/`-md`/`-lg`/`-full` · **Elevation** `--shadow-sm`/`-md` · **Motion** `--ease`, `--dur` · **Layout** `--sidebar-w`, `--topbar-h`, `--content-max`
+
+## Dark mode & theming
+
+Both themes ship. Dark is a **token override** — `:root[data-theme="dark"]` in `tokens.css` redefines only
+the *color* tokens (plus an `@media (prefers-color-scheme: dark)` fallback scoped to `:root:not([data-theme])`
+so an explicit choice always wins). `ThemeToggle` flips `data-theme` and persists to `localStorage`; an
+inline script in `App.razor`'s `<head>` applies the saved/system theme before first paint (no FOUC), and
+runtime interop is prerender-guarded ([ADR-0010](../../../docs/adr/0010-native-dialog-primitive.md)).
+Component CSS never branches on theme — it just reads the vars, so **add colors as tokens, never fix dark
+mode in component CSS.**
+
+**The theming trap (encoded from a real bug):** never hard-code a foreground color — especially `#fff` /
+`#000` — for text/icons sitting **on** a token-based fill. `--ink`, `--accent`, and the status colors
+**invert or brighten** in dark mode, so `color: #fff` over `background: var(--ink)` renders white-on-near-white
+(invisible) in dark. Use the theme-flipping token: `--paper` for a label on an `--ink` fill, `--on-accent`
+for a label on an accent fill. If you introduce a new "color-on-a-colored-fill", add its `--on-*` token to
+**both** theme blocks and verify the pair in **both** themes.
