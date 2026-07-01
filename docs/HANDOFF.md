@@ -1,7 +1,8 @@
 # Atrium — handoff / resume point
 
-**Read this first, then `docs/ATRIUM-PLAN.md` for the full design.** This file is the "where we are and
-how to pick up" note. Last updated after **Phase 5** (2026-07-01).
+**Read this first, then `docs/ARCHITECTURE.md` for how it fits together, `docs/adr/` for why, and
+`docs/ATRIUM-PLAN.md` for the original design.** This file is the "where we are and how to pick up"
+note. Last updated after **Phase 6** (2026-07-01).
 
 ## TL;DR
 
@@ -11,7 +12,7 @@ Atrium is a modular-monolith **Blazor Server portal** (rebuild of CozenDemo, whi
 **Storefront app vertical** (its own DB), authenticated by **Keycloak**. Backend is **Dapper + stored
 procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 
-## Status: Phases 0–5 done, committed. Next: Phase 6.
+## Status: Phases 0–6 done, committed. Next: Phase 7 (Tests + polish).
 
 | Phase | State | Commit |
 |---|---|---|
@@ -23,8 +24,8 @@ procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 | 4b Keycloak OIDC + secured catalog + token propagation | ✅ | `c1e73d6` |
 | 4c Storefront vertical (own DB) + slice→core | ✅ | `cb0f5c4` |
 | 5 Admin + Reports modules (admin-role writes, real reports) | ✅ | `3d40061` |
-| 6 Docs ("the rest") | ▢ next | — |
-| 7 Tests + polish | ▢ | — |
+| 6 Docs (ARCHITECTURE + 6 ADRs + BEYOND-THE-DEMO) | ✅ | _this commit_ |
+| 7 Tests + polish | ▢ next | — |
 
 (The TaskList tool is session-scoped — it starts empty each session; recreate tasks for the phase you pick up.)
 
@@ -146,12 +147,23 @@ Three real modules now prove "N apps, one host" (Storefront, Admin, Reports); He
 - **Verified** end-to-end via Playwright + service logs: admin read/write both `200` (edit persisted);
   testuser read `200`, write `403`; Reports rendered real composed data.
 
-## Picking up Phase 6 (Docs — "the rest")
+## Phase 6 done — what landed
 
-Write the docs called out in `ATRIUM-PLAN.md` §"The rest": other verticals (Admin/Reports APIs + DBs),
-promoting Orders to its own core service, polyrepo + contract-NuGet, prod service discovery,
-independent-UI-deploy options, short ADRs. Consider capturing the token-store option "B" (see Known
-limitations) as one of the ADRs.
+The "the rest" docs from `ATRIUM-PLAN.md` §"The rest", written as three deliverables:
+- **`docs/ARCHITECTURE.md`** — consolidated topology: request flow, solution layout, data recipe, auth
+  model, and a "where the bodies are buried" index pointing at the ADRs.
+- **`docs/adr/`** — six short ADRs recording decisions already made: 0001 modular monolith,
+  0002 Dapper/sprocs/DbUp, 0003 YARP + Keycloak, **0004 token-in-claim + the token-store option "B"**,
+  0005 slice-calls-core, 0006 shared-contracts-then-NuGet. (README.md indexes them.)
+- **`docs/BEYOND-THE-DEMO.md`** — the six deliberately-not-built items (other verticals, Orders→core,
+  polyrepo + contract-NuGet, gateway route self-registration, prod service discovery, independent-UI
+  deploy), each shown growing additively out of what exists.
+- Also removed stale `src/Atrium.Modules.Hello/` build cruft (source was already gone).
+
+## Picking up Phase 7 (Tests + polish)
+
+Adapt/port tests; responsive + focus + loading-state pass across the three modules. See
+`ATRIUM-PLAN.md` Phase 7.
 
 Workflow reminder (from prior phases): write code → `dotnet build` → run via `aspire run` → verify with
 Playwright → `code-simplifier`/`/code-review` pass → commit per phase (Co-Authored-By trailer).
