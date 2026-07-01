@@ -21,10 +21,11 @@ gate → **C** basic payment/checkout → **D** architecture + UI-flow mermaid d
 
 ## Next concrete action
 
-Start **item A** (hide home app cards the user can't access): dispatch an implementer subagent to add a
-`RequiredRole` to `IModule` (Admin/Reports → `"admin"`, Storefront → null) and wrap the role-gated cards in
-`Home.razor` in `<AuthorizeView Roles="@module.RequiredRole">`, mirroring `NavMenu.razor:19–33`. Orchestrator
-re-runs the gate (csharpier + build + test), commits atomically, updates STATUS/LOG/QUEUE, advances to B.
+**Item A DONE** (`afb89eb`, SAFE-REVERT-POINT). Start **item B** (anonymous storefront + checkout sign-in
+gate) — auth surface, **Tier-1 mandatory**. Dispatch an implementer for the two halves (anon catalog
+browsing: AllowAnonymous the GET catalog routes + token-optional `CatalogClient` + drop page `[Authorize]`;
+checkout gate: keep `POST orders` auth'd, show a sign-in `Notice`/`AuthorizeView` on the cart when
+anonymous). Then a **separate Tier-1 adversarial reviewer** (auth) before the orchestrator gate + commit.
 
 ## Autonomy boundary
 
@@ -37,8 +38,9 @@ checks are the supervised pass in `QUEUE.md`. Items **E** and **F** are subjecti
 **Tiering:** A = Tier-1 (auth-adjacent, low-risk). **B = Tier-1 mandatory (auth surface).** C = Tier-1
 (order-flow change). D = Tier-1 accuracy (showcase doc — grep every node/edge). E/F = Tier-0 best-effort.
 
-`SAFE-REVERT-POINT` will be recorded here after item **A** commits (the last pre-B point), so the user can drop
-the whole auth/checkout phase and keep the low-risk card fix if they want.
+**★ SAFE-REVERT-POINT = `afb89eb`** (item A) — the last pre-auth-phase commit. `git reset --hard afb89eb`
+on `feat/storefront-checkout-diagrams` drops the whole B/C auth+checkout phase and keeps the low-risk card
+fix + the run setup. Everything after this is the auth/checkout/diagram work.
 
 ## Stack / environment
 

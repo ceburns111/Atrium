@@ -18,7 +18,10 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
 
 ## Auto-run (code + docs — commit unattended, on the run branch)
 
-- [ ] **A · Hide app cards on home the user can't access** (code) — Tier-1 (auth-adjacent, but low-risk;
+- [x] **A · Hide app cards on home the user can't access** (code) — `afb89eb`. **SAFE-REVERT-POINT.**
+      Default `IModule.RequiredRole` (null; Admin/Reports → `"admin"`) + `<AuthorizeView Roles>` around
+      role-gated cards in `Home.razor`, mirroring `NavMenu`. Diff reviewed (card markup byte-identical,
+      extracted to a shared `RenderFragment`). Gate green (0W/0E, 23/23). Live login = supervised.
       reuses the shipped pattern). **Gap:** `Home.razor` renders a card per `Catalog.Modules` with **no**
       role filter, so a customer (`testuser` = `[user,customer]`) sees Admin + Reports cards even though
       `/admin` and `/reports` are already role-gated (they'd hit the Forbidden page). `NavMenu.razor`

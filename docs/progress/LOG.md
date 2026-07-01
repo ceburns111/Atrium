@@ -163,3 +163,12 @@ merged to `main`. Source of the new items: `TODO.md` "🆕 New work" + "## Last"
   mermaid yet). Wrote `QUEUE.md` (items A–F, ordered A→B→C→D→E→F with rationale) + refreshed `STATUS.md`.
 - **Queue set up. Next: item A** (role-gate the home app cards). One atomic commit per item; deterministic
   gate only; live/login/visual checks deferred to a supervised pass. E/F are best-effort + flagged.
+- `afb89eb` — **Item A (role-gate home cards)** done. **★ SAFE-REVERT-POINT** (last pre-auth-phase commit).
+  Added a default `IModule.RequiredRole` (null default, mirroring the existing `Accent` optional member;
+  Admin/Reports override → `"admin"`, Storefront inherits null) and wrapped role-gated cards in
+  `Home.razor` in `<AuthorizeView Roles="@module.RequiredRole">`, mirroring `NavMenu`. Implementer (high
+  confidence), reviewed by the orchestrator directly (proportionate: display-only filter over a pattern
+  already Tier-1-verified in Run 1, and the real gate is server-side on the pages). Diff verified: card
+  markup byte-for-byte identical, factored into a shared local `RenderFragment` (only refactor); no module
+  names hard-coded. Gate: csharpier no-op, build 0W/0E, `dotnet test` 23/23. Anonymous + `testuser` now see
+  only the Storefront card; `admin` sees all three. **Live login (testuser/admin/anon) = supervised.**
