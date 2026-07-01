@@ -38,20 +38,28 @@
     // Sync the imperative showModal/close calls to the declarative Open parameter after each render.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _module ??= await JS.InvokeAsync<IJSObjectReference>(
-            "import",
-            "./_content/Atrium.Design/js/dialog.js"
-        );
+        try
+        {
+            _module ??= await JS.InvokeAsync<IJSObjectReference>(
+                "import",
+                "./_content/Atrium.Design/js/dialog.js"
+            );
 
-        if (Open && !_shown)
-        {
-            _shown = true;
-            await _module.InvokeVoidAsync("showModal", _dialog);
+            if (Open && !_shown)
+            {
+                _shown = true;
+                await _module.InvokeVoidAsync("showModal", _dialog);
+            }
+            else if (!Open && _shown)
+            {
+                _shown = false;
+                await _module.InvokeVoidAsync("close", _dialog);
+            }
         }
-        else if (!Open && _shown)
+        catch (JSDisconnectedException)
         {
-            _shown = false;
-            await _module.InvokeVoidAsync("close", _dialog);
+            // The circuit went away between render and interop (navigation / disconnect) — the dialog
+            // is gone with it, so there's nothing to show or close. DisposeAsync guards the same way.
         }
     }
 
