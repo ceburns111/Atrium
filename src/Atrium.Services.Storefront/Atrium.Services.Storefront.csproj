@@ -15,6 +15,12 @@
       Version="1.12.0-preview.260629.1"
     />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
+    <!-- Config-driven IChatClient for the support agent: the MEAI OpenAI integration exposes
+         .AsIChatClient() on the OpenAI SDK client, which the real FoundryLocal/AzureFoundry providers
+         build. OpenAI 2.10.0 is pinned to match MEAI.OpenAI 10.6.0's transitive dependency exactly
+         (both stable; keeps the build at 0 warnings). -->
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.6.0" />
+    <PackageReference Include="OpenAI" Version="2.10.0" />
     <!-- Pin the patched Microsoft.OpenApi: AspNetCore.OpenApi 10.0.9 pulls 2.0.0 transitively, which
          carries a high-severity advisory (NU1903, GHSA-v5pm-xwqc-g5wc). Matches the pin in
          Atrium.IntegrationTests; the advisory surfaced repo-wide on the fresh MAF restore in this item. -->

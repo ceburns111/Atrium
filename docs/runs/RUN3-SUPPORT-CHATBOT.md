@@ -110,7 +110,7 @@ deferred** (see below) — it is **not** in this run.
   must declare a surface without depending on the agent framework. Fields per the design doc:
   `Name`, `Endpoint` (gateway-relative, e.g. `/storefront/agent`), `StarterPrompts?`, `Icon?`.
   Gate: build + test green (pure additive contract; no behavior).
-- [ ] **C2 · `SupportAgent` + tools + config-driven `IChatClient` (Storefront service).** Author the MAF
+- [x] **C2 · `SupportAgent` + tools + config-driven `IChatClient` (Storefront service).** Author the MAF
   agent as idiomatic MAF with two `[Description]` tool methods:
   `GetOrderStatus(orderId)` (Storefront order DB — add a get-status/get-by-id sproc + repo method if one
   doesn't exist, following the existing DbUp two-lane + Dapper + repository-interface-with-integration-test

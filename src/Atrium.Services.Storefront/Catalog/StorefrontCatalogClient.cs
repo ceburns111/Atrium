@@ -7,6 +7,16 @@ using Microsoft.Extensions.Logging;
 namespace Atrium.Services.Storefront.Catalog;
 
 /// <summary>
+/// Read surface of the Catalog core the Storefront vertical depends on. Extracted (mirroring
+/// <c>IOrderRepository</c>) so callers — endpoints and the support-agent product tool — can be
+/// unit-tested over a fake instead of a live <see cref="HttpClient"/>.
+/// </summary>
+public interface IStorefrontCatalogClient
+{
+    Task<IReadOnlyList<ProductDto>> GetProductsAsync(CancellationToken ct = default);
+}
+
+/// <summary>
 /// Internal client the Storefront vertical uses to call the Catalog core service (service-to-service).
 /// It relays the caller's bearer token so the authenticated user's identity flows through to Catalog —
 /// this is the "slice calls core" edge of the architecture, and why Storefront doesn't own product data.
@@ -15,7 +25,7 @@ public sealed class StorefrontCatalogClient(
     HttpClient http,
     IHttpContextAccessor httpContext,
     ILogger<StorefrontCatalogClient> logger
-)
+) : IStorefrontCatalogClient
 {
     public async Task<IReadOnlyList<ProductDto>> GetProductsAsync(CancellationToken ct = default)
     {

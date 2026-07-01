@@ -359,3 +359,28 @@ down cleanly, wrote `GOOD-MORNING.md`. Remaining work is all supervised (live/vi
 - **Tests (+3, real SQL via Testcontainers):** owner reads (total+lines), unknown id → null, other-user →
   null. **Gate (orchestrator re-ran):** csharpier clean (74), build **0W/0E**, `dotnet test` **60/60**.
   Confidence: high. (C2a is the data half of C2; the tool that wraps it is C2b.)
+
+### Item C2b — SupportAgent + tools + config-driven IChatClient (code, Tier-1 service/runtime) — GO
+- **Done.** New `Support/` feature folder in the Storefront service:
+  - **Config-driven `IChatClient`** (`SupportAgentServiceCollectionExtensions.AddSupportAgent`): provider
+    from `SupportAgent:Provider` — `Fake` (in-service `CannedChatClient`; **Development default** so the
+    service boots + gate runs with no AI config), `FoundryLocal`/`AzureFoundry` (shared OpenAI-compatible
+    client from `SupportAgent:Endpoint`/`ApiKey`/`Model`, api-key auth — DefaultAzureCredential deferred).
+    Non-Development + missing/unknown provider → throws at startup. `IChatClient` singleton; agent+tools scoped.
+  - **`SupportTools`** — `GetOrderStatus(int)` (resolves the signed-in user via `IHttpContextAccessor`
+    preferred_username, calls C2a's user-scoped `GetByIdAsync`, returns an **honest** "Confirmed. Placed
+    {date}, {N} item(s), total {total}" — no invented lifecycle; friendly not-found/not-signed-in msgs);
+    `FindProduct(string)` (case-insensitive name filter over the Catalog client, top 5).
+  - **`SupportAgent`** — a MAF `ChatClientAgent` over the configured `IChatClient` with both tools via
+    `AIFunctionFactory.Create`; instructions explicitly forbid inventing order progress.
+  - **`IStorefrontCatalogClient`** extracted (mirrors `IOrderRepository`); typed-client registration +
+    `OrdersEndpoints`/`ReportsEndpoints` consumers updated to the interface (makes `FindProduct` testable).
+- **Packages (build stayed 0W):** `Microsoft.Extensions.AI.OpenAI` 10.6.0 + `OpenAI` 2.10.0, both stable,
+  pinned to match MEAI core 10.6.0 (no advisory; no `Microsoft.OpenApi`-style pin needed for these).
+- **Tests (+6):** honest-status format; **user-scoping (recording fake asserts the repo got "alice")**;
+  not-found message; FindProduct match + nothing-found; SupportAgent builds over `FakeChatClient` and
+  `RunAsync` returns (tools register + agent runs). **Orchestrator review:** read the provider selector,
+  tools, agent, Program.cs wiring, canned client, and the tests — all genuine assertions, honest wording,
+  correct scoping.
+- **Gate (orchestrator re-ran):** csharpier clean (81), build **0W/0E**, `dotnet test` **66/66**.
+  Confidence: high. **C2 complete (C2a + C2b).** Live model run = supervised (Foundry Local).

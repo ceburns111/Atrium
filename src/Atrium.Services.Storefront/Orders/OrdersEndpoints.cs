@@ -24,7 +24,7 @@ public static class OrdersEndpoints
         CreateOrderRequest request,
         HttpContext http,
         IOrderRepository repository,
-        StorefrontCatalogClient catalog,
+        IStorefrontCatalogClient catalog,
         ILoggerFactory loggerFactory,
         CancellationToken ct
     )

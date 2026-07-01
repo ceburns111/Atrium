@@ -3,6 +3,7 @@ using Atrium.Services.Storefront.Catalog;
 using Atrium.Services.Storefront.Data;
 using Atrium.Services.Storefront.Orders;
 using Atrium.Services.Storefront.Reports;
+using Atrium.Services.Storefront.Support;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,9 +27,13 @@ builder.Services.AddServiceDiscovery();
 builder.Services.ConfigureHttpClientDefaults(http => http.AddServiceDiscovery());
 
 // Service-to-service call to the Catalog core (relays the caller's bearer token).
-builder.Services.AddHttpClient<StorefrontCatalogClient>(client =>
+builder.Services.AddHttpClient<IStorefrontCatalogClient, StorefrontCatalogClient>(client =>
     client.BaseAddress = new Uri("https+http://catalog")
 );
+
+// MAF order-support agent + its config-driven IChatClient (Fake in Development; FoundryLocal/AzureFoundry
+// via SupportAgent:* config). The AG-UI endpoint + gateway route are a later item; this only registers it.
+builder.AddSupportAgent();
 
 // Validate Keycloak JWTs; the shared "atrium" audience is stamped on every access token by the realm.
 builder
