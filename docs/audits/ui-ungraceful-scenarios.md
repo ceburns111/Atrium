@@ -12,6 +12,13 @@ The known "first instance" — an expired access token (no refresh in this demo)
 
 **Counts:** 1 High · 4 Medium · 5 Low.
 
+> **Resolution (2026-07-01):** All **Medium (M1–M4)** and **Low (L1–L5)** findings are **fixed** — a
+> shared `Atrium.Design/Notice` primitive backs inline error+retry on the four unguarded reads and the
+> Forbidden/NotFound/session-expired cards; Admin gained client-side validation, a Save re-entrancy
+> guard, and the Dialog interop is now guarded against `JSDisconnectedException`. The **High (H1)** —
+> `CartPage.PlaceOrder` duplicate-order risk — is **left open by design**: the right fix needs an
+> idempotency decision (server-side order key), not a blind try/catch.
+
 ---
 
 ## High

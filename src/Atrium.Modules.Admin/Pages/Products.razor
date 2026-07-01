@@ -13,7 +13,14 @@
     </Actions>
 </PageHeader>
 
-@if (_products is null)
+@if (_failed)
+{
+    <Notice Title="Couldn't load products"
+            Body="Something interrupted the request. Please try again.">
+        <Button Variant="ButtonVariant.Secondary" OnClick="Load">Try again</Button>
+    </Notice>
+}
+else if (_products is null)
 {
     <div class="table-scroll">
         <table class="atrium-table admin-table">
@@ -80,7 +87,8 @@ else
 <Dialog Open="_dialogOpen" OpenChanged="OnDialogOpenChanged" Title="@DialogTitle">
     <ChildContent>
         <Field Label="Name">
-            <input class="input" @bind="_form.Name" placeholder="Walnut Monitor Shelf" />
+            <input class="input" required @bind="_form.Name" @bind:event="oninput"
+                   placeholder="Walnut Monitor Shelf" />
         </Field>
         <Field Label="Category">
             <select class="select" @bind="_form.Category">
@@ -91,14 +99,16 @@ else
             </select>
         </Field>
         <Field Label="Price">
-            <input class="input" type="number" min="0" step="1" @bind="_form.Price" />
+            <input class="input" type="number" min="1" step="1" required
+                   @bind="_form.Price" @bind:event="oninput" />
         </Field>
         <Field Label="Blurb">
-            <input class="input" @bind="_form.Blurb" placeholder="One-line description." />
+            <input class="input" required @bind="_form.Blurb" @bind:event="oninput"
+                   placeholder="One-line description." />
         </Field>
     </ChildContent>
     <Footer>
-        <Button OnClick="Save" Disabled="_saving">@SaveLabel</Button>
+        <Button OnClick="Save" Disabled="_saving || !FormValid">@SaveLabel</Button>
         <Button Variant="ButtonVariant.Ghost" OnClick="Cancel" Disabled="_saving">Cancel</Button>
     </Footer>
 </Dialog>
@@ -109,18 +119,41 @@ else
     private int? _editingId; // null = creating a new product
     private bool _dialogOpen;
     private bool _saving;
+    private bool _failed;
     private readonly ProductForm _form = new();
 
     private string DialogTitle => _editingId is null ? "New product" : "Edit product";
     private string SaveLabel => _editingId is null ? "Add product" : "Save";
 
-    protected override async Task OnInitializedAsync()
-    {
-        _categories = (await Catalog.GetCategoriesAsync()).Select(c => c.Name).ToList();
-        await LoadAsync();
-    }
+    // Client-side gate so an empty Name/Blurb or a zero Price can't be submitted for a server 400
+    // round-trip; the Save button stays disabled until the form is valid.
+    private bool FormValid =>
+        !string.IsNullOrWhiteSpace(_form.Name)
+        && !string.IsNullOrWhiteSpace(_form.Blurb)
+        && !string.IsNullOrWhiteSpace(_form.Category)
+        && _form.Price > 0;
 
-    private async Task LoadAsync() => _products = await Catalog.GetProductsAsync();
+    protected override Task OnInitializedAsync() => Load();
+
+    // Guard the initial read so a non-session failure gets an inline retry instead of the shell's
+    // generic card. (The create/edit write path already surfaces failures as inline toasts.) A 401
+    // still bubbles as SessionExpiredException so the shell's re-login prompt wins.
+    private async Task Load()
+    {
+        _failed = false;
+        try
+        {
+            if (_categories.Count == 0)
+            {
+                _categories = (await Catalog.GetCategoriesAsync()).Select(c => c.Name).ToList();
+            }
+            _products = await Catalog.GetProductsAsync();
+        }
+        catch (Exception ex) when (ex is not SessionExpiredException)
+        {
+            _failed = true;
+        }
+    }
 
     private void StartCreate()
     {
@@ -143,6 +176,12 @@ else
 
     private async Task Save()
     {
+        // Belt-and-suspenders with the disabled Save button: ignore a re-entrant call while a save is
+        // already in flight, matching CartPage.PlaceOrder's guard.
+        if (_saving)
+        {
+            return;
+        }
         _saving = true;
         var (product, error) = _editingId is null
             ? await Catalog.CreateProductAsync(
@@ -165,7 +204,7 @@ else
             ToastVariant.Success
         );
         _dialogOpen = false;
-        await LoadAsync();
+        await Load();
     }
 
     private sealed class ProductForm

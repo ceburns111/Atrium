@@ -12,21 +12,17 @@
 }
 else if (CurrentException is SessionExpiredException)
 {
-    <div class="notice card">
-        <h2 class="notice__title">Your session has expired</h2>
-        <p class="notice__body">
-            You've been signed out after a period of inactivity. Sign in again to pick up where you left off.
-        </p>
+    <Notice Title="Your session has expired"
+            Body="You've been signed out after a period of inactivity. Sign in again to pick up where you left off.">
         <a class="btn btn--primary" href="@LoginUrl">Sign in again</a>
-    </div>
+    </Notice>
 }
 else
 {
-    <div class="notice card">
-        <h2 class="notice__title">Something went wrong</h2>
-        <p class="notice__body">An unexpected error interrupted this page. Reloading usually clears it.</p>
+    <Notice Title="Something went wrong"
+            Body="An unexpected error interrupted this page. Reloading usually clears it.">
         <a class="btn btn--secondary" href="@Nav.Uri">Reload</a>
-    </div>
+    </Notice>
 }
 
 @code {

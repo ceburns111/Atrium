@@ -26,7 +26,14 @@
     }
 </div>
 
-@if (_products is null)
+@if (_failed)
+{
+    <Notice Title="Couldn't load the catalog"
+            Body="Something interrupted the request. Please try again.">
+        <Button Variant="ButtonVariant.Secondary" OnClick="Load">Try again</Button>
+    </Notice>
+}
+else if (_products is null)
 {
     <div class="product-grid">
         @for (var i = 0; i < 8; i++)
@@ -61,25 +68,40 @@ else
     private IReadOnlyList<CategoryDto> _categories = [];
     private IReadOnlyList<ProductDto>? _products;
     private string? _category;
+    private bool _failed;
 
     protected override async Task OnInitializedAsync()
     {
         Cart.Changed += Refresh;
-        _categories = await Catalog.GetCategoriesAsync();
-        await LoadProductsAsync();
+        await Load();
+    }
+
+    // A non-session failure (500/timeout/drop) here shows an inline retry instead of tearing the whole
+    // page down to the shell error boundary; a 401 still surfaces as SessionExpiredException so the
+    // shell's re-login prompt wins.
+    private async Task Load()
+    {
+        _failed = false;
+        try
+        {
+            if (_categories.Count == 0)
+            {
+                _categories = await Catalog.GetCategoriesAsync();
+            }
+            _products = null;
+            StateHasChanged();
+            _products = await Catalog.GetProductsAsync(_category);
+        }
+        catch (Exception ex) when (ex is not SessionExpiredException)
+        {
+            _failed = true;
+        }
     }
 
     private async Task Filter(string? category)
     {
         _category = category;
-        await LoadProductsAsync();
-    }
-
-    private async Task LoadProductsAsync()
-    {
-        _products = null;
-        StateHasChanged();
-        _products = await Catalog.GetProductsAsync(_category);
+        await Load();
     }
 
     private void Add(ProductDto product)

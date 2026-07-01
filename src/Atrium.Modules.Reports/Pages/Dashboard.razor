@@ -8,7 +8,14 @@
             Title="Sales"
             Description="Live analytics over Storefront orders. Category totals are composed from the Catalog core, so they stay in step with the shop." />
 
-@if (_report is null)
+@if (_failed)
+{
+    <Notice Title="Couldn't load the report"
+            Body="Something interrupted the request. Please try again.">
+        <Button Variant="ButtonVariant.Secondary" OnClick="Load">Try again</Button>
+    </Notice>
+}
+else if (_report is null)
 {
     <div class="stat-grid">
         @for (var i = 0; i < 3; i++)
@@ -60,11 +67,25 @@ else
 @code {
     private SalesReportDto? _report;
     private decimal _maxRevenue;
+    private bool _failed;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync() => Load();
+
+    // A non-session failure composing the report shows an inline retry instead of the shell's generic
+    // card; a 401 still surfaces as SessionExpiredException so the re-login prompt takes over.
+    private async Task Load()
     {
-        _report = await Reports.GetSalesAsync();
-        _maxRevenue = _report.ByCategory.Count == 0 ? 0 : _report.ByCategory.Max(c => c.Revenue);
+        _failed = false;
+        _report = null;
+        try
+        {
+            _report = await Reports.GetSalesAsync();
+            _maxRevenue = _report.ByCategory.Count == 0 ? 0 : _report.ByCategory.Max(c => c.Revenue);
+        }
+        catch (Exception ex) when (ex is not SessionExpiredException)
+        {
+            _failed = true;
+        }
     }
 
     // Bar width relative to the biggest category, so the largest bar always fills the track.
