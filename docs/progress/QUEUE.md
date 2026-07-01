@@ -185,5 +185,6 @@ Bring the stack up (`cd src/Atrium.AppHost && aspire run`) with the user, then:
 - [~] **C live** — the payment form validates, "declined" and "approved" paths both behave, an approved
       payment places the order and lands on confirmation. Confirm no PAN/CVC is persisted or logged.
 - [~] **D** — diagrams render (GitHub/mermaid) and read correctly.
-- [~] **E** — dark mode looks right across storefront/admin/reports; toggle persists across reloads.
+- [x] **E + G** — dark mode: **user-confirmed good, no bugs (2026-07-01)** — the invisible-Save fix (G)
+      and the overall dark look (E) both verified. Toggle/persistence relies on the same interop as ADR-0010.
 - [~] **F** — image placeholders look on-brand, or the user supplies real images.
