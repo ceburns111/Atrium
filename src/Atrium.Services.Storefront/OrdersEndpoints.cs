@@ -39,6 +39,12 @@ public static class OrdersEndpoints
             {
                 return TypedResults.BadRequest($"Unknown product {item.ProductId}.");
             }
+            if (item.Quantity <= 0)
+            {
+                return TypedResults.BadRequest(
+                    $"Quantity for product {item.ProductId} must be positive."
+                );
+            }
             lines.Add(new OrderLineDto(product.Name, product.Price, item.Quantity));
         }
 

@@ -12,7 +12,7 @@ builder.Services.AddHealthChecks();
 builder.Services.AddServiceDiscovery();
 builder.Services.ConfigureHttpClientDefaults(http => http.AddServiceDiscovery());
 
-// Validate Keycloak-issued JWTs; require the atrium-catalog audience (stamped by the realm's mapper).
+// Validate Keycloak-issued JWTs; require the shared "atrium" audience (stamped by the realm's mapper).
 builder
     .Services.AddAuthentication()
     .AddKeycloakJwtBearer(

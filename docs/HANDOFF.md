@@ -95,6 +95,21 @@ cd /Users/ted/code/Atrium && dotnet csharpier format . && dotnet build Atrium.sl
   cookies) then log in again. Wiping the Keycloak data volume invalidates old sessions/tokens too.
 - **Realm changes need a volume reset.** `WithRealmImport` only creates missing resources; to re-import a
   changed realm run: `docker volume ls -q | grep keycloak | xargs docker volume rm` (after stopping Aspire).
+- **Tokens-in-the-cookie is a deliberate demo shortcut (an architecture smell we accept for now).**
+  A Blazor Server *circuit* has no `HttpContext` (it only exists for the initial request that opens the
+  SignalR connection), so a component can't call `GetTokenAsync` to reach a token. The workaround: park
+  the raw access token as a **custom claim** (`OnTokenValidated`) so it rides inside the `ClaimsPrincipal`
+  into the circuit, where `MainLayout` copies it into the scoped `AccessTokenHolder` for the typed clients.
+  This means the token (a *credential*) travels in the auth **cookie** — mild size bloat, no refresh, and a
+  conflation of identity with credentials. `SaveTokens = true` is **not** redundant: it's what lets the
+  OIDC handler send `id_token_hint` on RP-initiated logout (Keycloak 18+ otherwise shows a "confirm logout"
+  interstitial). The only true duplication is that the *access token specifically* is stored twice (once in
+  the `SaveTokens` properties, once as the claim), because logout and the circuit each need it in a
+  different place. **Preferred replacement if time allows (option "B"):** a small server-side token store —
+  capture tokens in `OnTokenValidated` into a session-keyed store (or `ITicketStore`), keep the cookie down
+  to a session id, and surface the current token to the circuit via a scoped service. That removes the
+  token from the cookie without pulling in the full `Duende.AccessTokenManagement` (the eventual prod path,
+  which also adds refresh — see "No token refresh" above).
 
 ## Gotchas that cost time (avoid re-hitting)
 
