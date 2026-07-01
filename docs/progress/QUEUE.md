@@ -64,7 +64,18 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
       anon POST orders is rejected). Live pass (anon browse → sign in → checkout) = supervised.
       </details>
 
-- [ ] **C · Basic payment form / checkout process (+ cart persistence)** (code — Tier-1). Depends on **B**.
+- [x] **C · Basic payment form / checkout process (+ cart persistence)** (code — Tier-1) — `da4abba`.
+      New `/storefront/checkout` (`[Authorize]`): order summary + `Field` card form, client-validated
+      (Luhn/expiry/CVC); mock `PaymentService` (approve default; PAN ending `0002` declined; **no real
+      gateway**) → on approval places the order via unchanged `OrdersClient.CreateAsync` (idempotency +
+      re-entrancy preserved) → confirmation. Cart persisted to `localStorage` (`{ProductId,Quantity}` only,
+      prerender-guarded hydrate) so it survives the sign-in round-trip. **No card data persisted/logged/sent;
+      no DB/contract change.** +30 payment tests. **Tier-1 review: APPROVE WITH NOTES** — both load-bearing
+      claims confirmed; two repair notes applied (checkout hydrate on deep-link; null-order = failure).
+      Gate 0W/0E, 56/56. Live checkout = supervised.
+
+      <details><summary>original spec</summary>
+      Depends on **B**.
       **Cart persistence (carried from B):** the anon cart is `AddScoped` (per-circuit) and empties across
       the full-page OIDC sign-in. A real checkout keeps the cart, so persist it to `localStorage` via a
       small JS-interop helper and hydrate `CartService` on init — guard `IJSRuntime` for prerender
@@ -82,6 +93,7 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
       sproc param) — otherwise keep payment client-side. Reuse `Notice`/`Button`/`Field`/`Dialog`; no new
       UI libs; no hard-coded colors (atrium-ui). Gate = build + test green. Live checkout = supervised.
       **Flag in LOG:** call out clearly that payment is simulated (no real gateway, no card storage).
+      </details>
 
 - [ ] **D · Architecture + UI-flow diagrams** (docs, mermaid — Tier-1 accuracy). Depends on B+C so the
       checkout/payment flow is real when drawn. **Plan:** add **Mermaid** diagrams that actually explain

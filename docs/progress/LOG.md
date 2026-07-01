@@ -194,3 +194,28 @@ merged to `main`. Source of the new items: `TODO.md` "🆕 New work" + "## Last"
     cleanup (harmless — distinct conn names); `CartPage` hand-writes a `.btn` anchor for the sign-in link
     (renders fine; matches `Shop.razor`'s existing link-as-button pattern).
   - Gate: csharpier no-op, build 0W/0E, `dotnet test` **25/25**. **Live anon→signin→checkout = supervised.**
+- `da4abba` — **Item C (payment/checkout + cart persistence)** done. Two parts: (1) **cart persistence** —
+  `CartPersistence` bridges the per-circuit `CartService` to `localStorage` (persists only
+  `{ProductId,Quantity}`), hydrating on the first interactive render (prerender-guarded, ADR-0010) so the
+  cart survives the full-page OIDC sign-in; JS module `cart-storage.js`. (2) **simulated checkout** — new
+  `/storefront/checkout` (`[Authorize]`) page: order summary + a `Field`-based card form, client-validated
+  (Luhn/future-expiry/CVC); a **mock** `PaymentService` (approve by default; PAN ending `0002` declined —
+  Stripe's test-decline number, passes Luhn so it exercises the post-validation decline path) with **no
+  real gateway**; on approval it places the order via the unchanged `OrdersClient.CreateAsync` (idempotency
+  key + re-entrancy guard preserved from CartPage) → clears cart → confirmation. `CartPage`'s signed-in
+  button now routes to checkout instead of placing inline. Implementer (high confidence) + **Tier-1
+  adversarial review: APPROVE WITH NOTES.**
+  - **Honesty (verified by the reviewer AND the orchestrator via grep):** the PAN/CVC/expiry live only in
+    `Checkout.razor` component state, are cleared after auth, and are **never** persisted, logged, or sent
+    anywhere but the mock. localStorage holds only product-id+qty; the order carries only ids+qty. **No
+    DB/sproc/contract change.**
+  - **Reviewer confirmed both load-bearing claims:** (a) no card-data leak; (b) an approved order is placed
+    exactly once and a decline places nothing (order placed strictly after a successful auth; key rotated
+    only after success; failure keeps cart + same key so a retry can't double-place).
+  - **Two repair notes applied before commit** (one repair attempt, per the ladder): (medium) `Checkout.razor`
+    now injects `CartPersistence` + hydrates on first render, so a *direct/deep-link* anonymous visit to
+    `/storefront/checkout` (→ login → fresh circuit) still restores the cart from localStorage — closes a gap
+    in the "cart survives sign-in" guarantee; (low) a null order from `CreateAsync` is now treated as a
+    failure (keep cart, same key) instead of confirming a phantom "Order #0".
+  - Gate: csharpier no-op, build 0W/0E, `dotnet test` **56/56** (+30 payment unit tests). **Live checkout
+    (approve/decline, cart-survives-signin, narrow viewport) = supervised.**
