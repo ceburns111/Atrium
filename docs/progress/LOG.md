@@ -74,6 +74,11 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
   app logging** (1 `ILogger` injected in `SessionErrorBoundary.razor`, 0 `Log*()` call sites). Item 6 gave
   us the pipeline; this item adds purposeful structured `ILogger<T>` logging at real seams. Deterministic,
   no live stack needed → confidently doable unattended. Added to QUEUE as item **7**.
+- **Low/tomorrow — csharpier fluent-chain one-per-line: NOT FEASIBLE (closed).** Verified empirically on
+  csharpier 1.3.0: chain-breaking is width-driven and non-configurable (short chain stays inline; long
+  chain breaks by heuristic, not uniform one-per-line; unknown config keys silently ignored — only
+  `printWidth`/`tabWidth`/`useTabs`/`endOfLine` honored). No config forces one-call-per-line. No code
+  change; item closed with evidence.
 
 - `bc7afd7` — **Item 4 (OpenAPI + Redoc)** done. `Microsoft.AspNetCore.OpenApi` 10.0.9 (per-csproj) on
   Catalog + Storefront: `AddOpenApi()` (DI, unconditional) + Dev-only, anonymous `MapOpenApi()`

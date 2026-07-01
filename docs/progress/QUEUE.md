@@ -60,8 +60,12 @@ Bring the stack up on the new build (`cd src/Atrium.AppHost && aspire run`), the
 ## Low / tomorrow
 
 - [~] Audit UI for ungraceful scenarios (the #1 session-expiry work is the first instance). (code)
-- [~] csharpier: break fluent call chains one-per-line. **Verify feasibility first** — csharpier is
-      deliberately low-config; this may not be a supported option. (config)
+- [x] csharpier: break fluent call chains one-per-line — **NOT FEASIBLE (verified 2026-07-01, csharpier
+      1.3.0).** CSharpier's chain breaking is width-driven and non-configurable: a short chain stays inline,
+      a long one breaks by its own heuristics (not uniformly one-per-line), and unknown config keys are
+      silently ignored — only `printWidth`/`tabWidth`/`useTabs`/`endOfLine` are honored. No option forces
+      one-call-per-line. Closing the item; the only lever (`printWidth`) would affect all formatting, not
+      just chains. No code change.
 - [~] `testuser` vs `admin`: determine whether `testuser` mimics an internal user; if so, add a
       **regular-customer** login that cannot see Admin/Reports (Keycloak realm change → volume reset). (code)
 - [ ] Update + add ADRs — rolled into item 10 above; keep this as the catch-all for later decisions. (doc)
