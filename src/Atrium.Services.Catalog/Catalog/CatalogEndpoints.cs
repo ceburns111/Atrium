@@ -19,6 +19,7 @@ public static class CatalogEndpoints
 
         // Writes are back-office only: on top of the group's auth, they require the admin realm role.
         catalog.MapPost("/products", CreateProduct).RequireAuthorization("admin");
+
         catalog.MapPut("/products/{id:int}", UpdateProduct).RequireAuthorization("admin");
     }
 
