@@ -5,13 +5,16 @@
 ## Where we are
 
 Run resumed on branch `overnight/2026-07-01`. Baseline green (build 0W/0E, tests 22/22, Docker up).
-**ALL DOCS DONE** — items #10 (`ee63214`), #2 (`14538c0`), #3 (`f30e9ae`), #1 (`a25c62f`). Now in the
-**CODE phase**. **Item #4 (built-in OpenAPI + Redoc) is NEXT** — attempt 1. Code order: **4** → 6.
+**ALL DOCS DONE** (10/2/3/1). **CODE phase in progress:** item #4 (OpenAPI+Redoc) DONE — `bc7afd7`
+(Tier-1 APPROVE WITH NOTES, live-check deferred). **Item #6 (OpenTelemetry + Serilog) is NEXT** —
+attempt 1, the LAST queued item before low/tomorrow. Code order: ~~4~~ → **6**.
 
-Both code items have a runtime surface → **Tier-1 adversarial review applies** (implementer → orchestrator
-gate incl. `dotnet test` → reviewer subagent → commit). Docker is up (integration tests run). All
-live/browser/trace verification is DEFERRED to the supervised morning pass — the loop commits code
-unit/integration-verified with a "live-verification deferred" note.
+Item 6 has a runtime surface → **Tier-1 adversarial review applies** (implementer → orchestrator gate incl.
+`dotnet test` → reviewer → commit). Docker up. Live/trace verification DEFERRED to the supervised morning
+pass — commit unit/integration-verified with a "live-verification deferred" note.
+
+After item 6 commits, the auto-run queue is DRAINED. Remaining work is all `[~]` supervised/low (morning
+live pass, skill keep/discard, the low/tomorrow items) — leave STATUS pointing there and stop cleanly.
 
 ### Skill-authoring capability (NEW, 2026-07-01)
 User authorized unattended skill authoring under `.claude/skills/**` — grant in `.claude/settings.local.json`

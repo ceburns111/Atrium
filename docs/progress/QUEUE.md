@@ -28,7 +28,7 @@ Before starting this phase, write the last docs commit hash into `LOG.md` + `STA
 `SAFE-REVERT-POINT`. One atomic commit per item. Gate = build-clean + unit/integration green + Playwright
 if the stack is up (else commit with a "browser-unverified" note — see `README.md`).
 
-- [ ] **4 · API docs — built-in OpenAPI + Redoc** (code; **decided 2026-07-01**). Enable
+- [x] **4 · API docs — built-in OpenAPI + Redoc** (code) — `bc7afd7`. Tier-1 APPROVE WITH NOTES; unit/integration green; live-check deferred to morning. Enable
       `Microsoft.AspNetCore.OpenApi` per service: `AddOpenApi()` + `MapOpenApi()` → each serves
       `/openapi/v1.json` (makes the existing `.WithTags` meaningful). Then a light **Redoc** page per
       service (Redoc standalone from CDN, `spec-url` → that service's `/openapi/v1.json`). Per-service

@@ -55,3 +55,19 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
   after this line is CODE (items 4, 6, …), committed unit/integration-verified, live-verification deferred.
 
 ### CODE PHASE (starts here)
+
+- `bc7afd7` — **Item 4 (OpenAPI + Redoc)** done. `Microsoft.AspNetCore.OpenApi` 10.0.9 (per-csproj) on
+  Catalog + Storefront: `AddOpenApi()` (DI, unconditional) + Dev-only, anonymous `MapOpenApi()`
+  (`/openapi/v1.json`) and a Redoc `/docs` page (CDN standalone), mapped outside the bearer-only groups.
+  Implementer (high confidence) + **Tier-1 adversarial review: APPROVE WITH NOTES** — reviewer verified
+  vs code + context7: default route `/openapi/v1.json` correct, `AllowAnonymous` valid on `MapOpenApi()`,
+  no global fallback policy (so reachable), Dev-gate is prod-safe, `.WithTags` (Catalog/Orders/Reports)
+  surface as tags. Orchestrator gate: csharpier no-op, build 0W/0E, `dotnet test` 22/22.
+  - **LIVE-VERIFICATION DEFERRED (morning):** `cd src/Atrium.AppHost && aspire run`; from the Aspire
+    dashboard get each service's own HTTP endpoint (NOT the gateway — it only proxies `/catalog`,
+    `/storefront`). Check `http://<catalogPort>/openapi/v1.json` + `/docs` (Catalog tag) and
+    `http://<storefrontPort>/openapi/v1.json` + `/docs` (Orders/Reports tags). Confirm each service resolves
+    `ASPNETCORE_ENVIRONMENT=Development` or the doc routes won't be mapped.
+  - **Non-blocking notes (reviewer, for later):** (1) Redoc CDN is pinned to `latest` — pin a concrete
+    `redoc@2.x` for reproducibility. (2) `/docs` `MapGet` has no `.ExcludeFromDescription()`, so it appears
+    as an untagged operation in the spec — add it for a clean doc. Neither is a blocker; left for the user.
