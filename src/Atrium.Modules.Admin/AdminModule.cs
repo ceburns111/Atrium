@@ -16,7 +16,7 @@ public sealed class AdminModule : IModule
     // Indigo — the back-office's own identity, distinct from the shell's teal and Storefront's amber.
     public string? Accent => "#4f46e5";
 
-    public IEnumerable<NavItem> NavItems => [new NavItem("Admin", "/admin")];
+    public IEnumerable<NavItem> NavItems => [new NavItem("Admin", "/admin", RequiredRole: "admin")];
 
     public void RegisterServices(IServiceCollection services, IConfiguration configuration)
     {

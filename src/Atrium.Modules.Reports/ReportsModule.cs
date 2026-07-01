@@ -16,7 +16,8 @@ public sealed class ReportsModule : IModule
     // Violet — Reports' own identity, distinct from the shell, Storefront (amber), and Admin (indigo).
     public string? Accent => "#7c3aed";
 
-    public IEnumerable<NavItem> NavItems => [new NavItem("Reports", "/reports")];
+    public IEnumerable<NavItem> NavItems =>
+        [new NavItem("Reports", "/reports", RequiredRole: "admin")];
 
     public void RegisterServices(IServiceCollection services, IConfiguration configuration)
     {

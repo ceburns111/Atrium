@@ -1,5 +1,5 @@
 @page "/reports"
-@attribute [Authorize]
+@attribute [Authorize(Roles = "admin")]
 @inject ReportsClient Reports
 
 <PageTitle>Reports</PageTitle>
