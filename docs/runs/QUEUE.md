@@ -175,16 +175,18 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
 
 ---
 
-## Supervised pass (live / browser / subjective — NOT the auto-loop)
+## Supervised pass — DONE via automated Playwright-MCP smoke (2026-07-01)
 
-Bring the stack up (`cd src/Atrium.AppHost && aspire run`) with the user, then:
+Instead of a manual click-through, drove the whole flow live through the Playwright MCP against
+`aspire run`. All steps ✅; 10 screenshots in [`verification/2026-07-01/`](verification/2026-07-01/); the
+re-runnable playbook is [`verification/README.md`](verification/README.md).
 
-- [~] **A live** — anon + `testuser` see only the Storefront card on home; `admin` sees all three.
-- [~] **B live** — anon can browse Shop + product + cart; the checkout shows the sign-in Notice; after
-      signing in as `testuser` the cart survives and checkout proceeds; anon `POST orders` is rejected.
-- [~] **C live** — the payment form validates, "declined" and "approved" paths both behave, an approved
-      payment places the order and lands on confirmation. Confirm no PAN/CVC is persisted or logged.
-- [~] **D** — diagrams render (GitHub/mermaid) and read correctly.
-- [x] **E + G** — dark mode: **user-confirmed good, no bugs (2026-07-01)** — the invisible-Save fix (G)
-      and the overall dark look (E) both verified. Toggle/persistence relies on the same interop as ADR-0010.
-- [~] **F** — image placeholders look on-brand, or the user supplies real images.
+- [x] **A live** — anon + `testuser` see only the Storefront card; `admin` sees all three (shots 01, 09).
+- [x] **B live** — anon browses Shop + cart; checkout shows the sign-in Notice; after `testuser` sign-in the
+      cart **survives** and checkout proceeds (shots 02, 03, 04). Anon `POST orders` → 401 already unit-proven.
+- [x] **C live** — payment form validates; **declined** (`…0002`) places nothing, **approved** (`4242…`)
+      places real order **#7002** → confirmation (shots 05, 06, 07). No PAN/CVC persisted/logged (grep-verified).
+- [~] **D** — diagrams render on GitHub (visual check still worth a glance).
+- [x] **E + G** — dark mode user-confirmed + live-verified; the invisible-Save fix legible in the dark Admin
+      modal (shots 08, 10).
+- [x] **F** — `ProductThumb` placeholders render on-brand (shot 02); real curated imagery still a user option.

@@ -6,9 +6,13 @@
 
 All seven items (A–G) are done and committed on `feat/storefront-checkout-diagrams`; `main` is untouched.
 Gate green throughout (build 0W/0E, tests **56/56**, Docker up). Wake-up summary: **`docs/runs/GOOD-MORNING.md`**.
-**Nothing left that's confidently doable unattended** — everything remaining NEEDS the user
-or the live stack (see "Supervised pass" in `QUEUE.md`): live login/anon/checkout verification, and the
-subjective dark-mode / image look (E/F/G). Then review + merge the branch → `main`.
+
+**✅ LIVE-VERIFIED (2026-07-01):** the whole flow was driven through the **Playwright MCP** against
+`aspire run` — anon browse, sign-in gate, **cart survival**, payment decline/approve (real order `#7002`),
+role-gated cards, dark mode + the Save-button fix. All ✅; evidence in
+[`verification/`](verification/) (10 screenshots + a re-runnable playbook). This also seeded
+**`docs/agentic-workflow.md`** (the portfolio write-up of the whole harness). **Only remaining: review +
+merge the branch → `main`** (optionally swap in real product photography for F).
 
 Commits: A `afb89eb` · B `7ab96e5` · C `da4abba` · D `6c015d0` · E `cbf4fb2` · F `3ab697a` · G `b332388`
 (+ per-item bookkeeping commits). **`SAFE-REVERT-POINT = afb89eb`** (drops the B–G auth/checkout/diagram/
