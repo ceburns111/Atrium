@@ -8,6 +8,7 @@
     <PackageReference Include="Aspire.Microsoft.Data.SqlClient" Version="13.4.6" />
     <PackageReference Include="Dapper" Version="2.1.79" />
     <PackageReference Include="dbup-sqlserver" Version="7.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="10.7.0" />
     <PackageReference Include="Riok.Mapperly" Version="4.3.1" />
   </ItemGroup>
