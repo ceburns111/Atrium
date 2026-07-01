@@ -344,3 +344,18 @@ down cleanly, wrote `GOOD-MORNING.md`. Remaining work is all supervised (live/vi
   two `Microsoft.Extensions.*.Abstractions` packages; no `Microsoft.Agents.AI`/`Microsoft.Extensions.AI`).
 - **Gate (orchestrator re-ran):** csharpier clean (74 files), build **0W/0E**, `dotnet test` **57/57**.
   Confidence: high. Pure additive contract; nothing to verify live.
+
+### Item C2a — user-scoped "look up one order" data layer (code, Tier-1 security-scoped)
+- **Done.** New sproc `usp_Order_GetById.sql` (`@OrderId, @UserName`; same flat header×line projection
+  as GetList, `WHERE o.Id=@OrderId AND o.UserName=@UserName`). New `IOrderRepository.GetByIdAsync(int
+  orderId, string userName, ct)` → `OrderDto?`; Dapper sproc call, reuses `OrderRow` + an extracted
+  `private static GroupRows(...)` helper (so GetOrders + GetById group identically), `.SingleOrDefault()`
+  → **null** for both not-found and not-owned (no exists-but-forbidden leak). No status column exists →
+  no invented lifecycle; returns the real order only.
+- **Security:** the `@UserName` predicate is the boundary — a support agent under the user's bearer can
+  only read that user's order. **Orchestrator review (security-scoped):** verified the sproc filters on
+  both id+owner and the repo collapses zero-rows to null; the new integration test proves an "intruder"
+  user gets null while the owner still reads the same order.
+- **Tests (+3, real SQL via Testcontainers):** owner reads (total+lines), unknown id → null, other-user →
+  null. **Gate (orchestrator re-ran):** csharpier clean (74), build **0W/0E**, `dotnet test` **60/60**.
+  Confidence: high. (C2a is the data half of C2; the tool that wraps it is C2b.)

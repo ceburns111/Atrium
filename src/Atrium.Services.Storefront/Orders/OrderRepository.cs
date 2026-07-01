@@ -16,6 +16,8 @@ public interface IOrderRepository
     );
 
     Task<IReadOnlyList<OrderDto>> GetOrdersAsync(string userName, CancellationToken ct = default);
+
+    Task<OrderDto?> GetByIdAsync(int orderId, string userName, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -117,7 +119,32 @@ public sealed class OrderRepository(SqlConnection db, ILogger<OrderRepository> l
             )
         );
 
-        return rows.GroupBy(r => new
+        return GroupRows(rows).ToList();
+    }
+
+    public async Task<OrderDto?> GetByIdAsync(
+        int orderId,
+        string userName,
+        CancellationToken ct = default
+    )
+    {
+        // The sproc filters on both id and owner, so no rows means either the order does not exist
+        // or it belongs to someone else — both collapse to null here (a caller only sees their own).
+        var rows = await db.QueryAsync<OrderRow>(
+            new CommandDefinition(
+                "dbo.usp_Order_GetById",
+                new { OrderId = orderId, UserName = userName },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct
+            )
+        );
+
+        return GroupRows(rows).SingleOrDefault();
+    }
+
+    // Reverses the flat header×line projection shared by the read sprocs into grouped orders.
+    private static IEnumerable<OrderDto> GroupRows(IEnumerable<OrderRow> rows) =>
+        rows.GroupBy(r => new
             {
                 r.OrderId,
                 r.PlacedAtUtc,
@@ -128,7 +155,5 @@ public sealed class OrderRepository(SqlConnection db, ILogger<OrderRepository> l
                 g.Key.PlacedAtUtc,
                 g.Key.Total,
                 g.Select(r => new OrderLineDto(r.ProductName, r.UnitPrice, r.Quantity)).ToList()
-            ))
-            .ToList();
-    }
+            ));
 }

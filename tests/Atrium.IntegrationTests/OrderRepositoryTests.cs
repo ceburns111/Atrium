@@ -90,4 +90,49 @@ public sealed class OrderRepositoryTests : IAsyncLifetime
         Assert.Equal(first, order.Id);
         Assert.Single(order.Lines); // the replay did not re-add the line
     }
+
+    [Fact]
+    public async Task GetById_returns_the_owner_s_order_with_its_total_and_lines()
+    {
+        const string user = "bob-getbyid";
+        var lines = new[]
+        {
+            new OrderLineDto("Monitor Arm", 120m, 1), // 120
+            new OrderLineDto("Keyboard", 90m, 2), // 180
+        };
+
+        var orderId = await NewRepository().CreateAsync(user, Guid.NewGuid(), lines);
+
+        var order = await NewRepository().GetByIdAsync(orderId, user);
+
+        Assert.NotNull(order);
+        Assert.Equal(orderId, order.Id);
+        Assert.Equal(300m, order.Total); // 120 + 180
+        Assert.Equal(2, order.Lines.Count);
+    }
+
+    [Fact]
+    public async Task GetById_returns_null_for_an_unknown_order()
+    {
+        const string user = "bob-getbyid-missing";
+
+        // A never-created id under this user must not resolve to anything.
+        var order = await NewRepository().GetByIdAsync(2_000_000_000, user);
+
+        Assert.Null(order);
+    }
+
+    [Fact]
+    public async Task GetById_returns_null_when_the_order_belongs_to_another_user()
+    {
+        // Security boundary: an order created by X must be invisible to Y even with the right id.
+        const string owner = "carol-owner";
+        const string other = "dave-intruder";
+        var lines = new[] { new OrderLineDto("Task Lamp", 79m, 1) };
+
+        var orderId = await NewRepository().CreateAsync(owner, Guid.NewGuid(), lines);
+
+        Assert.Null(await NewRepository().GetByIdAsync(orderId, other));
+        Assert.NotNull(await NewRepository().GetByIdAsync(orderId, owner)); // still readable by its owner
+    }
 }

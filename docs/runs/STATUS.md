@@ -7,8 +7,14 @@
 **Branch:** `feat/support-chatbot` (off `main`). **Baseline (run start):** csharpier no-op, build 0W/0E,
 `dotnet test` **56/56** (MTP runner confirmed), Docker up — green, cleared to run.
 
-**Current item:** **C2 · SupportAgent + tools + config-driven IChatClient (Storefront service)** (next).
-✅ **A** (NavMenu count) · ✅ **C0 GO** (MAF pinned) · ✅ **C1** (AgentSurface contract). repo-wide). Queue: **A → C0 … C5**.
+**Current item:** **C2b** — next (SupportAgent + tools + config-driven IChatClient). ✅ **C2a** done (order-status data layer). ✅ **A** · ✅ **C0 GO** · ✅ **C1**. Queue: **A → C0 … C5**.
+
+**C2 is split into two atomic commits** (per the spec guardrail — land framework-sensitive work in
+pieces): **C2a** = user-scoped "look up one order" data layer (`usp_Order_GetById` + `GetByIdAsync`
+scoped by UserName for security + integration tests; NO status column exists, so no invented lifecycle).
+**C2b** = `SupportAgent` + tools (`GetOrderStatus` wrapping C2a's method + derives an honest
+"Confirmed"-style status; product lookup via `StorefrontCatalogClient`) + config-driven `IChatClient`
+(Dev default = fake, `FoundryLocal`/`AzureFoundry` via config) + unit tests.
 
 **★ Real MAF 1.12.0 API shape (verified in C0 — use in C1–C5, docs sketch was wrong):** create via
 `new ChatClientAgent(IChatClient, instructions:, name:, tools: IList<AITool>?)` → `AIAgent`; run via
