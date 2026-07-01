@@ -87,6 +87,15 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
   Portal has `RoleClaimType="role"` (Program.cs:63) so role gating will work. Concrete fix planned as item 8
   (page `[Authorize(Roles="admin")]` + role-aware `NavItem` + shell filter). Held until item 7 commits to
   avoid concurrent edits to shared Portal/Modules files. Needs a live testuser-vs-admin login to confirm.
+- `153b6bc` — **Item 7 (application logging)** done. Structured `ILogger<T>` at repos (write success/DB
+  faults), endpoints (validation/pricing rejects), DbUp init (script counts/errors), all 5 HTTP clients
+  (401/non-success seam), and `SessionErrorBoundary`. Implementer (high confidence) + **Tier-1 review:
+  APPROVE WITH NOTES** — PII/secrets clean (order username omitted, only ids/counts; no tokens/headers),
+  no control-flow change (rethrows intact, logging additive before Throw/EnsureSuccess), template arg-counts
+  verified, exceptions passed as first arg (stack traces preserved), tests carry `NullLogger` (none
+  weakened). **Applied the one actionable note before commit:** instrumented the previously-missed
+  service-to-service `StorefrontCatalogClient`. Gate: csharpier no-op, build 0W/0E, `dotnet test` 22/22.
+  Live log-emission = morning check (Aspire Console tab; expected lines noted in the item-7 subagent report).
 
 - `bc7afd7` — **Item 4 (OpenAPI + Redoc)** done. `Microsoft.AspNetCore.OpenApi` 10.0.9 (per-csproj) on
   Catalog + Storefront: `AddOpenApi()` (DI, unconditional) + Dev-only, anonymous `MapOpenApi()`

@@ -8,13 +8,18 @@ Run resumed on branch `overnight/2026-07-01`. Baseline green (build 0W/0E, tests
 **ALL DOCS DONE** (10/2/3/1). **CODE phase:** #4 OpenAPI+Redoc (`bc7afd7`) + #6 OTel/Serilog (`d51a902`)
 DONE — both Tier-1 APPROVE WITH NOTES, live-check deferred. Original auto-run queue **DRAINED**.
 
-**Continuing unsupervised (user said keep going with anything confidently doable, 2026-07-01).** Next:
-**Item #7 (application logging)** — user-added; the repo has ~zero deliberate logging. Deterministic,
-build+test-verifiable, no live stack → confidently doable. Tier-1 applies (touches client/auth-adjacent
-paths + broad surface). Then attempt the low/tomorrow items I can do confidently (csharpier fluent-chain
-FEASIBILITY check — likely not a supported option; a static UI ungraceful-scenario AUDIT as a report). The
-`testuser`→customer-login item needs a Keycloak realm change + volume reset + live verify → SUPERVISED,
-leave for morning. Dialog aesthetic polish is subjective + needs the user's eye → SUPERVISED, leave.
+**Continuing unsupervised (user: keep going with anything confidently doable, 2026-07-01).**
+DONE this stretch: #7 application logging (`153b6bc`, Tier-1); csharpier fluent-chain item CLOSED (not
+feasible); customer-login INVESTIGATED → refined as item 8.
+
+**Item #8 (role-gate Admin/Reports from customers) is NEXT** — implement now (item 7 has committed, files
+free). Plan in QUEUE item 8: page `[Authorize(Roles="admin")]` on Admin `Products.razor` + Reports
+`Dashboard.razor`; role-aware `NavItem` (`RequiredRole`) + shell filter; check Reports read endpoint is
+admin-gated server-side. Portal `RoleClaimType="role"` supports it; NO realm change needed. Tier-1 (auth);
+build+test verifiable but **needs a live testuser-vs-admin login in the morning to confirm gating**.
+
+Then: a focused static **UI ungraceful-scenarios audit** (report only, no code) if confidently valuable.
+SUPERVISED / leave for morning: all live checks, Dialog aesthetic polish, skill keep/discard.
 
 When out of confidently-doable work: write a prominent **root-level wake-up summary doc** (user request)
 and stop cleanly, STATUS pointing at the supervised remainder.

@@ -33,7 +33,9 @@ if the stack is up (else commit with a "browser-unverified" note — see `README
       `/openapi/v1.json` (makes the existing `.WithTags` meaningful). Then a light **Redoc** page per
       service (Redoc standalone from CDN, `spec-url` → that service's `/openapi/v1.json`). Per-service
       docs, **no Swashbuckle**, no Scalar. Verify the JSON + Redoc render for Catalog and Storefront.
-- [ ] **7 · Application logging** (code; **added 2026-07-01 by user**). Repo has ~zero deliberate logging
+- [x] **7 · Application logging** (code) — `153b6bc`. Tier-1 APPROVE WITH NOTES (added the flagged
+      `StorefrontCatalogClient`); build+test green; live emission = morning check.
+      **added 2026-07-01 by user.** Repo had ~zero deliberate logging
       (1 injected `ILogger`, 0 `Log*()` calls); item 6 added the Serilog/OTel pipeline but nothing writes to
       it. Add purposeful **structured** `ILogger<T>` logging at real seams: repository ops (esp. failures /
       sproc `THROW`), the typed HTTP clients (401/session-expiry + non-success), endpoint business events
