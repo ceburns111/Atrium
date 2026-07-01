@@ -50,3 +50,5 @@ storefront.MapReportEndpoints();  // owns "/reports"
   route structure drift from the folder structure.
 - **A single flat `Program.cs` route table.** Pulls per-feature routing back out of the feature folders,
   undoing ADR-0007's slice organization.
+
+**Diagrams:** [checkout-flow.md](../diagrams/checkout-flow.md) — the `/storefront/checkout` and `/storefront/orders` routes in the end-to-end flow.

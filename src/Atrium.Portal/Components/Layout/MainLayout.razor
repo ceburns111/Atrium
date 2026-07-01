@@ -16,6 +16,7 @@
             <span class="crumbs__here">@Section</span>
         </nav>
         <div class="topbar__spacer"></div>
+        <ThemeToggle />
         <AuthorizeView>
             <Authorized>
                 <span class="topbar__user">@context.User.Identity?.Name</span>

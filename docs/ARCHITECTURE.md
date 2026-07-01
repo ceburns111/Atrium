@@ -2,7 +2,8 @@
 
 The consolidated "how it fits together" doc. For the build history and how to run, see
 [HANDOFF.md](HANDOFF.md); for *why* each choice was made, see the [ADRs](adr/); for what was
-deliberately scoped out, see [BEYOND-THE-DEMO.md](BEYOND-THE-DEMO.md).
+deliberately scoped out, see [BEYOND-THE-DEMO.md](BEYOND-THE-DEMO.md); for the flows drawn out (auth,
+checkout, module discovery) see the [Mermaid diagrams](diagrams/).
 
 ## One-paragraph summary
 
@@ -18,25 +19,40 @@ AppHost.
 
 ## Topology
 
+```mermaid
+flowchart LR
+    Browser(["Browser"])
+
+    subgraph Portal["Atrium.Portal — Blazor Server"]
+        Shell["App shell + ModuleCatalog"]
+        Mods["Modules (reflection-discovered):<br/>Storefront · Admin · Reports"]
+    end
+
+    KC["Keycloak<br/>realm: atrium<br/>(OIDC + JWT authority)"]
+    GW["Atrium.Gateway (YARP)<br/>pass-through routes"]
+    Cat["Catalog (core)"]
+    SF["Storefront (app vertical)"]
+    CatDb[("catalogdb")]
+    SfDb[("storefrontdb")]
+
+    Browser -- "auth cookie" --> Portal
+    Browser -. "OIDC login redirect" .-> KC
+    Portal -. "OIDC code + PKCE" .-> KC
+    Shell --> Mods
+    Mods -- "Bearer JWT" --> GW
+    GW -- "/catalog/** (forwards Bearer)" --> Cat
+    GW -- "/storefront/** (forwards Bearer)" --> SF
+    SF -- "GET /catalog/products<br/>(Bearer relay, direct)" --> Cat
+    Cat --> CatDb
+    SF --> SfDb
+    Cat -. "validate JWT (aud: atrium)" .-> KC
+    SF -. "validate JWT (aud: atrium)" .-> KC
 ```
-                                    ┌─────────────┐
-                          OIDC      │  Keycloak   │   JWT (audience: atrium)
-                    ┌───────────────│  :8080      │───────────────┐
-                    │               └─────────────┘               │
-                    ▼                                              ▼
-            ┌───────────────┐   bearer   ┌─────────────┐   route   ┌──────────────────┐
-   browser  │ Atrium.Portal │──────────▶ │ Atrium.     │──────────▶│ Catalog (core)   │
-  ─────────▶│ Blazor Server │            │ Gateway     │  /catalog │  owns catalogdb  │
-            │  host + modules│           │ (YARP)      │           └──────────────────┘
-            └───────────────┘            │             │           ┌──────────────────┐
-                                         │             │──────────▶│ Storefront (app) │
-                                         └─────────────┘/storefront│  owns storefrontdb│
-                                                                   │  ── calls Catalog │
-                                                                   └────────┬─────────┘
-                                                                            │ bearer relay
-                                                                            ▼
-                                                                   (Catalog /catalog/products)
-```
+
+The **cookie** hop is Browser ↔ Portal only; every hop from the Portal's typed clients onward carries
+a **Bearer JWT**. The gateway does no auth of its own — it forwards the token to the target service,
+which validates it. The Storefront→Catalog price-relay call goes **direct** to the Catalog service
+(`https+http://catalog`), not back through the gateway.
 
 - **Ingress is the gateway.** The Portal only knows the gateway address (`https+http://gateway` via
   Aspire service discovery); it never addresses Catalog or Storefront directly. YARP matches
@@ -97,10 +113,11 @@ Both services use the same recipe (see [ADR-0002](adr/0002-dapper-sprocs-dbup.md
 ## Auth model
 
 - **Portal → Keycloak: OIDC** (confidential client `atrium-portal`, secret injected by the AppHost as
-  `Keycloak__PortalSecret`). Browse/checkout require login.
-- **Services → Keycloak: JWT bearer.** Every service requires a valid token with the shared `atrium`
-  audience (a realm custom-audience mapper adds it). Reads are open to any authenticated user; writes
-  (Catalog `POST`/`PUT /catalog/products`) require the `admin` policy.
+  `Keycloak__PortalSecret`). **Checkout requires login; catalog browsing is anonymous.**
+- **Services → Keycloak: JWT bearer.** Protected endpoints require a valid token with the shared `atrium`
+  audience (a realm custom-audience mapper adds it). Catalog **reads** (`GET /catalog/products`,
+  `/categories`) are `.AllowAnonymous()` so the storefront browses signed-out; all other reads are open to
+  any authenticated user; writes (Catalog `POST`/`PUT /catalog/products`) require the `admin` policy.
 - **Roles are a flat `role` claim.** Both Portal and Catalog set `MapInboundClaims = false` and
   `RoleClaimType = "role"` so `RequireRole("admin")` matches — see [ADR-0003](adr/0003-yarp-keycloak-auth.md)
   and the "403 for everyone" gotcha in HANDOFF.

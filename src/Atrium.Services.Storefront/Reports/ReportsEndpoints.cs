@@ -12,9 +12,14 @@ namespace Atrium.Services.Storefront.Reports;
 public static class ReportsEndpoints
 {
     // Mapped onto the parent "/storefront" group (auth applied there), so this owns only "/reports".
+    // Analytics is admin-only: the parent supplies authentication, this subtree adds the admin role
+    // gate — matching the admin-gated Reports page/nav so the API can't be reached by a plain customer.
     public static void MapReportEndpoints(this IEndpointRouteBuilder storefront)
     {
-        var reports = storefront.MapGroup("/reports").WithTags("Reports");
+        var reports = storefront
+            .MapGroup("/reports")
+            .WithTags("Reports")
+            .RequireAuthorization("admin");
 
         reports.MapGet("/sales", GetSalesReport);
     }

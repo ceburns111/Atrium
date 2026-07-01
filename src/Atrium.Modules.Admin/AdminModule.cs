@@ -16,6 +16,9 @@ public sealed class AdminModule : IModule
     // Indigo — the back-office's own identity, distinct from the shell's teal and Storefront's amber.
     public string? Accent => "#4f46e5";
 
+    // Back-office access is gated to the admin role, matching the /admin route and nav entry.
+    public string? RequiredRole => "admin";
+
     public IEnumerable<NavItem> NavItems => [new NavItem("Admin", "/admin", RequiredRole: "admin")];
 
     public void RegisterServices(IServiceCollection services, IConfiguration configuration)

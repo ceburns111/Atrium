@@ -1,0 +1,211 @@
+@page "/storefront/checkout"
+@attribute [Authorize]
+@implements IDisposable
+@inject CartService Cart
+@inject CartPersistence Persistence
+@inject PaymentService Payments
+@inject OrdersClient Orders
+
+<PageTitle>Checkout</PageTitle>
+
+<PageHeader Eyebrow="Storefront" Title="Checkout" Description="Review your order and pay to place it." />
+
+@if (_confirmation is not null)
+{
+    <Notice Title="Order confirmed — thank you!"
+            Body="Your payment was approved and your order is on its way.">
+        <div class="confirmation">
+            <div class="confirmation__row"><span>Order</span><strong>#@_confirmation.OrderId</strong></div>
+            <div class="confirmation__row"><span>Total</span><strong>$@_confirmation.Total.ToString("N0")</strong></div>
+            <div class="confirmation__row"><span>Payment reference</span><strong>@_confirmation.Reference</strong></div>
+        </div>
+        <div class="confirmation__actions">
+            <a class="btn btn--accent" href="/storefront/orders">View your orders</a>
+            <a class="btn btn--ghost" href="/storefront">Keep shopping</a>
+        </div>
+    </Notice>
+}
+else if (Cart.Lines.Count == 0)
+{
+    <p class="empty">Your cart is empty. <a href="/storefront">Browse products</a>.</p>
+}
+else
+{
+    <div class="checkout">
+        <section class="card checkout__panel">
+            <h2 class="checkout__heading">Order summary</h2>
+            <table class="atrium-table">
+                <tbody>
+                    @foreach (var line in Cart.Lines)
+                    {
+                        <tr>
+                            <td>@line.Product.Name</td>
+                            <td class="num">×@line.Quantity</td>
+                            <td class="num">$@((line.Product.Price * line.Quantity).ToString("N0"))</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div class="cart-summary__total checkout__total">
+                <span>Total</span>
+                <strong>$@Cart.Total.ToString("N0")</strong>
+            </div>
+        </section>
+
+        <section class="card checkout__panel">
+            <h2 class="checkout__heading">Payment</h2>
+            <p class="checkout__note">Simulated payment — no real card is charged. Use any test card (e.g. 4242 4242 4242 4242); a number ending in 0002 is declined.</p>
+
+            @if (_declineReason is not null)
+            {
+                <Notice Title="Payment declined" Body="@_declineReason" />
+            }
+
+            <div class="pay-form">
+                <Field Label="Cardholder name" For="cardholder" Error="@_cardholderError">
+                    <input id="cardholder" class="input" autocomplete="off" @bind="_cardholderName" @bind:event="oninput" />
+                </Field>
+                <Field Label="Card number" For="cardnumber" Error="@_cardError">
+                    <input id="cardnumber" class="input" inputmode="numeric" autocomplete="off" placeholder="4242 4242 4242 4242" @bind="_cardNumber" @bind:event="oninput" />
+                </Field>
+                <div class="pay-form__row">
+                    <Field Label="Expiry (MM/YY)" For="expiry" Error="@_expiryError">
+                        <input id="expiry" class="input" inputmode="numeric" autocomplete="off" placeholder="MM/YY" @bind="_expiry" @bind:event="oninput" />
+                    </Field>
+                    <Field Label="CVC" For="cvc" Error="@_cvcError">
+                        <input id="cvc" class="input" inputmode="numeric" autocomplete="off" placeholder="123" @bind="_cvc" @bind:event="oninput" />
+                    </Field>
+                </div>
+                <Button Variant="ButtonVariant.Accent" OnClick="Pay" Disabled="_processing">
+                    @(_processing ? "Processing…" : $"Pay ${Cart.Total:N0}")
+                </Button>
+            </div>
+        </section>
+    </div>
+}
+
+@code {
+    // Card fields live ONLY in component state for the duration of the transaction and are cleared after
+    // authorization. The PAN, CVC, and expiry are never persisted, logged, or sent anywhere but the mock
+    // PaymentService — the order itself carries only product ids + quantities.
+    private string _cardholderName = "";
+    private string _cardNumber = "";
+    private string _expiry = "";
+    private string _cvc = "";
+
+    private string? _cardholderError;
+    private string? _cardError;
+    private string? _expiryError;
+    private string? _cvcError;
+    private string? _declineReason;
+
+    private bool _processing;
+
+    // One idempotency key per checkout attempt — reused across retries of the same cart (the server
+    // dedupes, so an ambiguous failure can't create a duplicate) and only rotated after a placement.
+    private Guid _orderKey = Guid.NewGuid();
+
+    private Confirmation? _confirmation;
+
+    private sealed record Confirmation(int OrderId, decimal Total, string Reference);
+
+    protected override void OnInitialized() => Cart.Changed += Refresh;
+
+    // Rehydrate the persisted cart on the first INTERACTIVE render only (never during prerender — ADR-0010).
+    // Covers a direct/deep-linked visit to /storefront/checkout that arrives in a fresh circuit after the
+    // full-page sign-in; the CartPersistence _hydrated guard makes it a no-op on the normal cart→checkout nav.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Persistence.HydrateAsync();
+        }
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Cart.Changed -= Refresh;
+
+    private async Task Pay()
+    {
+        if (_processing)
+        {
+            return;
+        }
+
+        if (!Validate())
+        {
+            return;
+        }
+
+        _processing = true;
+        _declineReason = null;
+        try
+        {
+            var authorization = await Payments.AuthorizeAsync(
+                new PaymentRequest(_cardholderName, _cardNumber, _expiry, _cvc, Cart.Total)
+            );
+
+            if (!authorization.Approved)
+            {
+                _declineReason = authorization.DeclineReason;
+                return; // do not place the order; let them retry with a different card
+            }
+
+            var request = new CreateOrderRequest(
+                Cart.Lines.Select(l => new OrderItemRequest(l.Product.Id, l.Quantity)).ToList(),
+                _orderKey
+            );
+            var order = await Orders.CreateAsync(request);
+            if (order is null)
+            {
+                // Treat a missing order (unexpected empty success body) as a failure: keep the cart and the
+                // same idempotency key so a retry is safe, rather than confirming a phantom "Order #0".
+                _declineReason = "Something went wrong placing your order. Please try again.";
+                return;
+            }
+
+            Cart.Clear(); // also clears the persisted cart via CartPersistence
+            _orderKey = Guid.NewGuid();
+            ClearCardFields();
+            _confirmation = new Confirmation(order.Id, order.Total, authorization.Reference!);
+        }
+        catch (Exception ex) when (ex is not SessionExpiredException)
+        {
+            // Let SessionExpiredException reach the error boundary (re-login). For other failures keep
+            // the cart and the same idempotency key so a retry reuses it and can't double-place.
+            _declineReason = "Something went wrong placing your order. Please try again.";
+        }
+        finally
+        {
+            _processing = false;
+        }
+    }
+
+    private bool Validate()
+    {
+        _cardholderError = PaymentValidation.IsValidCardholder(_cardholderName)
+            ? null
+            : "Enter the name on the card.";
+        _cardError = PaymentValidation.IsValidCardNumber(_cardNumber)
+            ? null
+            : "Enter a valid card number.";
+        _expiryError = PaymentValidation.IsValidExpiry(_expiry, DateOnly.FromDateTime(DateTime.Today))
+            ? null
+            : "Enter a valid future expiry (MM/YY).";
+        _cvcError = PaymentValidation.IsValidCvc(_cvc) ? null : "Enter a 3–4 digit CVC.";
+
+        return _cardholderError is null
+            && _cardError is null
+            && _expiryError is null
+            && _cvcError is null;
+    }
+
+    private void ClearCardFields()
+    {
+        _cardholderName = "";
+        _cardNumber = "";
+        _expiry = "";
+        _cvc = "";
+    }
+}

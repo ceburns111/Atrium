@@ -328,18 +328,6 @@ button {
     border-radius: var(--r-lg);
     padding: var(--space-5);
 }
-a.card {
-    display: block;
-    color: inherit;
-    transition:
-        border-color var(--dur) var(--ease),
-        box-shadow var(--dur) var(--ease);
-}
-a.card:hover {
-    border-color: var(--line-strong);
-    box-shadow: var(--shadow-md);
-    text-decoration: none;
-}
 
 /* ---------- Button ---------- */
 .btn {
@@ -373,14 +361,18 @@ a.card:hover {
 }
 .btn--primary {
     background: var(--ink);
-    color: #fff;
+    /* --paper (not a hard #fff) so the label flips with the theme: near-white on the dark light-mode
+       ink button, near-black on the near-white dark-mode ink button. */
+    color: var(--paper);
 }
 .btn--primary:hover:not(:disabled) {
-    background: #000;
+    /* Nudge the ink toward the page colour — a subtle, theme-agnostic hover (was a hard-coded #000,
+       which turned the near-white dark-mode button black). */
+    background: color-mix(in srgb, var(--ink) 85%, var(--paper));
 }
 .btn--accent {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
 }
 .btn--accent:hover:not(:disabled) {
     background: var(--accent-ink);
@@ -647,7 +639,7 @@ a.card:hover {
 .chip--on {
     background: var(--ink);
     border-color: var(--ink);
-    color: #fff;
+    color: var(--paper);
 }
 .product-grid {
     display: grid;
@@ -663,18 +655,45 @@ a.card:hover {
     border: 1px solid var(--line);
     border-radius: var(--r-lg);
 }
-.product__thumb {
-    display: grid;
-    place-items: center;
+/* Generated product placeholder (Atrium.Design ProductThumb). The panel is a token tint of the
+   product's derived accent (--thumb, set inline); the motif + initials reuse the same token at
+   full strength, echoing the Home monogram language. Scales crisply since the art is inline SVG. */
+.product-thumb {
+    display: block;
     aspect-ratio: 4 / 3;
     margin-bottom: var(--space-2);
     border-radius: var(--r-md);
-    background: var(--surface-2);
-    color: var(--faint);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--thumb, var(--accent)) 12%, var(--surface));
+}
+.product-thumb__art,
+.product-thumb__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.product-thumb__img {
+    object-fit: cover;
+}
+.product-thumb__motif {
+    fill: var(--thumb, var(--accent));
+    opacity: 0.16;
+}
+.product-thumb__initials {
+    fill: var(--thumb, var(--accent));
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 40px;
+}
+/* Small-size variant for cart / checkout line items. */
+.product-thumb--sm {
+    width: 44px;
+    margin-bottom: 0;
+    border-radius: var(--r-sm);
+    flex: none;
+}
+.product-thumb--sm .product-thumb__initials {
+    font-size: 46px;
 }
 .product__name {
     font-weight: 600;
@@ -732,6 +751,11 @@ a.card:hover {
 .cart-table {
     margin-bottom: var(--space-5);
 }
+.cart-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
 .cart-summary {
     display: flex;
     align-items: center;
@@ -774,6 +798,70 @@ a.card:hover {
     color: var(--ink);
 }
 
+/* ---------- Checkout: order summary + payment form ---------- */
+.checkout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-5);
+    align-items: start;
+}
+@media (max-width: 720px) {
+    .checkout {
+        grid-template-columns: 1fr;
+    }
+}
+.checkout__panel {
+    padding: var(--space-5);
+}
+.checkout__heading {
+    margin: 0 0 var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    color: var(--ink);
+}
+.checkout__note {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-xs);
+    color: var(--muted);
+}
+.checkout__total {
+    justify-content: flex-end;
+    margin-top: var(--space-4);
+}
+.pay-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+.pay-form__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+.confirmation {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+    text-align: left;
+}
+.confirmation__row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--muted);
+}
+.confirmation__row strong {
+    font-family: var(--font-mono);
+    color: var(--ink);
+}
+.confirmation__actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-3);
+}
+
 /* ---------- Toasts ---------- */
 .toast-host {
     position: fixed;
@@ -793,7 +881,9 @@ a.card:hover {
     padding: var(--space-3) var(--space-4);
     border-radius: var(--r-md);
     background: var(--ink);
-    color: #fff;
+    /* --paper flips with the theme, so the default (ink) toast and the status variants below
+       (whose fills invert dark↔bright) all keep a legible label in both themes. */
+    color: var(--paper);
     box-shadow: var(--shadow-md);
     font-size: var(--text-sm);
     animation: toast-in var(--dur) var(--ease);

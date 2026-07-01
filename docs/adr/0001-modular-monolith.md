@@ -56,3 +56,5 @@ has no compile-time knowledge of a module's internals.
 - **Micro-frontends now** — real independent deploy, but iframes/module-federation overhead with no
   payoff at demo scale. Kept as the heavy option in BEYOND-THE-DEMO.md.
 - **MEF / a plugin framework** — more machinery than a one-interface reflection scan needs.
+
+**Diagrams:** [module-discovery.md](../diagrams/module-discovery.md) — reflection → `ModuleCatalog` → role-gated Home cards + NavMenu.

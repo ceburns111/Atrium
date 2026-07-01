@@ -54,6 +54,10 @@ over HTTP (Storefront → Catalog). Decide before you start — the vertical is 
   register the repository, `AddKeycloakJwtBearer("keycloak", realm: "atrium")` with `Audience = "atrium"`,
   run `DatabaseInitializer.Initialize(...)` before serving, then `UseAuthentication`/`UseAuthorization`,
   `MapHealthChecks("/health")`, and the service-root `MapGroup("/<name>").RequireAuthorization()`.
+  **Public reads:** a specific endpoint can opt back out with `.AllowAnonymous()` (its metadata overrides
+  the group policy) while writes stay gated — e.g. Catalog's `GET /catalog/products|categories` are
+  anonymous so the storefront browses signed-out, but the `admin` `POST`/`PUT` writes are not. Default to
+  gated; open a read only when it's genuinely public.
   **Gotcha:** to gate on a role you MUST set both `MapInboundClaims = false` and
   `RoleClaimType = "role"` or every caller 403s — the worked example (with comments) is
   `Atrium.Services.Catalog/Program.cs`, which role-gates admin writes; Storefront relays a bearer and

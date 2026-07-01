@@ -38,6 +38,9 @@ Full picture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
   add a full vertical (service → contracts → module → gateway → Aspire → auth → tests), narrating the
   real Storefront + Catalog implementation. This is the source of truth for procedure; the skills below
   are its always-loaded guardrails.
+- **[docs/agentic-workflow.md](docs/agentic-workflow.md)** — how this codebase is built with an LLM under a
+  disciplined harness (independent gate, adversarial review, revertible per-item commits, live browser
+  verification). The run system that harness uses lives in **[docs/runs/](docs/runs/)**.
 
 ## The build/test gate
 

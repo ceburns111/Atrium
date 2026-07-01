@@ -49,3 +49,5 @@ normal API request has an `HttpContext`** — unlike a Blazor circuit (contrast
   binary; same problem, different layer.
 - **Duplicating product data into `storefrontdb`** — introduces a sync problem (staleness, write path)
   with no benefit at this scale.
+
+**Diagrams:** the Storefront→Catalog bearer-relay hop in [ARCHITECTURE.md](../ARCHITECTURE.md#topology); order re-pricing in [checkout-flow.md](../diagrams/checkout-flow.md).

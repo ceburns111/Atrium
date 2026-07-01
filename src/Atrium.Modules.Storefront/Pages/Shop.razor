@@ -1,8 +1,8 @@
 @page "/storefront"
-@attribute [Authorize]
 @implements IDisposable
 @inject CatalogClient Catalog
 @inject CartService Cart
+@inject CartPersistence Persistence
 @inject ToastService Toasts
 
 <PageTitle>Storefront</PageTitle>
@@ -52,7 +52,7 @@ else
         @foreach (var product in _products)
         {
             <div class="product">
-                <div class="product__thumb">@product.Category</div>
+                <ProductThumb Name="@product.Name" />
                 <div class="product__name">@product.Name</div>
                 <div class="product__blurb">@product.Blurb</div>
                 <div class="product__foot">
@@ -95,6 +95,16 @@ else
         catch (Exception ex) when (ex is not SessionExpiredException)
         {
             _failed = true;
+        }
+    }
+
+    // Rehydrate the persisted cart on the first interactive render (never during prerender — JS interop
+    // is unavailable then, per ADR-0010) so the cart badge is accurate on any entry into the storefront.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Persistence.HydrateAsync();
         }
     }
 

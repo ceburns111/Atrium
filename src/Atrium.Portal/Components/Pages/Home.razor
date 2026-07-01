@@ -18,17 +18,34 @@ else
     <div class="module-grid">
         @foreach (var module in Catalog.Modules)
         {
-            <a class="module-card" href="@module.BasePath">
-                <div class="module-card__mono" style="@MonoStyle(module)">@module.Name[..1]</div>
-                <div class="module-card__name">@module.Name</div>
-                <div class="module-card__desc">@module.Description</div>
-                <div class="module-card__foot">
-                    <span class="module-card__path">@module.BasePath</span>
-                    <span class="module-card__go">Open &rarr;</span>
-                </div>
-            </a>
+            @if (module.RequiredRole is null)
+            {
+                @ModuleCard(module)
+            }
+            else
+            {
+                <AuthorizeView Roles="@module.RequiredRole">
+                    <Authorized>
+                        @ModuleCard(module)
+                    </Authorized>
+                </AuthorizeView>
+            }
         }
     </div>
+}
+
+@* One card per module; role-gated modules are wrapped above so only authorized users see them. *@
+@{
+    RenderFragment ModuleCard(Atrium.Abstractions.IModule module) =>
+    @<a class="module-card" href="@module.BasePath">
+        <div class="module-card__mono" style="@MonoStyle(module)">@module.Name[..1]</div>
+        <div class="module-card__name">@module.Name</div>
+        <div class="module-card__desc">@module.Description</div>
+        <div class="module-card__foot">
+            <span class="module-card__path">@module.BasePath</span>
+            <span class="module-card__go">Open &rarr;</span>
+        </div>
+    </a>;
 }
 
 @code {

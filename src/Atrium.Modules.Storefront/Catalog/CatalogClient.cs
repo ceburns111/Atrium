@@ -1,5 +1,3 @@
-using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Atrium.Contracts;
 using Atrium.Design;
@@ -37,49 +35,12 @@ public sealed class CatalogClient(
         where T : class
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        if (!string.IsNullOrEmpty(tokens.AccessToken))
-        {
-            request.Headers.Authorization = new AuthenticationHeaderValue(
-                "Bearer",
-                tokens.AccessToken
-            );
-        }
+        request.Authorize(tokens);
         using var response = await http.SendAsync(request, ct);
-        LogIfUnsuccessful(logger, request, response);
+        response.LogIfUnsuccessful(logger, request);
         response.ThrowIfSessionExpired();
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(ct)
             ?? throw new InvalidOperationException();
-    }
-
-    // Structured Warning at the downstream seam: session expiry (401) vs. any other non-success. No auth
-    // header or token is logged — only method, path and status.
-    private static void LogIfUnsuccessful(
-        ILogger logger,
-        HttpRequestMessage request,
-        HttpResponseMessage response
-    )
-    {
-        if (response.IsSuccessStatusCode)
-        {
-            return;
-        }
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
-        {
-            logger.LogWarning(
-                "Session expired: {Method} {RequestUri} returned 401",
-                request.Method,
-                request.RequestUri
-            );
-        }
-        else
-        {
-            logger.LogWarning(
-                "Downstream {Method} {RequestUri} returned {StatusCode}",
-                request.Method,
-                request.RequestUri,
-                (int)response.StatusCode
-            );
-        }
     }
 }

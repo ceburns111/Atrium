@@ -40,10 +40,20 @@ builder
         {
             options.Audience = "atrium";
             options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+            // Keep Keycloak's short claim names as-is; the legacy inbound map would otherwise rename
+            // the flat "role" claim to ClaimTypes.Role and defeat the RoleClaimType match below.
+            options.MapInboundClaims = false;
             options.TokenValidationParameters.NameClaimType = "preferred_username";
+            // Keycloak's realm-role mapper flattens realm roles into a multivalued "role" claim.
+            options.TokenValidationParameters.RoleClaimType = "role";
         }
     );
-builder.Services.AddAuthorization();
+
+// Most of this vertical only needs an authenticated caller (relayed bearer). Reports is the exception:
+// the analytics surface is admin-only, matching the admin-gated Reports page/nav in the portal.
+builder
+    .Services.AddAuthorizationBuilder()
+    .AddPolicy("admin", policy => policy.RequireRole("admin"));
 
 var app = builder.Build();
 

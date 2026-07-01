@@ -1,14 +1,13 @@
 @page "/storefront/cart"
-@attribute [Authorize]
+@using Microsoft.AspNetCore.Components.Authorization
 @implements IDisposable
 @inject CartService Cart
-@inject ToastService Toasts
-@inject OrdersClient Orders
+@inject CartPersistence Persistence
 @inject NavigationManager Nav
 
 <PageTitle>Cart</PageTitle>
 
-<PageHeader Eyebrow="Storefront" Title="Cart" Description="Review your items before placing the order." />
+<PageHeader Eyebrow="Storefront" Title="Cart" Description="Review your items before checking out." />
 
 @if (Cart.Lines.Count == 0)
 {
@@ -31,7 +30,12 @@ else
                 @foreach (var line in Cart.Lines)
                 {
                     <tr>
-                        <td>@line.Product.Name</td>
+                        <td>
+                            <div class="cart-item">
+                                <ProductThumb Name="@line.Product.Name" Class="product-thumb--sm" />
+                                <span>@line.Product.Name</span>
+                            </div>
+                        </td>
                         <td class="num">$@line.Product.Price.ToString("N0")</td>
                         <td>
                             <div class="stepper">
@@ -42,7 +46,7 @@ else
                         </td>
                         <td class="num">$@((line.Product.Price * line.Quantity).ToString("N0"))</td>
                         <td class="num">
-                            <button class="btn btn--ghost btn--sm" @onclick="() => Cart.Remove(line.Product.Id)">Remove</button>
+                            <Button Variant="ButtonVariant.Ghost" Small="true" OnClick="() => Cart.Remove(line.Product.Id)">Remove</Button>
                         </td>
                     </tr>
                 }
@@ -55,38 +59,32 @@ else
             <span>Total</span>
             <strong>$@Cart.Total.ToString("N0")</strong>
         </div>
-        <Button Variant="ButtonVariant.Accent" OnClick="PlaceOrder" Disabled="_placing">@(_placing ? "Placing…" : "Place order")</Button>
+        <AuthorizeView>
+            <Authorized>
+                <Button Variant="ButtonVariant.Accent" OnClick="@(() => Nav.NavigateTo("/storefront/checkout"))">Proceed to checkout</Button>
+            </Authorized>
+            <NotAuthorized>
+                <Notice Title="Sign in to check out"
+                        Body="Sign in or create an account to place your order — your cart will be waiting.">
+                    <a class="btn btn--accent" href="/account/login?returnUrl=%2Fstorefront%2Fcart">Sign in</a>
+                </Notice>
+            </NotAuthorized>
+        </AuthorizeView>
     </div>
 }
 
 @code {
-    private bool _placing;
+    protected override void OnInitialized() => Cart.Changed += Refresh;
 
-    private async Task PlaceOrder()
+    // Rehydrate the persisted cart on the first INTERACTIVE render only — never during prerender, when
+    // JS interop is unavailable (ADR-0010). This is what carries the cart across the full-page sign-in.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Guard against a double-click placing the order twice while the request is in flight.
-        if (_placing)
+        if (firstRender)
         {
-            return;
-        }
-        _placing = true;
-        try
-        {
-            var request = new CreateOrderRequest(
-                Cart.Lines.Select(l => new OrderItemRequest(l.Product.Id, l.Quantity)).ToList()
-            );
-            var order = await Orders.CreateAsync(request);
-            Cart.Clear();
-            Toasts.Show($"Order placed — ${order?.Total ?? 0:N0}", ToastVariant.Success);
-            Nav.NavigateTo("/storefront/orders");
-        }
-        finally
-        {
-            _placing = false;
+            await Persistence.HydrateAsync();
         }
     }
-
-    protected override void OnInitialized() => Cart.Changed += Refresh;
 
     private void Refresh() => InvokeAsync(StateHasChanged);
 

@@ -1,5 +1,9 @@
 # Atrium progress system — runbook for resumable (overnight) work
 
+> **Active run:** Run 2 — branch **`feat/storefront-checkout-diagrams`** (autonomous commits go here;
+> `main` stays pristine). Run 1 (overnight 2026-07-01) is merged to `main`; its history is in `LOG.md`.
+> Where this runbook says `overnight/2026-07-01` below, substitute the active run branch.
+
 This folder lets an agent execute a queue of work **across sessions and context clears**. Everything
 needed to resume lives here on disk (git-tracked) + one memory entry — so a cold session with zero
 conversation context can pick up deterministically.

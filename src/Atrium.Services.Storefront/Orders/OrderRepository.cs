@@ -10,6 +10,7 @@ public interface IOrderRepository
 {
     Task<int> CreateAsync(
         string userName,
+        Guid idempotencyKey,
         IReadOnlyList<OrderLineDto> lines,
         CancellationToken ct = default
     );
@@ -26,6 +27,7 @@ public sealed class OrderRepository(SqlConnection db, ILogger<OrderRepository> l
 {
     public async Task<int> CreateAsync(
         string userName,
+        Guid idempotencyKey,
         IReadOnlyList<OrderLineDto> lines,
         CancellationToken ct = default
     )
@@ -35,44 +37,71 @@ public sealed class OrderRepository(SqlConnection db, ILogger<OrderRepository> l
         await db.OpenAsync(ct);
         await using var transaction = await db.BeginTransactionAsync(ct);
 
-        var orderId = await db.ExecuteScalarAsync<int>(
+        // Idempotent header insert: on a replay of an already-committed key the sproc returns the
+        // original id with IsNew = 0, so we skip re-adding the lines (they're already there).
+        var result = await db.QuerySingleAsync<OrderCreateResult>(
             new CommandDefinition(
                 "dbo.usp_Order_Create",
-                new { UserName = userName, Total = total },
+                new
+                {
+                    UserName = userName,
+                    Total = total,
+                    IdempotencyKey = idempotencyKey,
+                },
                 transaction,
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct
             )
         );
 
-        foreach (var line in lines)
+        if (result.IsNew)
         {
-            await db.ExecuteAsync(
-                new CommandDefinition(
-                    "dbo.usp_OrderItem_Add",
-                    new
-                    {
-                        OrderId = orderId,
-                        line.ProductName,
-                        line.UnitPrice,
-                        line.Quantity,
-                    },
-                    transaction,
-                    commandType: CommandType.StoredProcedure,
-                    cancellationToken: ct
-                )
-            );
+            foreach (var line in lines)
+            {
+                await db.ExecuteAsync(
+                    new CommandDefinition(
+                        "dbo.usp_OrderItem_Add",
+                        new
+                        {
+                            OrderId = result.OrderId,
+                            line.ProductName,
+                            line.UnitPrice,
+                            line.Quantity,
+                        },
+                        transaction,
+                        commandType: CommandType.StoredProcedure,
+                        cancellationToken: ct
+                    )
+                );
+            }
         }
 
         await transaction.CommitAsync(ct);
-        logger.LogInformation(
-            "Order {OrderId} created with {LineCount} line(s) totaling {OrderTotal}",
-            orderId,
-            lines.Count,
-            total
-        );
-        return orderId;
+
+        if (result.IsNew)
+        {
+            logger.LogInformation(
+                "Order {OrderId} created with {LineCount} line(s) totaling {OrderTotal}",
+                result.OrderId,
+                lines.Count,
+                total
+            );
+        }
+        else
+        {
+            logger.LogInformation(
+                "Order {OrderId} idempotency-replayed for key {IdempotencyKey}; no duplicate created",
+                result.OrderId,
+                idempotencyKey
+            );
+        }
+
+        return result.OrderId;
     }
+
+    // The two-column projection of usp_Order_Create: the order id plus whether this call actually
+    // inserted (true) or replayed an existing key (false).
+    private sealed record OrderCreateResult(int OrderId, bool IsNew);
 
     public async Task<IReadOnlyList<OrderDto>> GetOrdersAsync(
         string userName,

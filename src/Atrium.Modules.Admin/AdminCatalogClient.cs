@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Atrium.Contracts;
 using Atrium.Design;
@@ -39,12 +38,9 @@ public sealed class AdminCatalogClient(
         where T : class
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        Authorize(request);
+        request.Authorize(tokens);
         using var response = await http.SendAsync(request, ct);
-        if (!response.IsSuccessStatusCode)
-        {
-            LogUnsuccessful(request, response);
-        }
+        response.LogIfUnsuccessful(logger, request);
         response.ThrowIfSessionExpired();
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(ct)
@@ -62,7 +58,7 @@ public sealed class AdminCatalogClient(
         {
             Content = JsonContent.Create(body),
         };
-        Authorize(request);
+        request.Authorize(tokens);
         using var response = await http.SendAsync(request, ct);
 
         if (response.IsSuccessStatusCode)
@@ -71,7 +67,7 @@ public sealed class AdminCatalogClient(
         }
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
-            LogUnsuccessful(request, response);
+            response.LogIfUnsuccessful(logger, request);
         }
         // An expired token (401) is a dead session, not a per-request problem the page can toast past —
         // let the shell's boundary prompt a re-login. A 403 (wrong role) keeps you signed in, so it
@@ -88,7 +84,7 @@ public sealed class AdminCatalogClient(
             )
         )
         {
-            LogUnsuccessful(request, response);
+            response.LogIfUnsuccessful(logger, request);
         }
         return response.StatusCode switch
         {
@@ -99,39 +95,5 @@ public sealed class AdminCatalogClient(
                 $"Catalog write failed ({(int)response.StatusCode})."
             ),
         };
-    }
-
-    // Structured Warning at the downstream seam: session expiry (401) vs. any other non-success. No auth
-    // header or token is logged — only method, path and status.
-    private void LogUnsuccessful(HttpRequestMessage request, HttpResponseMessage response)
-    {
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
-        {
-            logger.LogWarning(
-                "Session expired: {Method} {RequestUri} returned 401",
-                request.Method,
-                request.RequestUri
-            );
-        }
-        else
-        {
-            logger.LogWarning(
-                "Downstream {Method} {RequestUri} returned {StatusCode}",
-                request.Method,
-                request.RequestUri,
-                (int)response.StatusCode
-            );
-        }
-    }
-
-    private void Authorize(HttpRequestMessage request)
-    {
-        if (!string.IsNullOrEmpty(tokens.AccessToken))
-        {
-            request.Headers.Authorization = new AuthenticationHeaderValue(
-                "Bearer",
-                tokens.AccessToken
-            );
-        }
     }
 }
