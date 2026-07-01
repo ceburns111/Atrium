@@ -651,18 +651,45 @@ button {
     border: 1px solid var(--line);
     border-radius: var(--r-lg);
 }
-.product__thumb {
-    display: grid;
-    place-items: center;
+/* Generated product placeholder (Atrium.Design ProductThumb). The panel is a token tint of the
+   product's derived accent (--thumb, set inline); the motif + initials reuse the same token at
+   full strength, echoing the Home monogram language. Scales crisply since the art is inline SVG. */
+.product-thumb {
+    display: block;
     aspect-ratio: 4 / 3;
     margin-bottom: var(--space-2);
     border-radius: var(--r-md);
-    background: var(--surface-2);
-    color: var(--faint);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--thumb, var(--accent)) 12%, var(--surface));
+}
+.product-thumb__art,
+.product-thumb__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.product-thumb__img {
+    object-fit: cover;
+}
+.product-thumb__motif {
+    fill: var(--thumb, var(--accent));
+    opacity: 0.16;
+}
+.product-thumb__initials {
+    fill: var(--thumb, var(--accent));
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 40px;
+}
+/* Small-size variant for cart / checkout line items. */
+.product-thumb--sm {
+    width: 44px;
+    margin-bottom: 0;
+    border-radius: var(--r-sm);
+    flex: none;
+}
+.product-thumb--sm .product-thumb__initials {
+    font-size: 46px;
 }
 .product__name {
     font-weight: 600;
@@ -719,6 +746,11 @@ button {
 }
 .cart-table {
     margin-bottom: var(--space-5);
+}
+.cart-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
 }
 .cart-summary {
     display: flex;

@@ -52,7 +52,7 @@ else
         @foreach (var product in _products)
         {
             <div class="product">
-                <div class="product__thumb">@product.Category</div>
+                <ProductThumb Name="@product.Name" />
                 <div class="product__name">@product.Name</div>
                 <div class="product__blurb">@product.Blurb</div>
                 <div class="product__foot">

@@ -30,7 +30,12 @@ else
                 @foreach (var line in Cart.Lines)
                 {
                     <tr>
-                        <td>@line.Product.Name</td>
+                        <td>
+                            <div class="cart-item">
+                                <ProductThumb Name="@line.Product.Name" Class="product-thumb--sm" />
+                                <span>@line.Product.Name</span>
+                            </div>
+                        </td>
                         <td class="num">$@line.Product.Price.ToString("N0")</td>
                         <td>
                             <div class="stepper">

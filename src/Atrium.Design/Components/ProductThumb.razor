@@ -1,0 +1,104 @@
+@namespace Atrium.Design
+
+@* Deterministic, self-contained product placeholder. Given only a product's Name it derives a stable
+   accent (hash → design-token palette) and initials, then draws an inline SVG motif — same product,
+   same look every render, no external assets or network image URLs.
+
+   Real-image seam: pass ImageUrl and this renders an <img> instead of the generated art. When products
+   gain a real image (e.g. a future ProductDto.ImageUrl), wiring it through is a one-spot change here;
+   every call site keeps using <ProductThumb Name="..." />. *@
+
+<div class="product-thumb @Class" style="--thumb: @Accent" role="img" aria-label="@AriaLabel">
+    @if (!string.IsNullOrWhiteSpace(ImageUrl))
+    {
+        <img class="product-thumb__img" src="@ImageUrl" alt="@Name" />
+    }
+    else
+    {
+        <svg class="product-thumb__art" viewBox="0 0 120 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+            <g class="product-thumb__motif">
+                <circle cx="@_cx" cy="@_cy" r="@_r" />
+                <rect x="@_rx" y="@_ry" width="46" height="46" rx="10" />
+            </g>
+            <text class="product-thumb__initials" x="60" y="46" text-anchor="middle" dominant-baseline="central">@Initials</text>
+        </svg>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Name { get; set; } = "";
+
+    // The real-image seam — when set, the generated placeholder is skipped in favour of an <img>.
+    [Parameter]
+    public string? ImageUrl { get; set; }
+
+    // Extra classes for the caller (e.g. a small-size modifier on cart line items).
+    [Parameter]
+    public string? Class { get; set; }
+
+    // On-brand tints only: reuse existing color tokens (no new hard-coded hex), tinted via color-mix in CSS,
+    // echoing the Home monogram's `--mono` approach.
+    private static readonly string[] Palette =
+    [
+        "var(--accent)",
+        "var(--success)",
+        "var(--warning)",
+        "var(--danger)",
+    ];
+
+    private int _hash;
+    private int _cx,
+        _cy,
+        _r,
+        _rx,
+        _ry;
+
+    private string Accent => Palette[_hash % Palette.Length];
+
+    protected override void OnParametersSet()
+    {
+        _hash = StableHash(Name);
+
+        // Deterministic motif geometry, bounded so any product still composes nicely behind the initials.
+        _cx = 22 + _hash % 26; // 22..47
+        _cy = 18 + _hash / 7 % 22; // 18..39
+        _r = 26 + _hash / 13 % 14; // 26..39
+        _rx = 62 + _hash / 17 % 24; // 62..85
+        _ry = 30 + _hash / 23 % 22; // 30..51
+    }
+
+    private string Initials
+    {
+        get
+        {
+            var words = Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 0)
+            {
+                return "?";
+            }
+
+            return words.Length >= 2
+                ? $"{words[0][0]}{words[1][0]}".ToUpperInvariant()
+                : words[0][..Math.Min(2, words[0].Length)].ToUpperInvariant();
+        }
+    }
+
+    // Placeholder art is decorative, but the tile still stands in for the product, so label it.
+    private string AriaLabel => $"{Name} (placeholder image)";
+
+    // Deterministic FNV-1a hash: unlike string.GetHashCode (randomized per process) this yields the same
+    // accent + motif for a given name across renders, restarts, and servers.
+    private static int StableHash(string value)
+    {
+        unchecked
+        {
+            var hash = 2166136261u;
+            foreach (var ch in value)
+            {
+                hash = (hash ^ ch) * 16777619u;
+            }
+            return (int)(hash & 0x7fffffff);
+        }
+    }
+}
