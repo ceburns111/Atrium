@@ -14,4 +14,7 @@
   build). Deferred to a supervised step-4 pass.
 
 ### Queue state at handoff
-Nothing started in the queue. Next: item 10 (ADR sweep). Autonomy boundary = docs only (10,2,3,1).
+Nothing started in the queue. Next: create branch `overnight/2026-07-01`, green-baseline check, then item
+10 (ADR sweep). Plan: run the whole queue unattended on that branch (docs 10,2,3,1 → code 4,6 → low/
+tomorrow), one atomic commit per item, orchestrator+subagents, escalation/backoff per README. Deterministic
+gate only; live verification deferred to a supervised morning pass. Docker up; aspire not required.
