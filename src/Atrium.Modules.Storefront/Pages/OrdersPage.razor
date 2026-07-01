@@ -1,0 +1,51 @@
+@page "/storefront/orders"
+@attribute [Authorize]
+@inject OrdersClient Orders
+
+<PageTitle>Orders</PageTitle>
+
+<PageHeader Eyebrow="Storefront" Title="Orders" Description="Your order history, served by the Storefront app service from its own database.">
+    <Actions>
+        <a class="btn btn--secondary" href="/storefront">Browse</a>
+    </Actions>
+</PageHeader>
+
+@if (_orders is null)
+{
+    <p class="empty">Loading orders…</p>
+}
+else if (_orders.Count == 0)
+{
+    <p class="empty">No orders yet. <a href="/storefront">Browse products</a>.</p>
+}
+else
+{
+    @foreach (var order in _orders)
+    {
+        <div class="card order-card">
+            <div class="order-card__head">
+                <span class="order-card__id">Order #@order.Id</span>
+                <span class="order-card__date">@order.PlacedAtUtc.ToLocalTime().ToString("g")</span>
+                <span class="order-card__total">$@order.Total.ToString("N0")</span>
+            </div>
+            <table class="atrium-table">
+                <tbody>
+                    @foreach (var line in order.Lines)
+                    {
+                        <tr>
+                            <td>@line.ProductName</td>
+                            <td class="num">$@line.UnitPrice.ToString("N0")</td>
+                            <td class="num">×@line.Quantity</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    private IReadOnlyList<OrderDto>? _orders;
+
+    protected override async Task OnInitializedAsync() => _orders = await Orders.GetOrdersAsync();
+}

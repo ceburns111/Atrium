@@ -2,6 +2,7 @@
 #:package Aspire.Hosting.SqlServer@13.4.6
 #:package Aspire.Hosting.Keycloak@13.4.6-preview.1.26319.6
 #:project ../Atrium.Services.Catalog/Atrium.Services.Catalog.csproj
+#:project ../Atrium.Services.Storefront/Atrium.Services.Storefront.csproj
 #:project ../Atrium.Gateway/Atrium.Gateway.csproj
 #:project ../Atrium.Portal/Atrium.Portal.csproj
 #:property UserSecretsId=atrium-apphost-secrets
@@ -13,6 +14,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 // SQL Server (persisted in a Docker volume) with a database per service.
 var sql = builder.AddSqlServer("sql").WithDataVolume();
 var catalogDb = sql.AddDatabase("catalogdb");
+var storefrontDb = sql.AddDatabase("storefrontdb");
 
 // Keycloak (identity core): imports the atrium realm on startup; fixed port so its URL is stable.
 var keycloak = builder.AddKeycloak("keycloak", 8080).WithDataVolume().WithRealmImport("./realms");
@@ -26,11 +28,23 @@ var catalog = builder
     .WaitFor(keycloak)
     .WithHttpHealthCheck("/health");
 
-// Gateway (YARP): the single ingress; routes /catalog/* to the catalog service by discovery.
+// Storefront app vertical: owns its own order database and calls the Catalog core to price orders.
+var storefront = builder
+    .AddProject<Projects.Atrium_Services_Storefront>("storefront")
+    .WithReference(storefrontDb)
+    .WithReference(catalog)
+    .WithReference(keycloak)
+    .WaitFor(storefrontDb)
+    .WaitFor(keycloak)
+    .WithHttpHealthCheck("/health");
+
+// Gateway (YARP): the single ingress; routes /catalog/* and /storefront/* to the services by discovery.
 var gateway = builder
     .AddProject<Projects.Atrium_Gateway>("gateway")
     .WithReference(catalog)
-    .WaitFor(catalog);
+    .WithReference(storefront)
+    .WaitFor(catalog)
+    .WaitFor(storefront);
 
 // Portal (Blazor Server host): OIDC against Keycloak; calls the gateway with the user's bearer token.
 builder

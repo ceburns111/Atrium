@@ -8,5 +8,6 @@
     <Project Path="src/Atrium.Modules.Storefront/Atrium.Modules.Storefront.csproj" />
     <Project Path="src/Atrium.Portal/Atrium.Portal.csproj" />
     <Project Path="src/Atrium.Services.Catalog/Atrium.Services.Catalog.csproj" />
+    <Project Path="src/Atrium.Services.Storefront/Atrium.Services.Storefront.csproj" />
   </Folder>
 </Solution>

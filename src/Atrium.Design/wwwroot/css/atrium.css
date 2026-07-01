@@ -651,6 +651,29 @@ a.card:hover {
     font-size: var(--text-md);
     color: var(--ink);
 }
+.order-card {
+    margin-bottom: var(--space-4);
+}
+.order-card__head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-4);
+    margin-bottom: var(--space-3);
+}
+.order-card__id {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--ink);
+}
+.order-card__date {
+    font-size: var(--text-sm);
+    color: var(--muted);
+}
+.order-card__total {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    color: var(--ink);
+}
 
 /* ---------- Toasts ---------- */
 .toast-host {

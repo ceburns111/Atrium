@@ -1,6 +1,7 @@
 using Atrium.Abstractions;
 using Atrium.Modules.Storefront.Cart;
 using Atrium.Modules.Storefront.Catalog;
+using Atrium.Modules.Storefront.Orders;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,8 +22,12 @@ public sealed class StorefrontModule : IModule
     {
         services.AddScoped<CartService>();
 
-        // The catalog is reached through the gateway; service discovery resolves the logical name.
+        // Both the catalog reads and the order writes go through the gateway; service discovery
+        // resolves the logical name.
         services.AddHttpClient<CatalogClient>(client =>
+            client.BaseAddress = new Uri("https+http://gateway")
+        );
+        services.AddHttpClient<OrdersClient>(client =>
             client.BaseAddress = new Uri("https+http://gateway")
         );
     }

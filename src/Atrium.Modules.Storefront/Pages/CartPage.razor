@@ -3,6 +3,7 @@
 @implements IDisposable
 @inject CartService Cart
 @inject ToastService Toasts
+@inject OrdersClient Orders
 @inject NavigationManager Nav
 
 <PageTitle>Cart</PageTitle>
@@ -57,11 +58,15 @@ else
 }
 
 @code {
-    private void PlaceOrder()
+    private async Task PlaceOrder()
     {
-        Toasts.Show($"Order placed — ${Cart.Total:N0}", ToastVariant.Success);
+        var request = new CreateOrderRequest(
+            Cart.Lines.Select(l => new OrderItemRequest(l.Product.Id, l.Quantity)).ToList()
+        );
+        var order = await Orders.CreateAsync(request);
         Cart.Clear();
-        Nav.NavigateTo("/storefront");
+        Toasts.Show($"Order placed — ${order?.Total ?? 0:N0}", ToastVariant.Success);
+        Nav.NavigateTo("/storefront/orders");
     }
 
     protected override void OnInitialized() => Cart.Changed += Refresh;

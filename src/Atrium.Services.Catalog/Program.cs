@@ -20,7 +20,7 @@ builder
         realm: "atrium",
         options =>
         {
-            options.Audience = "atrium-catalog";
+            options.Audience = "atrium";
             options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
             options.TokenValidationParameters.NameClaimType = "preferred_username";
         }
