@@ -9,7 +9,7 @@
 - `8483066` — Added `Dialog` primitive (native `<dialog>`/`showModal`) and modal-ised Admin create/edit;
   removed the create-card + inline-edit row + dead CSS.
 - Also: committed the Dialog/modal design spec; a csharpier formatting nit in CatalogEndpoints.
-- Set up this `docs/progress/` system + `atrium-overnight-run` memory for resumable work.
+- Set up this `docs/runs/` system + `atrium-overnight-run` memory for resumable work.
 - **Not yet verified in a browser:** the session-expired panel and the Admin modal (stack was on the old
   build). Deferred to a supervised step-4 pass.
 
@@ -39,7 +39,7 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
   `.claude/skills/**`. Grant added to `.claude/settings.local.json` (`autoMode.allow`, skills-scoped only;
   gitignored). Two classifier self-modification denials en route (item-3 dispatch, then the settings write)
   — correctly refused to let the agent grant *itself* permissions; the user authored/authorized the grant.
-  New `docs/progress/SKILL-REVIEW.md` ledger tracks every auto-authored skill for morning keep/discard.
+  New `docs/runs/SKILL-REVIEW.md` ledger tracks every auto-authored skill for morning keep/discard.
 - `f30e9ae` — **Item 3 (AGENTS.md + authoring skills)** done. Root `AGENTS.md` orientation hub + three real
   skills `atrium-service`/`atrium-module`/`atrium-contracts` (mirror `atrium-ui` frontmatter; all load
   cleanly — harness re-listed them). Implementer subagent (high confidence), Tier 0. Gate: build 0W/0E;

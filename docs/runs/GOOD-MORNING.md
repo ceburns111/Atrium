@@ -2,7 +2,7 @@
 
 **Branch:** `feat/storefront-checkout-diagrams` (off the unmerged `fix/modal-center-and-reports-gate`).
 **`main` is untouched.** Gate green throughout: `dotnet build` **0W/0E**, `dotnet test` **56/56**, Docker up.
-Full detail in `docs/progress/` (STATUS / QUEUE / LOG); this is the TL;DR.
+Full detail in `docs/runs/` (STATUS / QUEUE / LOG); this is the TL;DR.
 
 > Run 1 (the overnight ADRs/OpenAPI/OTel/role-gating run) is already merged to `main`. This is a **new**
 > queue built the same way — thin orchestrator + one implementer subagent per item, deterministic gate,

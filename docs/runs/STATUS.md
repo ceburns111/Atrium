@@ -5,8 +5,8 @@
 ## ✅ RUN 2 COMPLETE — queue drained, wound down cleanly (2026-07-01)
 
 All seven items (A–G) are done and committed on `feat/storefront-checkout-diagrams`; `main` is untouched.
-Gate green throughout (build 0W/0E, tests **56/56**, Docker up). Wake-up summary: **`GOOD-MORNING.md`** at
-the repo root. **Nothing left that's confidently doable unattended** — everything remaining NEEDS the user
+Gate green throughout (build 0W/0E, tests **56/56**, Docker up). Wake-up summary: **`docs/runs/GOOD-MORNING.md`**.
+**Nothing left that's confidently doable unattended** — everything remaining NEEDS the user
 or the live stack (see "Supervised pass" in `QUEUE.md`): live login/anon/checkout verification, and the
 subjective dark-mode / image look (E/F/G). Then review + merge the branch → `main`.
 
