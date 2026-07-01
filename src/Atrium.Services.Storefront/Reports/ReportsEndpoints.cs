@@ -11,11 +11,10 @@ namespace Atrium.Services.Storefront.Reports;
 /// </summary>
 public static class ReportsEndpoints
 {
-    public static void MapReportEndpoints(this IEndpointRouteBuilder app)
+    // Mapped onto the parent "/storefront" group (auth applied there), so this owns only "/reports".
+    public static void MapReportEndpoints(this IEndpointRouteBuilder storefront)
     {
-        var reports = app.MapGroup("/storefront/reports")
-            .WithTags("Reports")
-            .RequireAuthorization();
+        var reports = storefront.MapGroup("/reports").WithTags("Reports");
 
         reports.MapGet("/sales", GetSalesReport);
     }

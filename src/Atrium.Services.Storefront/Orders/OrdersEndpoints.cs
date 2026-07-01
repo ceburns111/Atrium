@@ -10,9 +10,10 @@ namespace Atrium.Services.Storefront.Orders;
 /// </summary>
 public static class OrdersEndpoints
 {
-    public static void MapOrderEndpoints(this IEndpointRouteBuilder app)
+    // Mapped onto the parent "/storefront" group (auth applied there), so this owns only "/orders".
+    public static void MapOrderEndpoints(this IEndpointRouteBuilder storefront)
     {
-        var orders = app.MapGroup("/storefront/orders").WithTags("Orders").RequireAuthorization();
+        var orders = storefront.MapGroup("/orders").WithTags("Orders");
 
         orders.MapPost("/", CreateOrder);
         orders.MapGet("/", GetOrders);

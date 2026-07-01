@@ -46,7 +46,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHealthChecks("/health");
-app.MapOrderEndpoints();
-app.MapReportEndpoints();
+
+// The service boundary, stated once: everything this vertical serves lives under /storefront and needs
+// an authenticated caller. Each feature maps its own relative subtree onto this group, so the routes
+// nest the way the folders do (Storefront › Orders, Storefront › Reports).
+var storefront = app.MapGroup("/storefront").RequireAuthorization();
+storefront.MapOrderEndpoints();
+storefront.MapReportEndpoints();
 
 app.Run();
