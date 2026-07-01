@@ -25,7 +25,7 @@ procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 | 4c Storefront vertical (own DB) + slice→core | ✅ | `cb0f5c4` |
 | 5 Admin + Reports modules (admin-role writes, real reports) | ✅ | `3d40061` |
 | 6 Docs (ARCHITECTURE + 6 ADRs + BEYOND-THE-DEMO) | ✅ | `653911d` |
-| 7 Tests (curated 3-unit + 2-integration suite) | ✅ | _this commit_ |
+| 7 Tests (curated 3-unit + 2-integration suite) | ✅ | `b0c1035` |
 | 7 Polish (responsive/focus/loading pass) | ▢ next (optional) | — |
 
 (The TaskList tool is session-scoped — it starts empty each session; recreate tasks for the phase you pick up.)
