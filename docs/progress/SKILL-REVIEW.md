@@ -33,9 +33,20 @@ git rm -r .claude/skills/<name>          # if already committed on the branch
 
 | # | Skill (`.claude/skills/<name>`) | Trigger (`description:` gist) | Authored | Commit | Status |
 |---|---------------------------------|-------------------------------|----------|--------|--------|
-| 1 | `atrium-service` | Building/editing an `Atrium.Services.*` backend service — feature folders, `Map*Endpoints`+tags+auth, Dapper/sprocs/DbUp/Mapperly, co-located repo iface + integration test. Triggers on any `.cs` under `src/Atrium.Services.*`. | 2026-07-01 (item 3) | `f30e9ae` | pending |
-| 2 | `atrium-module` | Building/editing an `Atrium.Modules.*` UI module — `IModule`, typed client w/ token attach + `ThrowIfSessionExpired`, auto `@page` routes. Defers visuals to `atrium-ui`. Triggers on `.cs`/`.razor` under `src/Atrium.Modules.*`. | 2026-07-01 (item 3) | `f30e9ae` | pending |
-| 3 | `atrium-contracts` | Adding/editing shared DTOs in `src/Atrium.Contracts` — DTO-only sealed records, breaking change fails both sides. Triggers on `.cs` under `src/Atrium.Contracts`. | 2026-07-01 (item 3) | `f30e9ae` | pending |
+| 1 | `atrium-service` | Building/editing an `Atrium.Services.*` backend service — feature folders, `Map*Endpoints`+tags+auth, Dapper/sprocs/DbUp/Mapperly, co-located repo iface + integration test. Triggers on any `.cs` under `src/Atrium.Services.*`. | 2026-07-01 (item 3) | `f30e9ae` | kept |
+| 2 | `atrium-module` | Building/editing an `Atrium.Modules.*` UI module — `IModule`, typed client w/ token attach + `ThrowIfSessionExpired`, auto `@page` routes. Defers visuals to `atrium-ui`. Triggers on `.cs`/`.razor` under `src/Atrium.Modules.*`. | 2026-07-01 (item 3) | `f30e9ae` | kept |
+| 3 | `atrium-contracts` | Adding/editing shared DTOs in `src/Atrium.Contracts` — DTO-only sealed records, breaking change fails both sides. Triggers on `.cs` under `src/Atrium.Contracts`. | 2026-07-01 (item 3) | `f30e9ae` | kept |
+
+### Review 2026-07-01 (morning gate)
+
+All 3 run-authored skills verified against source and **kept**. Every referenced ADR (0001–0009),
+the guide (`docs/guides/wire-up-a-new-app.md`), and every cited file exist; spot-checked claims match
+reality (repo iface co-located `CatalogRepository.cs:10`; `ProductDto` signature verbatim;
+`ThrowIfSessionExpired()` precedes `EnsureSuccessStatusCode()` `CatalogClient.cs:49-50`). Triggers are
+path-scoped and won't misfire. One precision fix applied to `atrium-service`: the role-claim gotcha now
+points at `Atrium.Services.Catalog/Program.cs` (the real role-gated example) rather than implying
+Storefront role-gates. Note: `atrium-ui` exists on disk but is **not** run-authored (committed Phase 0,
+`25eb940`, already on `main`) — out of scope for this ledger.
 
 ## Notes
 

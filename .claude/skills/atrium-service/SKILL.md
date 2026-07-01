@@ -55,8 +55,9 @@ over HTTP (Storefront → Catalog). Decide before you start — the vertical is 
   run `DatabaseInitializer.Initialize(...)` before serving, then `UseAuthentication`/`UseAuthorization`,
   `MapHealthChecks("/health")`, and the service-root `MapGroup("/<name>").RequireAuthorization()`.
   **Gotcha:** to gate on a role you MUST set both `MapInboundClaims = false` and
-  `RoleClaimType = "role"` or every caller 403s (see
-  [ADR-0003](../../../docs/adr/0003-yarp-keycloak-auth.md)).
+  `RoleClaimType = "role"` or every caller 403s — the worked example (with comments) is
+  `Atrium.Services.Catalog/Program.cs`, which role-gates admin writes; Storefront relays a bearer and
+  does not role-gate (see [ADR-0003](../../../docs/adr/0003-yarp-keycloak-auth.md)).
 - **App-vertical bearer relay** ([ADR-0005](../../../docs/adr/0005-slice-calls-core.md)): when calling a
   core service, add `AddHttpContextAccessor()`, an `AddHttpClient<…>` pointed at `https+http://<core>`,
   and forward the incoming `Authorization` header — reference
