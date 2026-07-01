@@ -113,10 +113,11 @@ Both services use the same recipe (see [ADR-0002](adr/0002-dapper-sprocs-dbup.md
 ## Auth model
 
 - **Portal → Keycloak: OIDC** (confidential client `atrium-portal`, secret injected by the AppHost as
-  `Keycloak__PortalSecret`). Browse/checkout require login.
-- **Services → Keycloak: JWT bearer.** Every service requires a valid token with the shared `atrium`
-  audience (a realm custom-audience mapper adds it). Reads are open to any authenticated user; writes
-  (Catalog `POST`/`PUT /catalog/products`) require the `admin` policy.
+  `Keycloak__PortalSecret`). **Checkout requires login; catalog browsing is anonymous.**
+- **Services → Keycloak: JWT bearer.** Protected endpoints require a valid token with the shared `atrium`
+  audience (a realm custom-audience mapper adds it). Catalog **reads** (`GET /catalog/products`,
+  `/categories`) are `.AllowAnonymous()` so the storefront browses signed-out; all other reads are open to
+  any authenticated user; writes (Catalog `POST`/`PUT /catalog/products`) require the `admin` policy.
 - **Roles are a flat `role` claim.** Both Portal and Catalog set `MapInboundClaims = false` and
   `RoleClaimType = "role"` so `RequireRole("admin")` matches — see [ADR-0003](adr/0003-yarp-keycloak-auth.md)
   and the "403 for everyone" gotcha in HANDOFF.
