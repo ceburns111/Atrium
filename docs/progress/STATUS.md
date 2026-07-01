@@ -5,16 +5,19 @@
 ## Where we are
 
 Run resumed on branch `overnight/2026-07-01`. Baseline green (build 0W/0E, tests 22/22, Docker up).
-**ALL DOCS DONE** (10/2/3/1). **CODE phase in progress:** item #4 (OpenAPI+Redoc) DONE — `bc7afd7`
-(Tier-1 APPROVE WITH NOTES, live-check deferred). **Item #6 (OpenTelemetry + Serilog) is NEXT** —
-attempt 1, the LAST queued item before low/tomorrow. Code order: ~~4~~ → **6**.
+**ALL DOCS DONE** (10/2/3/1). **CODE phase:** #4 OpenAPI+Redoc (`bc7afd7`) + #6 OTel/Serilog (`d51a902`)
+DONE — both Tier-1 APPROVE WITH NOTES, live-check deferred. Original auto-run queue **DRAINED**.
 
-Item 6 has a runtime surface → **Tier-1 adversarial review applies** (implementer → orchestrator gate incl.
-`dotnet test` → reviewer → commit). Docker up. Live/trace verification DEFERRED to the supervised morning
-pass — commit unit/integration-verified with a "live-verification deferred" note.
+**Continuing unsupervised (user said keep going with anything confidently doable, 2026-07-01).** Next:
+**Item #7 (application logging)** — user-added; the repo has ~zero deliberate logging. Deterministic,
+build+test-verifiable, no live stack → confidently doable. Tier-1 applies (touches client/auth-adjacent
+paths + broad surface). Then attempt the low/tomorrow items I can do confidently (csharpier fluent-chain
+FEASIBILITY check — likely not a supported option; a static UI ungraceful-scenario AUDIT as a report). The
+`testuser`→customer-login item needs a Keycloak realm change + volume reset + live verify → SUPERVISED,
+leave for morning. Dialog aesthetic polish is subjective + needs the user's eye → SUPERVISED, leave.
 
-After item 6 commits, the auto-run queue is DRAINED. Remaining work is all `[~]` supervised/low (morning
-live pass, skill keep/discard, the low/tomorrow items) — leave STATUS pointing there and stop cleanly.
+When out of confidently-doable work: write a prominent **root-level wake-up summary doc** (user request)
+and stop cleanly, STATUS pointing at the supervised remainder.
 
 ### Skill-authoring capability (NEW, 2026-07-01)
 User authorized unattended skill authoring under `.claude/skills/**` — grant in `.claude/settings.local.json`

@@ -56,6 +56,25 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
 
 ### CODE PHASE (starts here)
 
+- `d51a902` — **Item 6 (OTel + Serilog)** done. New shared `Atrium.ServiceDefaults` (Serilog provider +
+  OTel tracing, OTLP-guarded) wired into all four hosts. Implementer (high confidence) + **Tier-1 review:
+  APPROVE WITH NOTES**. **One repair applied before commit:** Serilog replacing the MEL factory dropped the
+  hosts' `appsettings` `Microsoft.AspNetCore→Warning` override (resurfaced framework Info logs + doubled
+  request logging) → restored via `MinimumLevel.Override` in the shared wiring. Gate: csharpier no-op,
+  build 0W/0E, `dotnet test` 22/22.
+  - **Checklist correction (from review):** logs use a Console sink → Aspire dashboard **Console** tab (not
+    **Structured**, which needs OTLP log export via `Serilog.Sinks.OpenTelemetry` — left as a supervised
+    enhancement). Traces DO span Portal→Gateway→Service→SQL (Blazor interactive-circuit calls start their
+    own root trace — expected).
+  - **LIVE-VERIFICATION DEFERRED (morning):** `aspire run` → dashboard **Traces**: exercise a Storefront
+    action, confirm one trace spans portal→gateway→storefront→catalog with SQL child spans; **Console** tab
+    shows structured Serilog request lines.
+
+- **Follow-on item queued (user, 2026-07-01, live): "application logging."** Audit found **~zero deliberate
+  app logging** (1 `ILogger` injected in `SessionErrorBoundary.razor`, 0 `Log*()` call sites). Item 6 gave
+  us the pipeline; this item adds purposeful structured `ILogger<T>` logging at real seams. Deterministic,
+  no live stack needed → confidently doable unattended. Added to QUEUE as item **7**.
+
 - `bc7afd7` — **Item 4 (OpenAPI + Redoc)** done. `Microsoft.AspNetCore.OpenApi` 10.0.9 (per-csproj) on
   Catalog + Storefront: `AddOpenApi()` (DI, unconditional) + Dev-only, anonymous `MapOpenApi()`
   (`/openapi/v1.json`) and a Redoc `/docs` page (CDN standalone), mapped outside the bearer-only groups.

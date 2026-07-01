@@ -33,7 +33,14 @@ if the stack is up (else commit with a "browser-unverified" note — see `README
       `/openapi/v1.json` (makes the existing `.WithTags` meaningful). Then a light **Redoc** page per
       service (Redoc standalone from CDN, `spec-url` → that service's `/openapi/v1.json`). Per-service
       docs, **no Swashbuckle**, no Scalar. Verify the JSON + Redoc render for Catalog and Storefront.
-- [ ] **6 · OpenTelemetry spans + structured logging (Serilog)** (code). Add Serilog + OTel tracing
+- [ ] **7 · Application logging** (code; **added 2026-07-01 by user**). Repo has ~zero deliberate logging
+      (1 injected `ILogger`, 0 `Log*()` calls); item 6 added the Serilog/OTel pipeline but nothing writes to
+      it. Add purposeful **structured** `ILogger<T>` logging at real seams: repository ops (esp. failures /
+      sproc `THROW`), the typed HTTP clients (401/session-expiry + non-success), endpoint business events
+      (order placed, product created/updated), DbUp migration runs, the error boundary. Correct levels,
+      message templates with named properties, **no tokens/PII, no per-item noise**. Gate = build +
+      unit/integration green; live emission is a morning check. Deterministic → runs unattended.
+- [x] **6 · OpenTelemetry spans + structured logging (Serilog)** (code) — `d51a902`. Shared `Atrium.ServiceDefaults` project; Tier-1 APPROVE WITH NOTES (one repair applied: restore `Microsoft.AspNetCore→Warning`); unit/integration green; live-check deferred. Add Serilog + OTel tracing
       across services/gateway/portal. Gate = build + unit/integration + confirm traces/logs emit on the
       running stack (or note browser/stack-unverified). Atomic commit.
 
