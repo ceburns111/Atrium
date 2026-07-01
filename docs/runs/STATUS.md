@@ -1,6 +1,34 @@
 # STATUS — read me first
 
-**Updated:** 2026-07-01 (Run 2 set up; green baseline confirmed).
+**Updated:** 2026-07-01 (Run 2 complete + live-verified; **Run 3 planned, not started**).
+
+## ⏭ NEXT: RUN 3 — planned, NOT started (resume here)
+
+The user will **clear context**, then start an **unattended run** against the new `TODO.md` backlog. A fresh
+zero-context session resumes from this section. **Confirm the two open decisions with the user before
+building** (don't assume), then set up a `QUEUE.md` (archive/replace the Run-2 queue below), branch, baseline-green,
+and run the loop per `README.md`.
+
+**The `TODO.md` backlog + honest unattended-ability (agreed 2026-07-01):**
+| Item | Unattended? | Notes |
+|---|---|---|
+| **Microsoft Test Platform + xUnit** | ✅ full | Pure code+config; build/test gate catches it. Best first item. |
+| **Azure deploy via IaC** | ⚠️ author-only | Write + lint Bicep/Terraform + `what-if`; **no live deploy** unattended (needs the user's Azure account, creds, cost-limit setup — their listed prereq). Deploy = supervised. |
+| **Support chatbot + MFA + Azure AI Foundry** | ⚠️ partial | Chat **module/UI + a mockable AI backend** is unattended-safe; **Foundry wiring + MFA** need cloud creds/decisions → supervised. |
+
+**Recommended scope:** unattended-safe slice = (1) MTP/xUnit end-to-end; (2) **author** the Azure IaC +
+scaffold the chatbot module against a **mocked** AI backend — all gate-verifiable — leaving cloud/credential
+wiring teed up for a supervised session.
+
+**Open decisions to confirm at run start:**
+1. **Scope:** the full unattended-safe slice above, or **just MTP/xUnit first** as a clean single-item run?
+2. **Branch base:** off `main` (clean; these items are largely independent of the storefront work) or off the
+   current unmerged `feat/storefront-checkout-diagrams`? (Run 2 is still unmerged — see below.)
+
+**Also still pending from Run 2:** review + merge `feat/storefront-checkout-diagrams` → `main` (all A–G
+done + live-verified). And `HANDOFF.md` retirement was deferred (6 docs link to it — fold content + fix links first).
+
+---
 
 ## ✅ RUN 2 COMPLETE — queue drained, wound down cleanly (2026-07-01)
 
