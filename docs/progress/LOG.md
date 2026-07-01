@@ -219,3 +219,14 @@ merged to `main`. Source of the new items: `TODO.md` "🆕 New work" + "## Last"
     failure (keep cart, same key) instead of confirming a phantom "Order #0".
   - Gate: csharpier no-op, build 0W/0E, `dotnet test` **56/56** (+30 payment unit tests). **Live checkout
     (approve/decline, cart-survives-signin, narrow viewport) = supervised.**
+- `6c015d0` — **Item D (architecture + UI-flow diagrams)** done. Replaced the ASCII topology in
+  `docs/ARCHITECTURE.md` with a Mermaid container diagram and added `docs/diagrams/` with three flow
+  diagrams (auth/token-propagation `sequenceDiagram`; the real end-to-end checkout `flowchart` incl. the
+  simulated-payment + `0002` decline path; module-discovery + role-gating `flowchart`) + a README index;
+  cross-linked from ADRs 0001/0003/0004/0005/0009. Implementer (high confidence, thorough grep self-check).
+  **Accuracy-reviewed by the orchestrator directly** (proportionate for a well-verified docs item — I have
+  first-hand context from mapping the platform): confirmed all four blocks are valid GitHub-flavored Mermaid
+  (balanced fences, correct diagram-type syntax) and spot-checked the load-bearing edges against code — the
+  gateway is pass-through (no auth box), the Storefront→Catalog hop is **direct** (`https+http://catalog`,
+  not via the gateway), catalog GET is anonymous, `/storefront/checkout` + `/storefront/orders` exist, and
+  `OrderPricing.cs` exists as named. Docs gate: accuracy check passed; build 0W/0E (markdown-only).

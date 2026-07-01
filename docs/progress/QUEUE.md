@@ -95,8 +95,14 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
       **Flag in LOG:** call out clearly that payment is simulated (no real gateway, no card storage).
       </details>
 
-- [ ] **D · Architecture + UI-flow diagrams** (docs, mermaid — Tier-1 accuracy). Depends on B+C so the
-      checkout/payment flow is real when drawn. **Plan:** add **Mermaid** diagrams that actually explain
+- [x] **D · Architecture + UI-flow diagrams** (docs, mermaid) — `6c015d0`. Mermaid topology in
+      `ARCHITECTURE.md` (replaced ASCII) + `docs/diagrams/` {auth-sequence, checkout-flow, module-discovery}
+      + index; cross-linked from ADRs 0001/0003/0004/0005/0009. Accuracy-reviewed by the orchestrator
+      directly (all 4 blocks valid GFM mermaid; load-bearing edges grep-verified: gateway pass-through,
+      direct SF→Catalog relay, anon catalog GET, checkout routes, `OrderPricing`). Build 0W/0E (md-only).
+
+      <details><summary>original spec</summary>
+      Depends on B+C so the checkout/payment flow is real when drawn. **Plan:** add **Mermaid** diagrams that actually explain
       the platform (ARCHITECTURE.md is ASCII-only today). At minimum: (1) a **C4-ish container/topology**
       graph (browser → Portal shell + reflection-discovered modules → YARP gateway → Catalog / Storefront
       services → SQL; Keycloak OIDC/JWT) — fold into `docs/ARCHITECTURE.md`; (2) an **auth sequence**
@@ -107,6 +113,7 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
       `docs/diagrams/` and link them from ARCHITECTURE.md + relevant ADRs. Docs gate = build-clean
       (n/a) + **accuracy**: every node/edge/arrow grep-verified against real files/types/routes. Tier-1
       because it's the showcase "explain the platform" deliverable.
+      </details>
 
 ## "## Last" bucket — best-effort + flag (subjective / asset-driven)
 

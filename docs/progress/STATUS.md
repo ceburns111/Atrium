@@ -21,13 +21,13 @@ gate → **C** basic payment/checkout → **D** architecture + UI-flow mermaid d
 
 ## Next concrete action
 
-**Items A (`afb89eb`) + B (`7ab96e5`) + C (`da4abba`) DONE.** Start **item D** — architecture + UI-flow
-**mermaid** diagrams (docs; Tier-1 *accuracy*). Dispatch an implementer to add mermaid diagrams that explain
-the platform: (1) container/topology (fold into `docs/ARCHITECTURE.md`), (2) auth/token-propagation sequence
-(ADR-0003/0004), (3) the checkout UI flow now real end-to-end (anon browse → cart → sign-in gate → payment →
-order → confirmation, items B+C), (4) module-discovery + role-gated cards/nav (item A). Put flow diagrams
-under `docs/diagrams/`, link from ARCHITECTURE.md + ADRs. Then a Tier-1 **accuracy** review (grep every
-node/edge against real files/types/routes) → docs gate (build-clean + accuracy) → commit.
+**Items A–D DONE** (`afb89eb` / `7ab96e5` / `da4abba` / `6c015d0`). The four "core" items are complete.
+**Now the "## Last" bucket — best-effort + flag (subjective):** **item E** dark mode, then **item F** store
+images. Dispatch an implementer for E: add a `:root[data-theme="dark"]` (+ `prefers-color-scheme` fallback)
+token override in `tokens.css` (colors only; never touch component CSS — they read the vars) + a small
+theme-toggle primitive in `Atrium.Design` wired into the shell top-bar, persisting to `localStorage` via
+prerender-guarded interop (ADR-0010). Gate = build + test green; the *look* is subjective → mark `[~]`, flag
+for the user, do NOT declare "done." Then F (generated on-brand SVG placeholders; flag for real imagery).
 
 ## Autonomy boundary
 
