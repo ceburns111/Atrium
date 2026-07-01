@@ -77,7 +77,7 @@ deferred** (see below) — it is **not** in this run.
 > item — verified 2026-07-01 (`global.json` runner = MTP, both test projects on `xunit.v3.mtp-v2`, no
 > legacy `Microsoft.NET.Test.Sdk`). Tick it in `TODO.md`; no work.
 
-### A · NavMenu "loaded vs visible" module count — Tier-1 (small, deterministic)
+### A · NavMenu "loaded vs visible" module count — Tier-1 — [x] DONE
 - [ ] **Problem.** `NavMenu.razor`'s `nav__foot` shows `@Catalog.Modules.Count module(s) loaded`
   (e.g. "3 modules loaded") even when a customer/anon only *sees* 1 module in the left-nav — misleading.
 - **Plan.** Compute the count the current user can actually **see** (the same role filter already applied

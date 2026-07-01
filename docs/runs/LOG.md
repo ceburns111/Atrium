@@ -291,3 +291,20 @@ down cleanly, wrote `GOOD-MORNING.md`. Remaining work is all supervised (live/vi
   added `docs/bugs/CARROTPAD.png` (a stray screenshot) out-of-band during planning. The doc-move is folded
   into the run-setup commit (spec links updated `../../`→`../`); the PNG is left untracked (the user's,
   unrelated to Run 3). No `git add -A` during this run.
+
+### Item A — NavMenu visible-vs-loaded module count (code, Tier-1 auth-adjacent/display-only)
+- **Done.** Footer (`nav__foot`) now shows `"{visible} of {loaded} modules visible"` when role-gating
+  hides modules, collapsing to the original `"{N} module(s) loaded"` when the user sees all of them.
+  `src/Atrium.Portal/Components/Layout/NavMenu.razor` only. Visible count =
+  `Catalog.Modules.Count(m => m.RequiredRole is null || user.IsInRole(m.RequiredRole))`, using the
+  existing `[CascadingParameter] Task<AuthenticationState>` idiom (same as `MainLayout`/`Home.razor`);
+  no hard-coded module names, no new auth plumbing, no CSS.
+- **Orchestrator review (light — display-only count, not an enforcement change):** verified the footer
+  agrees with the links the nav actually renders for all three personas — anon → "1 of 3", customer
+  (`[user,customer]`) → "1 of 3", admin → "3 modules loaded". Confirmed `IModule.RequiredRole` exists
+  (default null). **Latent assumption (flagged):** the footer counts by `IModule.RequiredRole` while the
+  nav links gate per `NavItem.RequiredRole`; they agree today because each module has one nav item at the
+  same role. If a future module contributes multiple nav items at differing roles, revisit.
+- **Gate (orchestrator re-ran authoritative):** csharpier check clean (71 files), build **0W/0E**,
+  `dotnet test` **56/56**. Implementer confidence: high. **Live check (supervised):** anon/testuser/admin
+  each see a correct, non-misleading count.

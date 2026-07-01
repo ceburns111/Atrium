@@ -7,7 +7,8 @@
 **Branch:** `feat/support-chatbot` (off `main`). **Baseline (run start):** csharpier no-op, build 0W/0E,
 `dotnet test` **56/56** (MTP runner confirmed), Docker up — green, cleared to run.
 
-**Current item:** **A · NavMenu visible-vs-loaded count** (next to execute). Queue: **A → C0 … C5**.
+**Current item:** **C0 · MAF/AG-UI package spike (go/no-go)** (next). ✅ **A done** (NavMenu
+visible-vs-loaded count). Queue: **A → C0 … C5**.
 Spec: **[`RUN3-SUPPORT-CHATBOT.md`](RUN3-SUPPORT-CHATBOT.md)**. Execute under `README.md` (thin
 orchestrator, one implementer subagent per item, deterministic gate, atomic commit per item). Keep this
 file + `LOG.md` current after every step. **`docs/bugs/CARROTPAD.png` is the user's stray asset — leave
