@@ -21,13 +21,13 @@ code)**, then an unattended session executes only what's been agreed. **Do NOT a
 discussion; after discussing, the agreed output may be research/plan docs (no code) and/or scoped local
 scaffolding — the user decides then.
 
-**Open decisions to confirm at run start:**
-1. **Branch base:** off `main` (clean; these items are independent of the storefront work) or off the current
-   unmerged `feat/storefront-checkout-diagrams`?
-2. Whether to run the unattended-safe slice **now** vs. **discuss the [DISCUSS FIRST] items first**, then run.
+**Open decision to confirm at run start:**
+- Whether to run the unattended-safe slice **now** vs. **discuss the [DISCUSS FIRST] items first**, then run.
+  (Branch base is settled: **off `main`** — Run 2 is now merged, so `main` is the clean base.)
 
-**Also still pending from Run 2:** review + merge `feat/storefront-checkout-diagrams` → `main` (all A–G done
-+ live-verified). And `HANDOFF.md` retirement was deferred (6 docs link to it — fold content + fix links first).
+**Run 2 is MERGED to `main`** (merge commit `09b42b8`, 2026-07-01; `main` green — build 0W/0E, tests 56/56).
+Branch `feat/storefront-checkout-diagrams` can be deleted at leisure. `HANDOFF.md` retirement is still
+deferred (6 docs link to it — fold content + fix links first).
 
 ---
 
