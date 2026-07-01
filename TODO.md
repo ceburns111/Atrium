@@ -31,20 +31,14 @@ Full detail: `docs/progress/` (STATUS / QUEUE / LOG) and `GOOD-MORNING.md`.
   inset: 0; margin: auto`. (An `@starting-style` entrance animation was tried and **reverted** — it
   glitched against Blazor re-renders, squishing the modal.) Verified centered live.
 
-## ⛔ Still left
-
-- [ ] **H1 · `CartPage.PlaceOrder` duplicate-order risk** — DECIDED: server-side idempotency key
-      (not a blind try/catch). Client sends a GUID per checkout (reused on retry); server dedupes so a
-      retry returns the original order. Touches Contracts (`CreateOrderRequest.IdempotencyKey`),
-      Orders sproc + a migration for a unique key column, repository + endpoint, module client, one
-      integration test. Plus the graceful catch (keep cart, safe retry toast). **← next up**
+##  Manual Test Required
 - [ ] Session-expired panel (force a 401) + Admin modal open/save/Esc — **NOT driven** in headless
       Playwright (interactive circuit + self-signed cert). Needs a real browser or an E2E harness.
 
 ## Clean Up 
-- [ ] Run overengineering check
-- [ ] Run clean up dead code etc check
-- [ ] Review potential slop from unattended runs in UI Modules
+- [ ] Implement cleanup findings (dead code, overeingineering, ui module slop and inconsistency)
+- [ ] Review for code drit
+- [ ] Update project specific tools/skills
 
 ## 🆕 New work
 - [ ] Payment form

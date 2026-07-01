@@ -328,18 +328,6 @@ button {
     border-radius: var(--r-lg);
     padding: var(--space-5);
 }
-a.card {
-    display: block;
-    color: inherit;
-    transition:
-        border-color var(--dur) var(--ease),
-        box-shadow var(--dur) var(--ease);
-}
-a.card:hover {
-    border-color: var(--line-strong);
-    box-shadow: var(--shadow-md);
-    text-decoration: none;
-}
 
 /* ---------- Button ---------- */
 .btn {

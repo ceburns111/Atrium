@@ -42,7 +42,7 @@ public sealed class OrderRepositoryTests : IAsyncLifetime
             new OrderLineDto("Headphones", 199m, 1), // 199
         };
 
-        var orderId = await NewRepository().CreateAsync(user, lines);
+        var orderId = await NewRepository().CreateAsync(user, Guid.NewGuid(), lines);
 
         Assert.True(orderId > 0);
 
@@ -64,11 +64,30 @@ public sealed class OrderRepositoryTests : IAsyncLifetime
             new OrderLineDto("Felt Cable Tray", 29m, 2),
         };
 
-        await NewRepository().CreateAsync(user, lines);
+        await NewRepository().CreateAsync(user, Guid.NewGuid(), lines);
 
         // The list sproc joins Orders×OrderItems (three flat rows); grouping must collapse them to one order.
         var order = Assert.Single(await NewRepository().GetOrdersAsync(user));
         Assert.Equal(3, order.Lines.Count);
         Assert.Contains(order.Lines, l => l.ProductName == "Task Lamp" && l.Quantity == 1);
+    }
+
+    [Fact]
+    public async Task Create_is_idempotent_for_a_repeated_key()
+    {
+        // Simulates a retry after an ambiguous failure: the same checkout key submitted twice must
+        // yield the original order — no second header, no duplicated lines.
+        const string user = "alice-idempotent";
+        var key = Guid.NewGuid();
+        var lines = new[] { new OrderLineDto("Task Lamp", 79m, 1) };
+
+        var first = await NewRepository().CreateAsync(user, key, lines);
+        var second = await NewRepository().CreateAsync(user, key, lines);
+
+        Assert.Equal(first, second); // same id, not a fresh order
+
+        var order = Assert.Single(await NewRepository().GetOrdersAsync(user));
+        Assert.Equal(first, order.Id);
+        Assert.Single(order.Lines); // the replay did not re-add the line
     }
 }
