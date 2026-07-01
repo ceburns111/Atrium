@@ -1,7 +1,7 @@
 # Atrium — handoff / resume point
 
 **Read this first, then `docs/ATRIUM-PLAN.md` for the full design.** This file is the "where we are and
-how to pick up" note. Last updated after **Phase 4** (2026-07-01).
+how to pick up" note. Last updated after **Phase 5** (2026-07-01).
 
 ## TL;DR
 
@@ -11,7 +11,7 @@ Atrium is a modular-monolith **Blazor Server portal** (rebuild of CozenDemo, whi
 **Storefront app vertical** (its own DB), authenticated by **Keycloak**. Backend is **Dapper + stored
 procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 
-## Status: Phases 0–4 done, committed. Next: Phase 5.
+## Status: Phases 0–5 done, committed. Next: Phase 6.
 
 | Phase | State | Commit |
 |---|---|---|
@@ -26,7 +26,7 @@ procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 | 6 Docs ("the rest") | ▢ next | — |
 | 7 Tests + polish | ▢ | — |
 
-Progress is also tracked in the task list (TaskList tool): Phase 5 = task #6, Phase 6 = #7, Phase 7 = #8.
+(The TaskList tool is session-scoped — it starts empty each session; recreate tasks for the phase you pick up.)
 
 ## How to run
 
@@ -42,7 +42,8 @@ Open `https://localhost:<portal-port>/`. Keycloak is at `https://localhost:8080`
 **Login:** `testuser` / `password` (customer) or `admin` / `password` (admin). The Aspire dashboard URL
 prints in the `aspire run` output.
 
-**UI-only quick look** (Home + Hello render without a backend; Storefront will 401 without the stack):
+**UI-only quick look** (the Home shell renders without a backend; module pages — Storefront/Admin/Reports —
+require the full stack and will redirect to login / 401 without it):
 ```
 cd /Users/ted/code/Atrium/src/Atrium.Portal && dotnet run --launch-profile http   # http://localhost:5035
 ```
