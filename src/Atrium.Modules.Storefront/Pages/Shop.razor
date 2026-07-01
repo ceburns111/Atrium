@@ -2,6 +2,7 @@
 @implements IDisposable
 @inject CatalogClient Catalog
 @inject CartService Cart
+@inject CartPersistence Persistence
 @inject ToastService Toasts
 
 <PageTitle>Storefront</PageTitle>
@@ -94,6 +95,16 @@ else
         catch (Exception ex) when (ex is not SessionExpiredException)
         {
             _failed = true;
+        }
+    }
+
+    // Rehydrate the persisted cart on the first interactive render (never during prerender — JS interop
+    // is unavailable then, per ADR-0010) so the cart badge is accurate on any entry into the storefront.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Persistence.HydrateAsync();
         }
     }
 

@@ -762,6 +762,70 @@ button {
     color: var(--ink);
 }
 
+/* ---------- Checkout: order summary + payment form ---------- */
+.checkout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-5);
+    align-items: start;
+}
+@media (max-width: 720px) {
+    .checkout {
+        grid-template-columns: 1fr;
+    }
+}
+.checkout__panel {
+    padding: var(--space-5);
+}
+.checkout__heading {
+    margin: 0 0 var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    color: var(--ink);
+}
+.checkout__note {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-xs);
+    color: var(--muted);
+}
+.checkout__total {
+    justify-content: flex-end;
+    margin-top: var(--space-4);
+}
+.pay-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+.pay-form__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+.confirmation {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+    text-align: left;
+}
+.confirmation__row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--muted);
+}
+.confirmation__row strong {
+    font-family: var(--font-mono);
+    color: var(--ink);
+}
+.confirmation__actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-3);
+}
+
 /* ---------- Toasts ---------- */
 .toast-host {
     position: fixed;

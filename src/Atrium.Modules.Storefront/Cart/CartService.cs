@@ -9,6 +9,13 @@ public sealed class CartLine
 }
 
 /// <summary>
+/// The minimal, persistable shape of a cart line: just the product id and quantity. Product details
+/// (name, price, blurb) are deliberately NOT stored — they are re-fetched from the catalog on hydrate
+/// so a persisted cart always re-prices against current catalog data and never carries stale prices.
+/// </summary>
+public sealed record CartSnapshotItem(int ProductId, int Quantity);
+
+/// <summary>
 /// The shopping cart, scoped per circuit and registered by the Storefront module itself — the host
 /// never knows it exists. Components subscribe to <see cref="Changed"/> to re-render on updates.
 /// </summary>
@@ -64,6 +71,21 @@ public sealed class CartService
     public void Clear()
     {
         _lines.Clear();
+        Changed?.Invoke();
+    }
+
+    /// <summary>The minimal id + quantity projection used to persist the cart.</summary>
+    public IReadOnlyList<CartSnapshotItem> Snapshot() =>
+        _lines.Select(l => new CartSnapshotItem(l.Product.Id, l.Quantity)).ToList();
+
+    /// <summary>
+    /// Replaces the cart's contents wholesale (used when rehydrating from persisted storage) and
+    /// notifies subscribers once. Lines are rebuilt by the caller from current catalog products.
+    /// </summary>
+    public void Restore(IEnumerable<CartLine> lines)
+    {
+        _lines.Clear();
+        _lines.AddRange(lines);
         Changed?.Invoke();
     }
 }
