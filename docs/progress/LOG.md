@@ -79,6 +79,14 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
   chain breaks by heuristic, not uniform one-per-line; unknown config keys silently ignored — only
   `printWidth`/`tabWidth`/`useTabs`/`endOfLine` honored). No config forces one-call-per-line. No code
   change; item closed with evidence.
+- **Low/tomorrow — `testuser`/customer-login: investigated (read-only), refined into QUEUE item 8.**
+  Finding: realm already has roles `user`/`customer`/`admin`; `testuser`=`[user,customer]` (a customer,
+  NOT internal), `admin`=`[user,admin]`. Both personas already exist → **no realm change/volume reset
+  needed** (original assumption corrected). Real gap: Admin (`Products.razor`) + Reports (`Dashboard.razor`)
+  use bare `[Authorize]` (auth-only) and `NavItem` is role-unaware, so a customer sees/opens Admin+Reports.
+  Portal has `RoleClaimType="role"` (Program.cs:63) so role gating will work. Concrete fix planned as item 8
+  (page `[Authorize(Roles="admin")]` + role-aware `NavItem` + shell filter). Held until item 7 commits to
+  avoid concurrent edits to shared Portal/Modules files. Needs a live testuser-vs-admin login to confirm.
 
 - `bc7afd7` — **Item 4 (OpenAPI + Redoc)** done. `Microsoft.AspNetCore.OpenApi` 10.0.9 (per-csproj) on
   Catalog + Storefront: `AddOpenApi()` (DI, unconditional) + Dev-only, anonymous `MapOpenApi()`

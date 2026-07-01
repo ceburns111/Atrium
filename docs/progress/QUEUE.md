@@ -66,8 +66,19 @@ Bring the stack up on the new build (`cd src/Atrium.AppHost && aspire run`), the
       silently ignored — only `printWidth`/`tabWidth`/`useTabs`/`endOfLine` are honored. No option forces
       one-call-per-line. Closing the item; the only lever (`printWidth`) would affect all formatting, not
       just chains. No code change.
-- [~] `testuser` vs `admin`: determine whether `testuser` mimics an internal user; if so, add a
-      **regular-customer** login that cannot see Admin/Reports (Keycloak realm change → volume reset). (code)
+- [ ] **8 · Role-gate Admin/Reports from customers** (code; refined from the `testuser`-vs-`admin` item,
+      2026-07-01). **Investigation done (read-only):** the realm ALREADY defines roles `user`/`customer`/
+      `admin`; **`testuser` is a customer** (`["user","customer"]`), `admin` is `["user","admin"]` — both
+      personas exist, so **NO realm change / volume reset is needed** (corrects the original assumption).
+      **The real gap:** `Products.razor` (Admin) and `Dashboard.razor` (Reports) use bare
+      `@attribute [Authorize]` (auth only, not role), and `NavItem` is role-unaware — so a customer sees
+      the Admin/Reports nav + can open those pages. Portal wiring supports role checks
+      (`RoleClaimType = "role"`, Program.cs:63), so `[Authorize(Roles="admin")]` will work. **Plan:**
+      (1) `@attribute [Authorize(Roles = "admin")]` on the Admin + Reports pages; (2) make nav role-aware —
+      add optional `RequiredRole` to `NavItem` (`Atrium.Abstractions`) + filter in the shell via
+      `<AuthorizeView>`; (3) confirm the Reports read endpoint is admin-gated server-side too. Build+test
+      verifiable; **needs a live login (testuser vs admin) in the morning to confirm the gating behaves.**
+      Tier-1 (auth). Hold until item 7 commits (shared files).
 - [ ] Update + add ADRs — rolled into item 10 above; keep this as the catch-all for later decisions. (doc)
 
 ## Done this session (for context)
