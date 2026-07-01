@@ -32,6 +32,9 @@
     --accent: #117b68;
     --accent-ink: #0c5a4c;
     --accent-soft: #e6f2ef;
+    /* Label colour for text/icons ON an accent fill (accent button). White reads on the deep light-mode
+       accent; dark mode flips it (the lighter dark accent needs a dark label to clear AA). */
+    --on-accent: #ffffff;
 
     /* Status — muted and harmonized with the neutral ramp, never alarming. */
     --success: #16785a;
@@ -92,6 +95,8 @@
     --accent: #2dbd9b;
     --accent-ink: #58d4b7;
     --accent-soft: #16362e;
+    /* Dark label on the luminous dark-mode accent — dark-on-teal clears AA where white would not. */
+    --on-accent: #08211b;
 
     --success: #35c99a;
     --success-soft: #14332a;
@@ -122,6 +127,7 @@
         --accent: #2dbd9b;
         --accent-ink: #58d4b7;
         --accent-soft: #16362e;
+        --on-accent: #08211b;
 
         --success: #35c99a;
         --success-soft: #14332a;

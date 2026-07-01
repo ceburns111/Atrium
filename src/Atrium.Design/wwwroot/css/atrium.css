@@ -361,14 +361,18 @@ button {
 }
 .btn--primary {
     background: var(--ink);
-    color: #fff;
+    /* --paper (not a hard #fff) so the label flips with the theme: near-white on the dark light-mode
+       ink button, near-black on the near-white dark-mode ink button. */
+    color: var(--paper);
 }
 .btn--primary:hover:not(:disabled) {
-    background: #000;
+    /* Nudge the ink toward the page colour — a subtle, theme-agnostic hover (was a hard-coded #000,
+       which turned the near-white dark-mode button black). */
+    background: color-mix(in srgb, var(--ink) 85%, var(--paper));
 }
 .btn--accent {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
 }
 .btn--accent:hover:not(:disabled) {
     background: var(--accent-ink);
@@ -635,7 +639,7 @@ button {
 .chip--on {
     background: var(--ink);
     border-color: var(--ink);
-    color: #fff;
+    color: var(--paper);
 }
 .product-grid {
     display: grid;
@@ -877,7 +881,9 @@ button {
     padding: var(--space-3) var(--space-4);
     border-radius: var(--r-md);
     background: var(--ink);
-    color: #fff;
+    /* --paper flips with the theme, so the default (ink) toast and the status variants below
+       (whose fills invert dark↔bright) all keep a legible label in both themes. */
+    color: var(--paper);
     box-shadow: var(--shadow-md);
     font-size: var(--text-sm);
     animation: toast-in var(--dur) var(--ease);
