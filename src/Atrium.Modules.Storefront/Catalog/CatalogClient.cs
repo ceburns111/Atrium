@@ -39,6 +39,7 @@ public sealed class CatalogClient(HttpClient http, AccessTokenHolder tokens)
             );
         }
         using var response = await http.SendAsync(request, ct);
+        response.ThrowIfSessionExpired();
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(ct)
             ?? throw new InvalidOperationException();

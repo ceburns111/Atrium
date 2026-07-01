@@ -23,6 +23,7 @@ public sealed class OrdersClient(HttpClient http, AccessTokenHolder tokens)
         };
         Authorize(message);
         using var response = await http.SendAsync(message, ct);
+        response.ThrowIfSessionExpired();
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<OrderDto>(ct);
     }
@@ -32,6 +33,7 @@ public sealed class OrdersClient(HttpClient http, AccessTokenHolder tokens)
         using var message = new HttpRequestMessage(HttpMethod.Get, "storefront/orders");
         Authorize(message);
         using var response = await http.SendAsync(message, ct);
+        response.ThrowIfSessionExpired();
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<IReadOnlyList<OrderDto>>(ct) ?? [];
     }

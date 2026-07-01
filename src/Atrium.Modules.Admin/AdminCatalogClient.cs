@@ -36,6 +36,7 @@ public sealed class AdminCatalogClient(HttpClient http, AccessTokenHolder tokens
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         Authorize(request);
         using var response = await http.SendAsync(request, ct);
+        response.ThrowIfSessionExpired();
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(ct)
             ?? throw new InvalidOperationException();
@@ -59,6 +60,10 @@ public sealed class AdminCatalogClient(HttpClient http, AccessTokenHolder tokens
         {
             return (await response.Content.ReadFromJsonAsync<ProductDto>(ct), null);
         }
+        // An expired token (401) is a dead session, not a per-request problem the page can toast past —
+        // let the shell's boundary prompt a re-login. A 403 (wrong role) keeps you signed in, so it
+        // stays an inline message.
+        response.ThrowIfSessionExpired();
         return response.StatusCode switch
         {
             HttpStatusCode.Forbidden => (null, "You need the admin role to change the catalog."),

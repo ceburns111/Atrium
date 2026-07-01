@@ -6,9 +6,17 @@ note. Last updated after **Phase 7 + a service reorg** (2026-07-01).
 
 ## ▶ Start here (this session)
 
-**First task: a Playwright smoke test of the service reorg** (commit `6b59938` moved every service file
-into feature folders + nested namespaces — build + all 20 tests pass, but it hasn't been driven in a
-browser yet). Steps:
+**Service reorg (`6b59938`) is now browser-verified** — the smoke flows below were driven by hand on
+2026-07-01 and looked good (storefront add→cart→order, Reports composed data, Admin inline-edit render,
+narrow-screen responsive). Nothing is pending; the build is at a clean stopping point.
+
+Candidate next work (all optional — pick per available time):
+- **Token-store option "B"** — remove the access token from the auth cookie via a small server-side
+  session-keyed store, surfaced to the circuit by a scoped service (see Known limitations / ADR-0004).
+- **`docs/BEYOND-THE-DEMO.md` items** — other verticals, Orders→core, polyrepo + contract-NuGet,
+  gateway route self-registration, prod service discovery, independent-UI deploy.
+
+<details><summary>Original smoke-test steps (kept for reference; already done by hand)</summary>
 
 1. **Start the stack** (Docker must be running): `cd src/Atrium.AppHost && aspire run`. Wait ~1–2 min,
    then find the Portal's **https** port: `lsof -iTCP -sTCP:LISTEN -P -n | grep Atrium.Po` and probe
@@ -23,8 +31,8 @@ browser yet). Steps:
      row and confirm Save/Cancel don't overlap the Blurb cell (that was a bug fixed in `0a5c75e`).
    - Resize to ~420px: sidebar collapses to a "Menu" drawer; wide tables scroll **within** their
      container (no page-level horizontal scroll).
-4. If green, the reorg is verified — move on to open work (nothing is pending; the build is at a clean
-   stopping point).
+
+</details>
 
 ## TL;DR
 
@@ -34,7 +42,7 @@ Atrium is a modular-monolith **Blazor Server portal** (rebuild of CozenDemo, whi
 **Storefront app vertical** (its own DB), authenticated by **Keycloak**. Backend is **Dapper + stored
 procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 
-## Status: Phases 0–7 done + service reorg, committed. Next: smoke-test the reorg (see ▶ above).
+## Status: Phases 0–7 done + service reorg, committed & browser-verified. No work pending (see ▶ above).
 
 | Phase | State | Commit |
 |---|---|---|
@@ -49,7 +57,7 @@ procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 | 6 Docs (ARCHITECTURE + 6 ADRs + BEYOND-THE-DEMO) | ✅ | `653911d` |
 | 7 Tests (curated 3-unit + 2-integration suite) | ✅ | `b0c1035` |
 | 7 Polish (responsive/focus/loading + 2 bug fixes) | ✅ | `0a5c75e` |
-| Service reorg (feature folders + ADR-0007) | ✅ (browser-smoke pending) | `6b59938` |
+| Service reorg (feature folders + ADR-0007) | ✅ (browser-verified 2026-07-01) | `6b59938` |
 
 (The TaskList tool is session-scoped — it starts empty each session; recreate tasks for the phase you pick up.)
 
@@ -131,7 +139,10 @@ dotnet test Atrium.slnx                                              # everythin
 ## Known limitations (intentional for a demo; document in Phase 6)
 
 - **No token refresh.** The access token is captured at login (no refresh). After it expires (~5 min) the
-  catalog returns 401 and the storefront page 500s. Prod fix: `Duende.AccessTokenManagement`.
+  catalog returns 401. This is now handled **gracefully**: clients map the 401 to a typed
+  `SessionExpiredException` and the shell's `SessionErrorBoundary` shows a "session expired — sign in
+  again" panel instead of crashing the circuit (was: unhandled-exception / 500). Expiry itself is still
+  unfixed — prod fix: `Duende.AccessTokenManagement`.
 - **Stale cookie across restarts.** Cookies are per-host (not per-port); an old Portal cookie carrying a
   dead token can 500 the storefront after an Aspire restart. Workaround: hit `/account/logout` (or clear
   cookies) then log in again. Wiping the Keycloak data volume invalidates old sessions/tokens too.
@@ -244,6 +255,21 @@ Both backend services were flat (all files in the project root). Reorganized int
 (DIP + convention + optionality); `DatabaseInitializer` left duplicated over a shared lib. Pure move —
 git renames, 20/20 tests green. Reasoning in **ADR-0007** (incl. the "why integration-test repos
 instead of mocking" writeup). **Not yet driven in a browser** → that's the ▶ Start-here task above.
+
+## Graceful session-expiry handling — what landed
+
+An idle circuit outlived its ~5-min access token, and the next action (e.g. an Admin **Save**) hit a
+**401** that fell through to the generic "An unhandled error has occurred" overlay and killed the
+circuit. Fix (no refresh — just graceful handling of expiry; see ADR-0004):
+- New `SessionExpiredException` + `HttpResponseMessage.ThrowIfSessionExpired()` in `Atrium.Design`.
+- All four typed clients (`CatalogClient`, `OrdersClient`, `ReportsClient`, `AdminCatalogClient`) map a
+  401 to that typed signal before `EnsureSuccessStatusCode`. 403 (wrong role) still shows an inline toast.
+- New shell-level `SessionErrorBoundary` (custom `ErrorBoundary`) around `@Body` in `MainLayout` renders
+  a "session expired — sign in again" panel for it, a generic card + server-side log for anything else,
+  and `Recover()`s on navigation.
+- Tests: `SessionExpiredTests` (U4) — 401→`SessionExpiredException`, 500→still `HttpRequestException`.
+  Unit 18/18 green (2 new), build 0 warnings. **Browser-verify pending:** the panel render on a live 401 needs a
+  stack restart on the new build + a forced/waited expiry (unit tests cover the client mapping only).
 
 Workflow reminder (from prior phases): write code → `dotnet build` → run via `aspire run` → verify with
 Playwright → `code-simplifier`/`/code-review` pass → commit per phase (Co-Authored-By trailer).

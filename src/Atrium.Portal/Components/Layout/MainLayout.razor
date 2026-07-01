@@ -29,7 +29,9 @@
 
     <main class="app-main">
         <div class="app-content">
-            @Body
+            <SessionErrorBoundary @ref="_errorBoundary">
+                @Body
+            </SessionErrorBoundary>
         </div>
     </main>
 
@@ -46,6 +48,7 @@
 
 @code {
     private bool _navOpen;
+    private SessionErrorBoundary? _errorBoundary;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthState { get; set; }
@@ -69,6 +72,9 @@
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         _navOpen = false;
+        // Clear any error card so the newly-navigated page gets a fresh attempt (recommended for a
+        // layout-scoped boundary, which otherwise stays in its error state across navigations).
+        _errorBoundary?.Recover();
         InvokeAsync(StateHasChanged);
     }
 

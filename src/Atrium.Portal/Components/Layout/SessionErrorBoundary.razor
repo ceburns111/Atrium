@@ -1,0 +1,47 @@
+@inherits ErrorBoundary
+@inject NavigationManager Nav
+@inject ILogger<SessionErrorBoundary> Logger
+
+@* A shell-level boundary around the module body: an expired token (no refresh in this demo) surfaces
+   as a SessionExpiredException, which we turn into a friendly "sign in again" prompt instead of the
+   generic circuit-terminated error UI. Any other exception still gets a card (and a server-side log)
+   rather than tearing the circuit down. MainLayout calls Recover() on navigation to clear it. *@
+@if (CurrentException is null)
+{
+    @ChildContent
+}
+else if (CurrentException is SessionExpiredException)
+{
+    <div class="notice card">
+        <h2 class="notice__title">Your session has expired</h2>
+        <p class="notice__body">
+            You've been signed out after a period of inactivity. Sign in again to pick up where you left off.
+        </p>
+        <a class="btn btn--primary" href="@LoginUrl">Sign in again</a>
+    </div>
+}
+else
+{
+    <div class="notice card">
+        <h2 class="notice__title">Something went wrong</h2>
+        <p class="notice__body">An unexpected error interrupted this page. Reloading usually clears it.</p>
+        <a class="btn btn--secondary" href="@Nav.Uri">Reload</a>
+    </div>
+}
+
+@code {
+    private string LoginUrl =>
+        $"/account/login?returnUrl={Uri.EscapeDataString(new Uri(Nav.Uri).PathAndQuery)}";
+
+    protected override Task OnErrorAsync(Exception exception)
+    {
+        // Session expiry is expected (the access token has no refresh), so it isn't an error to log.
+        // Everything else is a genuine fault — log it server-side, since we now render a card instead
+        // of letting it crash the circuit into the browser console.
+        if (exception is not SessionExpiredException)
+        {
+            Logger.LogError(exception, "Unhandled exception surfaced to the session error boundary.");
+        }
+        return Task.CompletedTask;
+    }
+}

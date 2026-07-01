@@ -23,6 +23,7 @@ public sealed class ReportsClient(HttpClient http, AccessTokenHolder tokens)
             );
         }
         using var response = await http.SendAsync(request, ct);
+        response.ThrowIfSessionExpired();
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<SalesReportDto>(ct)
             ?? throw new InvalidOperationException();

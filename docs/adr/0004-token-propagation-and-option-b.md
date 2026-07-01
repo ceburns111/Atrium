@@ -38,9 +38,12 @@ each consumer needs it in a different place.
 - **A credential travels in the auth cookie.** The access token is a *credential*; putting it in the
   identity **cookie** conflates identity with credentials and bloats the cookie. It works, it's simple,
   and for a demo it's acceptable — but it's an architecture smell we're naming, not hiding.
-- **No refresh.** The token is captured once at login. After it expires (~5 min) Catalog returns 401
-  and the Storefront page 500s. Workaround for the demo: log out and back in. (See HANDOFF known
-  limitations.)
+- **No refresh.** The token is captured once at login; there's no refresh. After it expires (~5 min)
+  Catalog returns 401. The clients now translate that 401 into a typed `SessionExpiredException`
+  (`Atrium.Design`), which a shell-level `SessionErrorBoundary` around the module body turns into a
+  "your session has expired — sign in again" panel, instead of tearing down the circuit with the
+  generic unhandled-error UI. This is graceful **handling** of expiry, not a fix for it — the real fix
+  is refresh (option B → `Duende.AccessTokenManagement`). Workaround remains: sign in again.
 - **Stale cookie across restarts.** Cookies are per-host, not per-port, so an old Portal cookie
   carrying a dead token can 500 the storefront after an Aspire restart until you re-login.
 
