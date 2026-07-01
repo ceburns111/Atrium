@@ -1,0 +1,8 @@
+@* Routable so a full-page GET to a role-gated route (deep-link / refresh / bookmark) lands here via
+   the cookie handler's AccessDeniedPath; also rendered inline by Routes.razor's <NotAuthorized>. *@
+@page "/forbidden"
+@layout MainLayout
+
+<h3>Access denied</h3>
+<p>You don't have permission to view this page.</p>
+<p><a href="/">Return to home</a></p>

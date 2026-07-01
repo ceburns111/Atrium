@@ -31,3 +31,6 @@ phase5-home.png
 
 # Local scratch notes
 TODO.md
+
+# Personal, machine-local Claude Code settings (permission grants) — do not commit
+.claude/settings.local.json

@@ -2,6 +2,7 @@ using System.Reflection;
 using DbUp;
 using DbUp.Engine;
 using DbUp.Helpers;
+using Microsoft.Extensions.Logging;
 
 namespace Atrium.Services.Catalog.Data;
 
@@ -17,38 +18,54 @@ namespace Atrium.Services.Catalog.Data;
 /// </summary>
 public static class DatabaseInitializer
 {
-    public static void Initialize(string connectionString)
+    public static void Initialize(string connectionString, ILogger logger)
     {
         EnsureDatabase.For.SqlDatabase(connectionString);
 
         var assembly = Assembly.GetExecutingAssembly();
 
         Run(
+            "migrations",
             DeployChanges
                 .To.SqlDatabase(connectionString)
                 .WithScriptsEmbeddedInAssembly(assembly, name => name.Contains(".Migrations."))
                 .WithTransactionPerScript()
                 .LogToConsole()
-                .Build()
+                .Build(),
+            logger
         );
 
         Run(
+            "programmability",
             DeployChanges
                 .To.SqlDatabase(connectionString)
                 .WithScriptsEmbeddedInAssembly(assembly, name => name.Contains(".Programmability."))
                 .JournalTo(new NullJournal())
                 .WithTransactionPerScript()
                 .LogToConsole()
-                .Build()
+                .Build(),
+            logger
         );
     }
 
-    private static void Run(UpgradeEngine engine)
+    private static void Run(string lane, UpgradeEngine engine, ILogger logger)
     {
         var result = engine.PerformUpgrade();
         if (!result.Successful)
         {
+            logger.LogError(
+                result.Error,
+                "Database {Lane} upgrade failed after {ScriptCount} script(s)",
+                lane,
+                result.Scripts.Count()
+            );
             throw new InvalidOperationException("Database migration failed.", result.Error);
         }
+
+        logger.LogInformation(
+            "Database {Lane} upgrade applied {ScriptCount} script(s)",
+            lane,
+            result.Scripts.Count()
+        );
     }
 }

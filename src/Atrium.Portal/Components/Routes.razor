@@ -1,10 +1,20 @@
+@using Atrium.Portal.Components.Pages
 @inject Atrium.Portal.Modularity.ModuleCatalog Catalog
 
 <Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="Catalog.Assemblies" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
-            <NotAuthorized>
-                <RedirectToLogin />
+            <NotAuthorized Context="authState">
+                @if (authState.User.Identity?.IsAuthenticated == true)
+                {
+                    @* Signed in but lacks the required role → clean Forbidden page (no login bounce). *@
+                    <Forbidden />
+                }
+                else
+                {
+                    @* Not signed in → OIDC challenge, returning here after login. *@
+                    <RedirectToLogin />
+                }
             </NotAuthorized>
         </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />

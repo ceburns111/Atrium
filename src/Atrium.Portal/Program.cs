@@ -2,12 +2,17 @@ using System.Security.Claims;
 using Atrium.Design;
 using Atrium.Portal.Components;
 using Atrium.Portal.Modularity;
+using Atrium.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog structured logging + OpenTelemetry tracing (Blazor Server ASP.NET Core + the module
+// HttpClients to the gateway), so a trace starts here and follows Portal → Gateway → Service → SQL.
+builder.AddAtriumTelemetry();
 
 // Add services to the container.
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
@@ -39,7 +44,13 @@ builder
         options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
     })
-    .AddCookie()
+    .AddCookie(options =>
+    {
+        // A wrong-role user reaching a role-gated route by full-page GET (deep-link / refresh /
+        // bookmark) is denied at the endpoint (403); send them to the clean Forbidden page instead
+        // of the default /Account/AccessDenied, which isn't a route and falls through to "Not Found".
+        options.AccessDeniedPath = "/forbidden";
+    })
     .AddOpenIdConnect(options =>
     {
         options.Authority = keycloakAuthority;
@@ -86,6 +97,9 @@ foreach (var module in moduleCatalog.Modules)
 builder.Services.AddSingleton(moduleCatalog);
 
 var app = builder.Build();
+
+// One structured log event per request (method, path, status, elapsed); early so it wraps handlers.
+app.UseAtriumRequestLogging();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

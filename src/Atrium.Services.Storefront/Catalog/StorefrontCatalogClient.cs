@@ -1,6 +1,8 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Atrium.Contracts;
+using Microsoft.Extensions.Logging;
 
 namespace Atrium.Services.Storefront.Catalog;
 
@@ -9,7 +11,11 @@ namespace Atrium.Services.Storefront.Catalog;
 /// It relays the caller's bearer token so the authenticated user's identity flows through to Catalog —
 /// this is the "slice calls core" edge of the architecture, and why Storefront doesn't own product data.
 /// </summary>
-public sealed class StorefrontCatalogClient(HttpClient http, IHttpContextAccessor httpContext)
+public sealed class StorefrontCatalogClient(
+    HttpClient http,
+    IHttpContextAccessor httpContext,
+    ILogger<StorefrontCatalogClient> logger
+)
 {
     public async Task<IReadOnlyList<ProductDto>> GetProductsAsync(CancellationToken ct = default)
     {
@@ -25,7 +31,39 @@ public sealed class StorefrontCatalogClient(HttpClient http, IHttpContextAccesso
         }
 
         using var response = await http.SendAsync(request, ct);
+        LogIfUnsuccessful(logger, request, response);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<IReadOnlyList<ProductDto>>(ct) ?? [];
+    }
+
+    // Structured Warning at the service-to-service seam: a relayed-token rejection (401) vs. any other
+    // non-success from Catalog. No auth header or token is logged — only method, path and status.
+    private static void LogIfUnsuccessful(
+        ILogger logger,
+        HttpRequestMessage request,
+        HttpResponseMessage response
+    )
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            logger.LogWarning(
+                "Catalog rejected relayed token: {Method} {RequestUri} returned 401",
+                request.Method,
+                request.RequestUri
+            );
+        }
+        else
+        {
+            logger.LogWarning(
+                "Downstream Catalog {Method} {RequestUri} returned {StatusCode}",
+                request.Method,
+                request.RequestUri,
+                (int)response.StatusCode
+            );
+        }
     }
 }

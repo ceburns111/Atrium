@@ -1,6 +1,7 @@
 using Atrium.Contracts;
 using Atrium.Services.Storefront.Catalog;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
 
 namespace Atrium.Services.Storefront.Orders;
 
@@ -24,6 +25,7 @@ public static class OrdersEndpoints
         HttpContext http,
         IOrderRepository repository,
         StorefrontCatalogClient catalog,
+        ILoggerFactory loggerFactory,
         CancellationToken ct
     )
     {
@@ -32,6 +34,9 @@ public static class OrdersEndpoints
         var (lines, error) = OrderPricing.PriceOrder(request.Items, products);
         if (error is not null)
         {
+            loggerFactory
+                .CreateLogger(typeof(OrdersEndpoints))
+                .LogWarning("Order rejected during pricing: {Reason}", error);
             return TypedResults.BadRequest(error);
         }
 

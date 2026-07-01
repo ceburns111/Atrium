@@ -1,6 +1,7 @@
 using System.Net;
 using Atrium.Design;
 using Atrium.Modules.Storefront.Catalog;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Atrium.UnitTests;
 
@@ -39,7 +40,11 @@ public class SessionExpiredTests
         {
             BaseAddress = new Uri("https://gateway/"),
         };
-        return new CatalogClient(http, new AccessTokenHolder { AccessToken = "expired-token" });
+        return new CatalogClient(
+            http,
+            new AccessTokenHolder { AccessToken = "expired-token" },
+            NullLogger<CatalogClient>.Instance
+        );
     }
 
     private sealed class StubHandler(HttpStatusCode status) : HttpMessageHandler

@@ -8,6 +8,7 @@
     <Project Path="src/Atrium.Modules.Reports/Atrium.Modules.Reports.csproj" />
     <Project Path="src/Atrium.Modules.Storefront/Atrium.Modules.Storefront.csproj" />
     <Project Path="src/Atrium.Portal/Atrium.Portal.csproj" />
+    <Project Path="src/Atrium.ServiceDefaults/Atrium.ServiceDefaults.csproj" />
     <Project Path="src/Atrium.Services.Catalog/Atrium.Services.Catalog.csproj" />
     <Project Path="src/Atrium.Services.Storefront/Atrium.Services.Storefront.csproj" />
   </Folder>

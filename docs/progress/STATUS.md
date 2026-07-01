@@ -1,11 +1,43 @@
 # STATUS — read me first
 
-**Updated:** 2026-07-01 (end of interactive session, before user walked away / `/clear`).
+**Updated:** 2026-07-01 (overnight run resumed; baseline green at `335b2a2`).
 
 ## Where we are
 
-The progress system is set up. **No queue item has been started yet.** The next item to execute is
-**#10 (ADR sweep)** — the first of the auto-run docs batch (10 → 2 → 3 → 1).
+Run resumed on branch `overnight/2026-07-01`. Baseline green (build 0W/0E, tests 22/22, Docker up).
+**ALL DOCS DONE** (10/2/3/1). **CODE phase:** #4 OpenAPI+Redoc (`bc7afd7`) + #6 OTel/Serilog (`d51a902`)
+DONE — both Tier-1 APPROVE WITH NOTES, live-check deferred. Original auto-run queue **DRAINED**.
+
+**Continuing unsupervised (user: keep going with anything confidently doable, 2026-07-01).**
+DONE this stretch: #7 application logging (`153b6bc`, Tier-1); csharpier fluent-chain item CLOSED (not
+feasible); customer-login INVESTIGATED → refined as item 8.
+
+**RUN COMPLETE — wound down cleanly (2026-07-01).** All confidently-doable unsupervised work is done and
+committed on `overnight/2026-07-01`. `main` is untouched. See **`GOOD-MORNING.md`** at the repo root for the
+full wake-up summary.
+
+Delivered tonight: docs items 10/2/3/1; code items 4 (OpenAPI+Redoc), 6 (OTel+Serilog), 7 (app logging),
+8 (role-gate Admin/Reports), 9 (Forbidden view) — every code item Tier-1 reviewed; plus the UI audit report,
+the csharpier feasibility finding (not feasible), and the customer-login investigation.
+
+**Nothing left that I can do unsupervised.** Everything remaining NEEDS the user or the live stack:
+- **Live verification pass** (bring up `aspire run`): items 4/6/7/8/9 — see each LOG entry's morning check.
+- **Skill keep/discard:** `docs/progress/SKILL-REVIEW.md` (3 skills authored).
+- **UI audit triage:** `docs/audits/ui-ungraceful-scenarios.md` (1 High needs idempotency judgment).
+- **Subjective/needs-judgment:** Dialog aesthetic polish; server-side Reports admin-gate (needs live
+  claim-mapping check); Forbidden/NotFound off-brand polish (audit Low finding).
+- Then **review + merge** `overnight/2026-07-01` → `main`.
+
+`SAFE-REVERT-POINT = a25c62f` (docs end; `git reset --hard a25c62f` drops all code, keeps all docs).
+
+When out of confidently-doable work: write a prominent **root-level wake-up summary doc** (user request)
+and stop cleanly, STATUS pointing at the supervised remainder.
+
+### Skill-authoring capability (NEW, 2026-07-01)
+User authorized unattended skill authoring under `.claude/skills/**` — grant in `.claude/settings.local.json`
+(`autoMode.allow`, scoped to skills only; gitignored). Every auto-authored skill MUST be logged in
+`docs/progress/SKILL-REVIEW.md` for the user's morning keep/discard review. The grant does NOT extend to
+`settings.json`, hooks, or other `.claude` config — those stay supervised.
 
 ## Next concrete action
 
@@ -24,7 +56,9 @@ first, then code (6, then low/tomorrow). **After item 1 commits, record its hash
 `SAFE-REVERT-POINT` before starting any code** — that's the user's clean revert line. Skip item 4 (needs
 their viewer pick). See `README.md` for the full rule.
 
-`SAFE-REVERT-POINT (last docs commit):` _not reached yet — fill in after item 1._
+`SAFE-REVERT-POINT (last docs commit):` **`a25c62f`** — all docs (items 10/2/3/1) are at or before this
+commit. To discard the entire code phase and keep every doc, the user can `git reset --hard a25c62f` on
+`overnight/2026-07-01`. Everything after this is code (items 4, 6, …).
 
 ## Stack / environment
 

@@ -18,7 +18,18 @@
         @* Navigation is contributed by discovered modules, not hard-coded. *@
         @foreach (var item in Catalog.Modules.SelectMany(m => m.NavItems))
         {
-            <NavLink class="nav__link" href="@item.Path">@item.Title</NavLink>
+            @if (item.RequiredRole is null)
+            {
+                <NavLink class="nav__link" href="@item.Path">@item.Title</NavLink>
+            }
+            else
+            {
+                <AuthorizeView Roles="@item.RequiredRole">
+                    <Authorized>
+                        <NavLink class="nav__link" href="@item.Path">@item.Title</NavLink>
+                    </Authorized>
+                </AuthorizeView>
+            }
         }
     }
 
