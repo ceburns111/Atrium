@@ -18,3 +18,15 @@ Nothing started in the queue. Next: create branch `overnight/2026-07-01`, green-
 10 (ADR sweep). Plan: run the whole queue unattended on that branch (docs 10,2,3,1 → code 4,6 → low/
 tomorrow), one atomic commit per item, orchestrator+subagents, escalation/backoff per README. Deterministic
 gate only; live verification deferred to a supervised morning pass. Docker up; aspire not required.
+
+## 2026-07-01 — overnight run resumed (Opus 4.8)
+
+- **Baseline (start commit `335b2a2`):** branch `overnight/2026-07-01` created off `main`. Tree clean;
+  `csharpier` no-op; `dotnet build` 0W/0E; `dotnet test` 22/22 green; Docker up. Green baseline confirmed —
+  cleared to run the queue. Starting item 10 (ADR sweep).
+- `ee63214` — **Item 10 (ADR sweep)** done. New ADR-0008 (session-expiry handling), ADR-0009 (service-root
+  route nesting), ADR-0010 (native `<dialog>` primitive); refreshed ADR-0007 (co-located repo interfaces),
+  cross-linked ADR-0004 → 0008; README index synced. Implementer subagent (high confidence), Tier 0.
+  Gate: build 0W/0E; every cited path/class/method/route grep-verified. Orchestrator caught one accuracy
+  gap — ADR-0008 claimed 0004 linked back but 0004 had no explicit link; added the bidirectional link
+  before commit. Docs only → no live verification needed.

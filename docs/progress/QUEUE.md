@@ -5,7 +5,7 @@ Execution order for tonight/hi: **10 → 2 → 3 → 1 → 6**, then low/tomorro
 
 ## Auto-run tonight (docs — commit unattended)
 
-- [ ] **10 · ADR sweep** (doc). Update/add ADRs for decisions made this session:
+- [x] **10 · ADR sweep** (doc) — `ee63214`. Update/add ADRs for decisions made this session:
       - New ADR: **graceful session-expiry handling** (401 → `SessionExpiredException` → `SessionErrorBoundary`).
       - New ADR: **service-root route nesting** (one `/storefront` parent group; features as relative
         subgroups) — or fold into ADR-0007.

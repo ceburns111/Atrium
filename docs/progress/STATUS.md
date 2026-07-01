@@ -1,11 +1,12 @@
 # STATUS — read me first
 
-**Updated:** 2026-07-01 (end of interactive session, before user walked away / `/clear`).
+**Updated:** 2026-07-01 (overnight run resumed; baseline green at `335b2a2`).
 
 ## Where we are
 
-The progress system is set up. **No queue item has been started yet.** The next item to execute is
-**#10 (ADR sweep)** — the first of the auto-run docs batch (10 → 2 → 3 → 1).
+Run resumed on branch `overnight/2026-07-01`. Baseline green (build 0W/0E, tests 22/22, Docker up).
+**Item #10 (ADR sweep) DONE** — `ee63214`. **Item #2 ("Wire up a new Atrium app" guide) is NEXT** —
+attempt 1. Docs batch order: ~~10~~ → **2** → 3 → 1, then code (6).
 
 ## Next concrete action
 
