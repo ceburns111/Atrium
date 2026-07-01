@@ -5,6 +5,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    @* Apply the saved (or system) theme before first paint so there's no flash of the wrong theme.
+       Runs ahead of Blazor; the ThemeToggle handles runtime changes and persistence thereafter. *@
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem("atrium.theme");
+                if (!t) {
+                    t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                }
+                document.documentElement.dataset.theme = t;
+            } catch (e) {
+                /* localStorage blocked — fall back to the prefers-color-scheme media query in CSS. */
+            }
+        })();
+    </script>
     <ResourcePreloader />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
