@@ -3,6 +3,8 @@
 @page "/forbidden"
 @layout MainLayout
 
-<h3>Access denied</h3>
-<p>You don't have permission to view this page.</p>
-<p><a href="/">Return to home</a></p>
+<PageTitle>Access denied</PageTitle>
+
+<Notice Title="Access denied" Body="You don't have permission to view this page.">
+    <a class="btn btn--secondary" href="/">Return to home</a>
+</Notice>

@@ -10,7 +10,14 @@
     </Actions>
 </PageHeader>
 
-@if (_orders is null)
+@if (_failed)
+{
+    <Notice Title="Couldn't load your orders"
+            Body="Something interrupted the request. Please try again.">
+        <Button Variant="ButtonVariant.Secondary" OnClick="Load">Try again</Button>
+    </Notice>
+}
+else if (_orders is null)
 {
     @for (var i = 0; i < 3; i++)
     {
@@ -54,6 +61,23 @@ else
 
 @code {
     private IReadOnlyList<OrderDto>? _orders;
+    private bool _failed;
 
-    protected override async Task OnInitializedAsync() => _orders = await Orders.GetOrdersAsync();
+    protected override Task OnInitializedAsync() => Load();
+
+    // Reads are idempotent, so a non-session failure gets an inline retry rather than the shell's
+    // generic error card; a 401 still bubbles as SessionExpiredException for the re-login prompt.
+    private async Task Load()
+    {
+        _failed = false;
+        _orders = null;
+        try
+        {
+            _orders = await Orders.GetOrdersAsync();
+        }
+        catch (Exception ex) when (ex is not SessionExpiredException)
+        {
+            _failed = true;
+        }
+    }
 }
