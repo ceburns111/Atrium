@@ -81,14 +81,16 @@ if (app.Environment.IsDevelopment())
                       </head>
                       <body>
                         <redoc spec-url="/openapi/v1.json"></redoc>
-                        <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+                        <script src="https://cdn.redoc.ly/redoc/v2.5.0/bundles/redoc.standalone.js"></script>
                       </body>
                     </html>
                     """,
                     "text/html"
                 )
         )
-        .AllowAnonymous();
+        .AllowAnonymous()
+        // The docs viewer is a UI convenience, not part of the API — keep it out of the OpenAPI document.
+        .ExcludeFromDescription();
 }
 
 // The service boundary, stated once: everything this vertical serves lives under /storefront and needs
