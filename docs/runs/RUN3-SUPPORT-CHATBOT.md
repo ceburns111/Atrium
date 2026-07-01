@@ -99,7 +99,7 @@ deferred** (see below) — it is **not** in this run.
 > Prefer landing C0–C2 (which are the most framework-sensitive) as separate commits so a later blocker
 > doesn't strand a giant uncommitted change.
 
-- [ ] **C0 · Spike & pin the stack — go/no-go.** Resolve the **exact** MAF (Microsoft Agent Framework)
+- [x] **C0 · Spike & pin the stack — GO.** Resolve the **exact** MAF (Microsoft Agent Framework)
   and **AG-UI .NET** package IDs + versions (both are preview/fast-moving — do not assume names). Add a
   throwaway smoke that constructs an `AIAgent`/`ChatClientAgent` over a **fake `IChatClient`** and, if
   feasible, hosts a trivial AG-UI SSE endpoint. **Deliverable:** the pinned package refs + a one-paragraph

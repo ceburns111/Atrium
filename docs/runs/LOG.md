@@ -308,3 +308,29 @@ down cleanly, wrote `GOOD-MORNING.md`. Remaining work is all supervised (live/vi
 - **Gate (orchestrator re-ran authoritative):** csharpier check clean (71 files), build **0W/0E**,
   `dotnet test` **56/56**. Implementer confidence: high. **Live check (supervised):** anon/testuser/admin
   each see a correct, non-misleading count.
+
+### Item C0 — MAF + AG-UI spike & pin — **GO** (code, Tier-1 framework go/no-go)
+- **GO.** MAF + AG-UI restore, compile, and run an agent turn over a fake `IChatClient` on this .NET 10
+  repo. Pinned on `Atrium.Services.Storefront`: `Microsoft.Agents.AI` **1.12.0** (stable) +
+  `Microsoft.Agents.AI.Hosting.AGUI.AspNetCore` **1.12.0-preview.260629.1** (prerelease; `AddAGUI`/
+  `MapAGUI`, wired in C3). `Microsoft.Agents.AI` **1.12.0** also on `Atrium.UnitTests` for the smoke.
+  `Microsoft.Extensions.AI` resolves transitively at **10.6.0** (`IChatClient` lives there) — no explicit
+  ref, no conflict.
+- **Kept smoke (seed for C2):** `tests/Atrium.UnitTests/Support/FakeChatClient.cs` (deterministic
+  `IChatClient`, reused by later items) + `tests/Atrium.UnitTests/MafAgentSmokeTests.cs` (builds a
+  `ChatClientAgent` over the fake, runs a turn, asserts `.Text`).
+- **★ Real 1.12.0 API (docs sketch was wrong — recorded for C1–C5):** `new ChatClientAgent(IChatClient,
+  instructions:, name:, tools: IList<AITool>?)` → `AIAgent`; `RunAsync(string,...)` → **`AgentResponse`**
+  (`.Text`/`.Messages`); conversation type `AgentSession`. **No** `CreateAIAgent` extension, **no**
+  `AgentRunResponse`. Tools via `AIFunctionFactory.Create(...)`.
+- **NU1903 (build-integrity) — folded into this item.** C0's fresh restore surfaced a newly-published
+  high-severity advisory: `Microsoft.AspNetCore.OpenApi 10.0.9` pulls `Microsoft.OpenApi 2.0.0`
+  transitively (GHSA-v5pm-xwqc-g5wc). A clean restore showed it in **3** projects (Catalog + Storefront
+  services + UnitTests) — latent repo-wide, only masked at baseline by restore caching. Fixed the same
+  way Run 2's item B did: pin `Microsoft.OpenApi` **2.9.0** on the two service projects (UnitTests clears
+  transitively). Orchestrator verified: base build was 0W only due to cache; forced restore reproduced
+  the 3-project blast radius; the two pins bring a forced-restore build back to **0W**.
+- **Gate (orchestrator re-ran authoritative, forced restore):** csharpier clean (73 files), build
+  **0W/0E**, `dotnet test` **57/57** (56 + the new MAF smoke). Implementer confidence: high (its
+  "NU1903 pre-existing / independent" claim was partly wrong — it IS pre-existing transitively via
+  AspNetCore.OpenApi, but the baseline was 0W, so the run must clear it; done).

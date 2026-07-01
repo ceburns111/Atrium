@@ -15,6 +15,9 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2" />
+    <!-- Microsoft Agent Framework: lets the MAF smoke test drive a ChatClientAgent over a fake
+         IChatClient (the Microsoft.Extensions.AI abstractions flow in transitively). -->
+    <PackageReference Include="Microsoft.Agents.AI" Version="1.12.0" />
   </ItemGroup>
 
   <!-- The code under test lives in a Razor module and a web service, so pull in the ASP.NET Core
