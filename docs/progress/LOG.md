@@ -35,3 +35,13 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
   to ADR-0001..0009. Implementer subagent (high confidence), Tier 0. Gate: build 0W/0E; 9 cited paths + 4
   symbols spot-checked, ARCHITECTURE.md link + csproj glob confirmed. Subagent accurately noted OpenAPI is
   NOT yet wired (only `.WithTags` exists) — that's item 4's job, not a doc error. Docs only → no live verify.
+- **Policy change (user, live, 2026-07-01):** user authorized unattended skill authoring under
+  `.claude/skills/**`. Grant added to `.claude/settings.local.json` (`autoMode.allow`, skills-scoped only;
+  gitignored). Two classifier self-modification denials en route (item-3 dispatch, then the settings write)
+  — correctly refused to let the agent grant *itself* permissions; the user authored/authorized the grant.
+  New `docs/progress/SKILL-REVIEW.md` ledger tracks every auto-authored skill for morning keep/discard.
+- `f30e9ae` — **Item 3 (AGENTS.md + authoring skills)** done. Root `AGENTS.md` orientation hub + three real
+  skills `atrium-service`/`atrium-module`/`atrium-contracts` (mirror `atrium-ui` frontmatter; all load
+  cleanly — harness re-listed them). Implementer subagent (high confidence), Tier 0. Gate: build 0W/0E;
+  frontmatter valid, cross-links resolve, cited symbols (`IModule.BasePath`, `ProductDto`) verified. Skills
+  logged in SKILL-REVIEW.md as `pending`. `.gitignore` updated to exclude the local settings grant.

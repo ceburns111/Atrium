@@ -5,9 +5,19 @@
 ## Where we are
 
 Run resumed on branch `overnight/2026-07-01`. Baseline green (build 0W/0E, tests 22/22, Docker up).
-Items #10 (`ee63214`) and #2 (`14538c0`) DONE. **Item #3 (AGENTS.md + authoring skills) is NEXT** —
-attempt 1. Docs batch order: ~~10~~ → ~~2~~ → **3** → 1, then code (6).
-Item 3 derives from item 2's guide (`docs/guides/wire-up-a-new-app.md`) — must not contradict it.
+Items #10 (`ee63214`), #2 (`14538c0`), #3 (`f30e9ae`) DONE. **Item #1 (README per project) is NEXT** —
+attempt 1, the LAST docs item. Docs order: ~~10~~ → ~~2~~ → ~~3~~ → **1**, then code (6).
+
+**After item 1 commits:** record its hash here + in `LOG.md` as `SAFE-REVERT-POINT` (the user's clean
+revert line) BEFORE starting any code item. Then code phase: item 6 (OTel/Serilog). Item 4 (OpenAPI+Redoc)
+is decided and in scope too — both are code, Tier-1 review applies. All live verification deferred to the
+supervised morning pass.
+
+### Skill-authoring capability (NEW, 2026-07-01)
+User authorized unattended skill authoring under `.claude/skills/**` — grant in `.claude/settings.local.json`
+(`autoMode.allow`, scoped to skills only; gitignored). Every auto-authored skill MUST be logged in
+`docs/progress/SKILL-REVIEW.md` for the user's morning keep/discard review. The grant does NOT extend to
+`settings.json`, hooks, or other `.claude` config — those stay supervised.
 
 ## Next concrete action
 

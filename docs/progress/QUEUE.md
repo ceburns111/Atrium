@@ -15,7 +15,7 @@ Execution order for tonight/hi: **10 → 2 → 3 → 1 → 6**, then low/tomorro
 - [x] **2 · "Wire up a new Atrium app" guide** (doc) — `14538c0` (`docs/guides/wire-up-a-new-app.md`). End-to-end: how to add a new vertical
       (service + module + contracts + gateway route + Aspire wiring + auth) on the platform. This is the
       **source of truth**; item 3 derives from it. Walk the real Storefront/Catalog code as the worked example.
-- [ ] **3 · AGENTS.md + authoring skills** (doc). Derive from item 2: an `AGENTS.md` at repo root plus
+- [x] **3 · AGENTS.md + authoring skills** (doc) — `f30e9ae`. Root `AGENTS.md` + 3 real skills (`atrium-service`/`atrium-module`/`atrium-contracts`), logged in `SKILL-REVIEW.md` for morning keep/discard. Derive from item 2: an `AGENTS.md` at repo root plus
       focused skills/guardrails for building Modules, Services, Contracts — style rules, the design-system
       reuse rules (see `.claude/skills/atrium-ui`), the data recipe, the auth model, the test gate. Goal:
       bootstrap fast, high-quality new work. Must not contradict item 2 — cross-link, don't duplicate.
