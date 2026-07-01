@@ -1,9 +1,14 @@
+using Atrium.ServiceDefaults;
 using Atrium.Services.Storefront.Catalog;
 using Atrium.Services.Storefront.Data;
 using Atrium.Services.Storefront.Orders;
 using Atrium.Services.Storefront.Reports;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog structured logging + OpenTelemetry tracing (ASP.NET Core, HttpClient, SqlClient) exported
+// over OTLP to the Aspire dashboard. SqlClient is on because this vertical owns a database.
+builder.AddAtriumTelemetry(instrumentSqlClient: true);
 
 // This vertical's own database (no EF; Dapper over sprocs), plus the caller's HttpContext for token relay.
 builder.AddSqlServerClient("storefrontdb");
@@ -46,6 +51,9 @@ var connectionString =
     app.Configuration.GetConnectionString("storefrontdb")
     ?? throw new InvalidOperationException("Connection string 'storefrontdb' was not configured.");
 DatabaseInitializer.Initialize(connectionString);
+
+// One structured log event per request (method, path, status, elapsed); early so it wraps handlers.
+app.UseAtriumRequestLogging();
 
 app.UseAuthentication();
 app.UseAuthorization();

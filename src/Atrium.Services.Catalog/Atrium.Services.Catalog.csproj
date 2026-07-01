@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup>
     <ProjectReference Include="..\Atrium.Contracts\Atrium.Contracts.csproj" />
+    <ProjectReference Include="..\Atrium.ServiceDefaults\Atrium.ServiceDefaults.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,7 +1,12 @@
+using Atrium.ServiceDefaults;
 using Atrium.Services.Catalog.Catalog;
 using Atrium.Services.Catalog.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog structured logging + OpenTelemetry tracing (ASP.NET Core, HttpClient, SqlClient) exported
+// over OTLP to the Aspire dashboard. SqlClient is on because this service owns a database.
+builder.AddAtriumTelemetry(instrumentSqlClient: true);
 
 // Aspire-injected "catalogdb" SqlConnection (scoped) — Dapper reads from it, no EF.
 builder.AddSqlServerClient("catalogdb");
@@ -48,6 +53,9 @@ var connectionString =
     app.Configuration.GetConnectionString("catalogdb")
     ?? throw new InvalidOperationException("Connection string 'catalogdb' was not configured.");
 DatabaseInitializer.Initialize(connectionString);
+
+// One structured log event per request (method, path, status, elapsed); early so it wraps handlers.
+app.UseAtriumRequestLogging();
 
 app.UseAuthentication();
 app.UseAuthorization();

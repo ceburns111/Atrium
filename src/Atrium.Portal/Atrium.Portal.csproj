@@ -6,6 +6,7 @@
     <ProjectReference Include="..\Atrium.Modules.Reports\Atrium.Modules.Reports.csproj" />
     <ProjectReference Include="..\Atrium.Modules.Storefront\Atrium.Modules.Storefront.csproj" />
     <ProjectReference Include="..\Atrium.Contracts\Atrium.Contracts.csproj" />
+    <ProjectReference Include="..\Atrium.ServiceDefaults\Atrium.ServiceDefaults.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference
