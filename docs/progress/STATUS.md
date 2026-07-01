@@ -5,13 +5,13 @@
 ## Where we are
 
 Run resumed on branch `overnight/2026-07-01`. Baseline green (build 0W/0E, tests 22/22, Docker up).
-Items #10 (`ee63214`), #2 (`14538c0`), #3 (`f30e9ae`) DONE. **Item #1 (README per project) is NEXT** —
-attempt 1, the LAST docs item. Docs order: ~~10~~ → ~~2~~ → ~~3~~ → **1**, then code (6).
+**ALL DOCS DONE** — items #10 (`ee63214`), #2 (`14538c0`), #3 (`f30e9ae`), #1 (`a25c62f`). Now in the
+**CODE phase**. **Item #4 (built-in OpenAPI + Redoc) is NEXT** — attempt 1. Code order: **4** → 6.
 
-**After item 1 commits:** record its hash here + in `LOG.md` as `SAFE-REVERT-POINT` (the user's clean
-revert line) BEFORE starting any code item. Then code phase: item 6 (OTel/Serilog). Item 4 (OpenAPI+Redoc)
-is decided and in scope too — both are code, Tier-1 review applies. All live verification deferred to the
-supervised morning pass.
+Both code items have a runtime surface → **Tier-1 adversarial review applies** (implementer → orchestrator
+gate incl. `dotnet test` → reviewer subagent → commit). Docker is up (integration tests run). All
+live/browser/trace verification is DEFERRED to the supervised morning pass — the loop commits code
+unit/integration-verified with a "live-verification deferred" note.
 
 ### Skill-authoring capability (NEW, 2026-07-01)
 User authorized unattended skill authoring under `.claude/skills/**` — grant in `.claude/settings.local.json`
@@ -36,7 +36,9 @@ first, then code (6, then low/tomorrow). **After item 1 commits, record its hash
 `SAFE-REVERT-POINT` before starting any code** — that's the user's clean revert line. Skip item 4 (needs
 their viewer pick). See `README.md` for the full rule.
 
-`SAFE-REVERT-POINT (last docs commit):` _not reached yet — fill in after item 1._
+`SAFE-REVERT-POINT (last docs commit):` **`a25c62f`** — all docs (items 10/2/3/1) are at or before this
+commit. To discard the entire code phase and keep every doc, the user can `git reset --hard a25c62f` on
+`overnight/2026-07-01`. Everything after this is code (items 4, 6, …).
 
 ## Stack / environment
 

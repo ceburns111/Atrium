@@ -45,3 +45,13 @@ gate only; live verification deferred to a supervised morning pass. Docker up; a
   cleanly — harness re-listed them). Implementer subagent (high confidence), Tier 0. Gate: build 0W/0E;
   frontmatter valid, cross-links resolve, cited symbols (`IModule.BasePath`, `ProductDto`) verified. Skills
   logged in SKILL-REVIEW.md as `pending`. `.gitignore` updated to exclude the local settings grant.
+- `a25c62f` — **Item 1 (README per project)** done. 13 READMEs (11 `src/*` + 2 `tests/*`), one consistent
+  5-heading shape, all new (no overwrites). Implementer subagent (high confidence), Tier 0. Gate: build
+  0W/0E; cited types/routes/sprocs/run-cmd grep-verified. Docs only → no live verify.
+  - Note: a root file `ATRIUM-AI-EXTENSIBILITY-DESIGN.md` appeared mid-run — **the user's own** (they
+    confirmed live); left untracked and untouched, NOT part of any queue item.
+- **★ SAFE-REVERT-POINT = `a25c62f`** — end of the docs phase. All docs (10/2/3/1) are at/before this
+  commit. `git reset --hard a25c62f` discards the whole code phase while keeping every doc. Everything
+  after this line is CODE (items 4, 6, …), committed unit/integration-verified, live-verification deferred.
+
+### CODE PHASE (starts here)

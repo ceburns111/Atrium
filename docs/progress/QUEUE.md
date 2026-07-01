@@ -19,7 +19,7 @@ Execution order for tonight/hi: **10 → 2 → 3 → 1 → 6**, then low/tomorro
       focused skills/guardrails for building Modules, Services, Contracts — style rules, the design-system
       reuse rules (see `.claude/skills/atrium-ui`), the data recipe, the auth model, the test gate. Goal:
       bootstrap fast, high-quality new work. Must not contradict item 2 — cross-link, don't duplicate.
-- [ ] **1 · README.md per project** (doc). One README per `src/*` project: what it is, its role in the
+- [x] **1 · README.md per project** (doc) — `a25c62f`. 13 READMEs (11 src/ + 2 tests/). **SAFE-REVERT-POINT.** One README per `src/*` project: what it is, its role in the
       topology, key types, how it's run/tested. Short and accurate; link to `docs/ARCHITECTURE.md`.
 
 ## Code phase — after ALL docs commit (run unattended; record SAFE-REVERT-POINT first)
