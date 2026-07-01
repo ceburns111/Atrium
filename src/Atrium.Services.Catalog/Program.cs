@@ -22,10 +22,19 @@ builder
         {
             options.Audience = "atrium";
             options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+            // Keep Keycloak's short claim names as-is; the legacy inbound map would otherwise rename
+            // the flat "role" claim to ClaimTypes.Role and defeat the RoleClaimType match below.
+            options.MapInboundClaims = false;
             options.TokenValidationParameters.NameClaimType = "preferred_username";
+            // Keycloak's realm-role mapper flattens realm roles into a multivalued "role" claim.
+            options.TokenValidationParameters.RoleClaimType = "role";
         }
     );
-builder.Services.AddAuthorization();
+
+// Product writes are gated on the admin realm role; reads only need an authenticated caller.
+builder
+    .Services.AddAuthorizationBuilder()
+    .AddPolicy("admin", policy => policy.RequireRole("admin"));
 
 var app = builder.Build();
 

@@ -1,0 +1,198 @@
+@page "/admin"
+@attribute [Authorize]
+@inject AdminCatalogClient Catalog
+@inject ToastService Toasts
+
+<PageTitle>Admin</PageTitle>
+
+<PageHeader Eyebrow="Admin"
+            Title="Products"
+            Description="Create and edit catalog products. Saving requires the admin role — sign in as admin to make changes.">
+    <Actions>
+        <Button Variant="ButtonVariant.Secondary" OnClick="StartCreate" Disabled="_busy">New product</Button>
+    </Actions>
+</PageHeader>
+
+@if (_creating)
+{
+    <div class="card admin-form">
+        <Field Label="Name" Class="admin-form__wide">
+            <input class="input" @bind="_form.Name" placeholder="Walnut Monitor Shelf" />
+        </Field>
+        <Field Label="Category">
+            <select class="select" @bind="_form.Category">
+                @foreach (var category in _categories)
+                {
+                    <option value="@category">@category</option>
+                }
+            </select>
+        </Field>
+        <Field Label="Price">
+            <input class="input" type="number" min="0" step="1" @bind="_form.Price" />
+        </Field>
+        <Field Label="Blurb" Class="admin-form__wide">
+            <input class="input" @bind="_form.Blurb" placeholder="One-line description." />
+        </Field>
+        <div class="admin-form__actions">
+            <Button OnClick="SaveCreate" Disabled="_saving">Add product</Button>
+            <Button Variant="ButtonVariant.Ghost" OnClick="Cancel" Disabled="_saving">Cancel</Button>
+        </div>
+    </div>
+}
+
+@if (_products is null)
+{
+    <p class="empty">Loading…</p>
+}
+else if (_products.Count == 0)
+{
+    <p class="empty">No products yet.</p>
+}
+else
+{
+    <table class="atrium-table admin-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th class="num">Price</th>
+                <th>Blurb</th>
+                <th aria-label="Actions"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in _products)
+            {
+                @if (_editingId == product.Id)
+                {
+                    <tr>
+                        <td><input class="input" @bind="_form.Name" /></td>
+                        <td>
+                            <select class="select" @bind="_form.Category">
+                                @foreach (var category in _categories)
+                                {
+                                    <option value="@category">@category</option>
+                                }
+                            </select>
+                        </td>
+                        <td class="num"><input class="input" type="number" min="0" step="1" @bind="_form.Price" /></td>
+                        <td><input class="input" @bind="_form.Blurb" /></td>
+                        <td class="admin-table__actions">
+                            <Button Small OnClick="SaveEdit" Disabled="_saving">Save</Button>
+                            <Button Small Variant="ButtonVariant.Ghost" OnClick="Cancel" Disabled="_saving">Cancel</Button>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td>@product.Name</td>
+                        <td><Badge>@product.Category</Badge></td>
+                        <td class="num">$@product.Price.ToString("N0")</td>
+                        <td class="admin-table__blurb">@product.Blurb</td>
+                        <td class="admin-table__actions">
+                            <Button Small Variant="ButtonVariant.Secondary" OnClick="() => StartEdit(product)" Disabled="_busy">Edit</Button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<ProductDto>? _products;
+    private IReadOnlyList<string> _categories = [];
+    private int? _editingId;
+    private bool _creating;
+    private bool _saving;
+    private readonly ProductForm _form = new();
+
+    // Only one edit or create can be open at a time — the "New" and "Edit" buttons disable while busy.
+    private bool _busy => _creating || _editingId is not null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = (await Catalog.GetCategoriesAsync()).Select(c => c.Name).ToList();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() => _products = await Catalog.GetProductsAsync();
+
+    private void StartCreate()
+    {
+        _form.Reset(_categories.FirstOrDefault() ?? "");
+        _creating = true;
+    }
+
+    private void StartEdit(ProductDto product)
+    {
+        _form.Set(product);
+        _editingId = product.Id;
+    }
+
+    private void Cancel()
+    {
+        _creating = false;
+        _editingId = null;
+    }
+
+    private async Task SaveCreate()
+    {
+        _saving = true;
+        var (product, error) = await Catalog.CreateProductAsync(
+            new CreateProductRequest(_form.Name, _form.Category, _form.Price, _form.Blurb)
+        );
+        _saving = false;
+        if (error is not null)
+        {
+            Toasts.Show(error, ToastVariant.Danger);
+            return;
+        }
+        Toasts.Show($"Created {product!.Name}", ToastVariant.Success);
+        _creating = false;
+        await LoadAsync();
+    }
+
+    private async Task SaveEdit()
+    {
+        _saving = true;
+        var (product, error) = await Catalog.UpdateProductAsync(
+            _editingId!.Value,
+            new UpdateProductRequest(_form.Name, _form.Category, _form.Price, _form.Blurb)
+        );
+        _saving = false;
+        if (error is not null)
+        {
+            Toasts.Show(error, ToastVariant.Danger);
+            return;
+        }
+        Toasts.Show($"Saved {product!.Name}", ToastVariant.Success);
+        _editingId = null;
+        await LoadAsync();
+    }
+
+    private sealed class ProductForm
+    {
+        public string Name { get; set; } = "";
+        public string Category { get; set; } = "";
+        public decimal Price { get; set; }
+        public string Blurb { get; set; } = "";
+
+        public void Reset(string category)
+        {
+            Name = "";
+            Category = category;
+            Price = 0;
+            Blurb = "";
+        }
+
+        public void Set(ProductDto product)
+        {
+            Name = product.Name;
+            Category = product.Category;
+            Price = product.Price;
+            Blurb = product.Blurb;
+        }
+    }
+}

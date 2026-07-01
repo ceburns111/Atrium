@@ -16,6 +16,10 @@ public static class CatalogEndpoints
 
         catalog.MapGet("/products", GetProducts);
         catalog.MapGet("/categories", GetCategories);
+
+        // Writes are back-office only: on top of the group's auth, they require the admin realm role.
+        catalog.MapPost("/products", CreateProduct).RequireAuthorization("admin");
+        catalog.MapPut("/products/{id:int}", UpdateProduct).RequireAuthorization("admin");
     }
 
     private static async Task<Ok<IReadOnlyList<ProductDto>>> GetProducts(
@@ -28,4 +32,56 @@ public static class CatalogEndpoints
         ICatalogRepository repository,
         CancellationToken ct
     ) => TypedResults.Ok(await repository.GetCategoriesAsync(ct));
+
+    private static async Task<Results<Ok<ProductDto>, BadRequest<string>>> CreateProduct(
+        CreateProductRequest request,
+        ICatalogRepository repository,
+        CancellationToken ct
+    )
+    {
+        var error = await Validate(request.Name, request.Category, request.Price, repository, ct);
+        if (error is not null)
+        {
+            return TypedResults.BadRequest(error);
+        }
+        // Create always yields a row (the sproc guards the category), so the result is non-null.
+        return TypedResults.Ok((await repository.CreateProductAsync(request, ct))!);
+    }
+
+    private static async Task<Results<Ok<ProductDto>, NotFound, BadRequest<string>>> UpdateProduct(
+        int id,
+        UpdateProductRequest request,
+        ICatalogRepository repository,
+        CancellationToken ct
+    )
+    {
+        var error = await Validate(request.Name, request.Category, request.Price, repository, ct);
+        if (error is not null)
+        {
+            return TypedResults.BadRequest(error);
+        }
+        var product = await repository.UpdateProductAsync(id, request, ct);
+        return product is null ? TypedResults.NotFound() : TypedResults.Ok(product);
+    }
+
+    // Shared validation for writes: a real name, a positive price, and a category that actually exists.
+    private static async Task<string?> Validate(
+        string name,
+        string category,
+        decimal price,
+        ICatalogRepository repository,
+        CancellationToken ct
+    )
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "Name is required.";
+        }
+        if (price <= 0)
+        {
+            return "Price must be positive.";
+        }
+        var categories = await repository.GetCategoriesAsync(ct);
+        return categories.Any(c => c.Name == category) ? null : $"Unknown category '{category}'.";
+    }
 }

@@ -39,4 +39,56 @@ public sealed class CatalogRepository(SqlConnection db) : ICatalogRepository
         );
         return categories.AsList();
     }
+
+    public async Task<ProductDto?> CreateProductAsync(
+        CreateProductRequest request,
+        CancellationToken ct = default
+    ) =>
+        await WriteProductAsync(
+            "dbo.usp_Product_Create",
+            new
+            {
+                request.Name,
+                CategoryName = request.Category,
+                request.Price,
+                request.Blurb,
+            },
+            ct
+        );
+
+    public async Task<ProductDto?> UpdateProductAsync(
+        int id,
+        UpdateProductRequest request,
+        CancellationToken ct = default
+    ) =>
+        await WriteProductAsync(
+            "dbo.usp_Product_Update",
+            new
+            {
+                Id = id,
+                request.Name,
+                CategoryName = request.Category,
+                request.Price,
+                request.Blurb,
+            },
+            ct
+        );
+
+    // Both write sprocs SELECT the affected row back (empty for an unknown id), so one helper maps both.
+    private async Task<ProductDto?> WriteProductAsync(
+        string procedure,
+        object parameters,
+        CancellationToken ct
+    )
+    {
+        var row = await db.QuerySingleOrDefaultAsync<ProductRow>(
+            new CommandDefinition(
+                procedure,
+                parameters,
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct
+            )
+        );
+        return row is null ? null : CatalogMapper.ToDto(row);
+    }
 }

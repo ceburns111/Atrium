@@ -518,6 +518,109 @@ a.card:hover {
     font-size: var(--text-sm);
 }
 
+/* ---------- Admin: product create form + editable table ---------- */
+.admin-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+}
+.admin-form__wide {
+    grid-column: 1 / -1;
+}
+.admin-form__actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: var(--space-2);
+}
+.admin-table__blurb {
+    max-width: 34ch;
+    color: var(--muted);
+}
+/* Keep the actions column tight so the editable row's inputs get the width. */
+.admin-table th:last-child,
+.admin-table td:last-child {
+    width: 1%;
+    white-space: nowrap;
+}
+.admin-table__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+.admin-table .num .input {
+    text-align: right;
+}
+
+/* ---------- Reports: stat cards + CSS bar chart ---------- */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+.stat {
+    padding: var(--space-5);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+}
+.stat__label {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.stat__value {
+    margin-top: var(--space-2);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+}
+.stat--skeleton {
+    height: 96px;
+    border-color: transparent;
+    background: var(--surface-2);
+    animation: pulse 1.2s var(--ease) infinite;
+}
+.bars {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+.bar {
+    display: grid;
+    grid-template-columns: 8rem 1fr auto;
+    align-items: center;
+    gap: var(--space-4);
+}
+.bar__label {
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+}
+.bar__track {
+    height: 12px;
+    border-radius: var(--r-full);
+    background: var(--surface-2);
+    overflow: hidden;
+}
+.bar__fill {
+    height: 100%;
+    min-width: 2px;
+    border-radius: var(--r-full);
+    background: var(--accent);
+    transition: width var(--dur) var(--ease);
+}
+.bar__value {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
 /* ---------- Storefront: filters, products, cart ---------- */
 .filters {
     display: flex;

@@ -1,0 +1,73 @@
+@page "/reports"
+@attribute [Authorize]
+@inject ReportsClient Reports
+
+<PageTitle>Reports</PageTitle>
+
+<PageHeader Eyebrow="Reports"
+            Title="Sales"
+            Description="Live analytics over Storefront orders. Category totals are composed from the Catalog core, so they stay in step with the shop." />
+
+@if (_report is null)
+{
+    <div class="stat-grid">
+        @for (var i = 0; i < 3; i++)
+        {
+            <div class="stat stat--skeleton"></div>
+        }
+    </div>
+}
+else
+{
+    <div class="stat-grid">
+        <div class="stat">
+            <div class="stat__label">Revenue</div>
+            <div class="stat__value">$@_report.TotalRevenue.ToString("N0")</div>
+        </div>
+        <div class="stat">
+            <div class="stat__label">Orders</div>
+            <div class="stat__value">@_report.TotalOrders.ToString("N0")</div>
+        </div>
+        <div class="stat">
+            <div class="stat__label">Units sold</div>
+            <div class="stat__value">@_report.TotalUnits.ToString("N0")</div>
+        </div>
+    </div>
+
+    <div class="section-label">Revenue by category</div>
+
+    @if (_report.ByCategory.Count == 0)
+    {
+        <p class="empty">No orders yet — place one in the Storefront and it shows up here.</p>
+    }
+    else
+    {
+        <div class="bars">
+            @foreach (var category in _report.ByCategory)
+            {
+                <div class="bar">
+                    <div class="bar__label">@category.Category</div>
+                    <div class="bar__track">
+                        <div class="bar__fill" style="width: @Percent(category.Revenue)%"></div>
+                    </div>
+                    <div class="bar__value">$@category.Revenue.ToString("N0") · @category.Units u</div>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    private SalesReportDto? _report;
+    private decimal _maxRevenue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _report = await Reports.GetSalesAsync();
+        _maxRevenue = _report.ByCategory.Count == 0 ? 0 : _report.ByCategory.Max(c => c.Revenue);
+    }
+
+    // Bar width relative to the biggest category, so the largest bar always fills the track.
+    private int Percent(decimal revenue) =>
+        _maxRevenue == 0 ? 0 : (int)Math.Round(revenue / _maxRevenue * 100);
+}

@@ -22,8 +22,8 @@ procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 | 4a Catalog + gateway + Aspire | ✅ | `5617961` |
 | 4b Keycloak OIDC + secured catalog + token propagation | ✅ | `c1e73d6` |
 | 4c Storefront vertical (own DB) + slice→core | ✅ | `cb0f5c4` |
-| 5 Admin + Reports modules | ▢ next | — |
-| 6 Docs ("the rest") | ▢ | — |
+| 5 Admin + Reports modules (admin-role writes, real reports) | ✅ | — |
+| 6 Docs ("the rest") | ▢ next | — |
 | 7 Tests + polish | ▢ | — |
 
 Progress is also tracked in the task list (TaskList tool): Phase 5 = task #6, Phase 6 = #7, Phase 7 = #8.
@@ -61,9 +61,14 @@ cd /Users/ted/code/Atrium && dotnet csharpier format . && dotnet build Atrium.sl
 - `Atrium.Contracts` — DTOs (Product/Category/Order).
 - `Atrium.Modules.Storefront` — Storefront UI module (Shop, Cart, Orders; CatalogClient, OrdersClient,
   CartService). Amber accent.
-- `Atrium.Modules.Hello` — throwaway module proving discovery (keep until Phase 5, then can delete).
-- `Atrium.Services.Catalog` — core service: Dapper/sprocs/DbUp/Mapperly, JWT-secured.
-- `Atrium.Services.Storefront` — app vertical: own DB (orders), calls Catalog, JWT-secured.
+- `Atrium.Modules.Admin` — back-office products table with inline edit + create (AdminCatalogClient →
+  Catalog writes). Indigo accent. Writes are admin-role gated server-side; the page is view-any/write-admin.
+- `Atrium.Modules.Reports` — sales analytics: stat cards + CSS-drawn bar chart (ReportsClient →
+  Storefront `/reports/sales`). Violet accent. (Hello module removed — three real modules now prove discovery.)
+- `Atrium.Services.Catalog` — core service: Dapper/sprocs/DbUp/Mapperly, JWT-secured. Product reads for
+  all; `POST`/`PUT /catalog/products` gated on the `admin` policy.
+- `Atrium.Services.Storefront` — app vertical: own DB (orders), calls Catalog, JWT-secured. Adds a
+  `/storefront/reports/sales` aggregate that composes Catalog for the product→category map.
 - `Atrium.Gateway` — YARP reverse proxy + service discovery.
 - `Atrium.AppHost` — single-file Aspire (`apphost.cs`, run with `aspire run`).
 
@@ -117,18 +122,36 @@ cd /Users/ted/code/Atrium && dotnet csharpier format . && dotnet build Atrium.sl
   order/cart pages are `CartPage.razor` / `OrdersPage.razor` (routes set by `@page`, unaffected).
 - DbUp 7.x has `LogToConsole()`, not `LogToAutodetectedLog()`.
 - `aspire run` uses dynamic ports; always re-discover via `lsof`. Keycloak stays on 8080.
+- **Role-based auth needs `MapInboundClaims = false`.** The realm's role mapper puts a flat `role`
+  claim in the access token, and Catalog sets `RoleClaimType = "role"`. But JWT-bearer's default
+  `MapInboundClaims = true` renames the inbound `role` claim to the long `ClaimTypes.Role` URI, so
+  `RequireRole("admin")` (which matches on `RoleClaimType`) finds nothing → **403 for everyone, admins
+  included**. Fix: set `options.MapInboundClaims = false` (Catalog `Program.cs`), matching the Portal.
+- Debugging that took a token dump: temporarily `Console.WriteLine(http.User.Claims…)` in an already
+  authorized endpoint, hit it, and read the DCP `*_out` file under
+  `$TMPDIR/aspire-dcp*/` — service stdout isn't in `~/.aspire/logs` (those are CLI logs), and default
+  `Microsoft.AspNetCore=Warning` hides the authorization-failure line.
 
-## Picking up Phase 5 (Admin + Reports modules)
+## Phase 5 done — what landed
 
-Build two more UI modules to show "3 apps, one host", reusing the design system + `atrium-ui` skill:
-- **`Atrium.Modules.Admin`** — a data-table CRUD view over products (uses `.atrium-table`, `Field`,
-  `Button`). Could add admin write endpoints to the Catalog service (secured to the `admin` role — the
-  realm already has an `admin` user + role), or stay read-only against Catalog for scope.
-- **`Atrium.Modules.Reports`** — stat cards + **CSS-drawn bar charts** (no chart lib), e.g. sales by
-  category from orders. Give each module its own accent (see `IModule.Accent`; Storefront=amber).
-- Reference each from `Atrium.Portal` (one line each) — they auto-appear on the homepage + nav.
-- Then consider removing the Hello module.
+Three real modules now prove "N apps, one host" (Storefront, Admin, Reports); Hello was removed.
+- **Admin** writes go to the Catalog core: `usp_Product_Create`/`usp_Product_Update` (run-always sprocs
+  that SELECT the affected row back), `ICatalogRepository.Create/UpdateProductAsync`, `POST`/`PUT
+  /catalog/products` gated on the `admin` policy. UI is an editable `.atrium-table` with an inline
+  create form. `AdminCatalogClient` maps a 403 to a friendly toast rather than throwing.
+- **Reports** are real: `usp_Report_SalesByProduct` + `usp_Report_OrderCount` in the Storefront DB,
+  aggregated into `SalesReportDto`; the endpoint composes Catalog (product→category map) to bucket sales
+  by category — the same "slice calls core" relay used for pricing. UI = stat cards + CSS bar chart.
+- **Verified** end-to-end via Playwright + service logs: admin read/write both `200` (edit persisted);
+  testuser read `200`, write `403`; Reports rendered real composed data.
+
+## Picking up Phase 6 (Docs — "the rest")
+
+Write the docs called out in `ATRIUM-PLAN.md` §"The rest": other verticals (Admin/Reports APIs + DBs),
+promoting Orders to its own core service, polyrepo + contract-NuGet, prod service discovery,
+independent-UI-deploy options, short ADRs. Consider capturing the token-store option "B" (see Known
+limitations) as one of the ADRs.
 
 Workflow reminder (from prior phases): write code → `dotnet build` → run via `aspire run` → verify with
-Playwright screenshots → `code-simplifier`/`/code-review` pass → commit per phase (Co-Authored-By trailer).
+Playwright → `code-simplifier`/`/code-review` pass → commit per phase (Co-Authored-By trailer).
 Aesthetic direction via the `frontend-design` skill; consistency via the `.claude/skills/atrium-ui` skill.

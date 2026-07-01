@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 // This vertical's own database (no EF; Dapper over sprocs), plus the caller's HttpContext for token relay.
 builder.AddSqlServerClient("storefrontdb");
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHealthChecks();
 
@@ -44,5 +45,6 @@ app.UseAuthorization();
 
 app.MapHealthChecks("/health");
 app.MapOrderEndpoints();
+app.MapReportEndpoints();
 
 app.Run();

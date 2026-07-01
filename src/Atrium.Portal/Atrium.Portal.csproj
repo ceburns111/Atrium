@@ -2,7 +2,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Atrium.Abstractions\Atrium.Abstractions.csproj" />
     <ProjectReference Include="..\Atrium.Design\Atrium.Design.csproj" />
-    <ProjectReference Include="..\Atrium.Modules.Hello\Atrium.Modules.Hello.csproj" />
+    <ProjectReference Include="..\Atrium.Modules.Admin\Atrium.Modules.Admin.csproj" />
+    <ProjectReference Include="..\Atrium.Modules.Reports\Atrium.Modules.Reports.csproj" />
     <ProjectReference Include="..\Atrium.Modules.Storefront\Atrium.Modules.Storefront.csproj" />
     <ProjectReference Include="..\Atrium.Contracts\Atrium.Contracts.csproj" />
   </ItemGroup>

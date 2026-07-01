@@ -10,4 +10,14 @@ public interface ICatalogRepository
         CancellationToken ct = default
     );
     Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(CancellationToken ct = default);
+
+    Task<ProductDto?> CreateProductAsync(
+        CreateProductRequest request,
+        CancellationToken ct = default
+    );
+    Task<ProductDto?> UpdateProductAsync(
+        int id,
+        UpdateProductRequest request,
+        CancellationToken ct = default
+    );
 }
