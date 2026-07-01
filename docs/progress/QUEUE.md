@@ -37,15 +37,18 @@ if the stack is up (else commit with a "browser-unverified" note — see `README
       across services/gateway/portal. Gate = build + unit/integration + confirm traces/logs emit on the
       running stack (or note browser/stack-unverified). Atomic commit.
 
-## Supervised (best-effort unattended, but flag for the user's eye)
+## Supervised morning pass (one live pass, with the user — NOT the overnight loop)
 
-- [~] **Browser-verify #1 + Admin modal** (needs stack). Restart stack on the new build; verify the
-      session-expired panel on a forced 401, and the modal (open via New/Edit, save both paths,
-      Esc/X/Cancel, focus return, narrow viewport). Screenshot per atrium-ui. Log findings; don't
-      "fix-and-forget" anything subjective.
-- [~] **Dialog frontend-design polish** (subjective). User wants the modal to read as a small, centered,
-      "cute" dialog with better spacing. A reversible `frontend-design` CSS pass is OK, but **flag it in
-      LOG for the user to eyeball** — don't mark it done.
+All live/browser/trace verification is consolidated here so the overnight loop never drives the stack.
+Bring the stack up on the new build (`cd src/Atrium.AppHost && aspire run`), then:
+
+- [~] **#1 session-expired panel** — force a 401 (drop Keycloak accessTokenLifespan or wait out expiry);
+      confirm the panel renders instead of the crash overlay.
+- [~] **Admin modal** — open via New product and Edit; save both paths persist; Esc / X / Cancel each
+      close; focus returns to the trigger; narrow viewport. Screenshot per atrium-ui.
+- [~] **Dialog "cute"/spacing polish** — subjective; `frontend-design` pass, user eyeballs it.
+- [~] **Item 4 live** — `/openapi/v1.json` + Redoc render for Catalog and Storefront.
+- [~] **Item 6 live** — traces/logs actually emit across services/gateway/portal.
 
 ## Low / tomorrow
 

@@ -9,10 +9,13 @@ The progress system is set up. **No queue item has been started yet.** The next 
 
 ## Next concrete action
 
-Start item **10**: read `docs/adr/` (esp. 0004, 0007) and the four "done this session" commits, then
-add/update ADRs for: graceful session-expiry handling, service-root route nesting, the native-`<dialog>`
-Dialog primitive, and the co-located repository interfaces. Keep `docs/adr/README.md` in sync. Gate =
-build-clean + accuracy self-review (docs item). Commit, then advance to item 2.
+1. `git switch -c overnight/2026-07-01` (off `main`) — all autonomous commits go here, not `main`.
+2. Resume hygiene: `git status` clean? `dotnet build` + `dotnet test` green baseline? Docker up? Record
+   the start commit in `LOG.md`.
+3. Start item **10**: read `docs/adr/` (esp. 0004, 0007) + the four "done this session" commits, then
+   add/update ADRs for graceful session-expiry handling, service-root route nesting, the native-`<dialog>`
+   Dialog primitive, and the co-located repository interfaces. Keep `docs/adr/README.md` in sync. Gate =
+   build-clean + accuracy check (docs). Commit, advance to item 2.
 
 ## Autonomy boundary
 
@@ -25,9 +28,11 @@ their viewer pick). See `README.md` for the full rule.
 
 ## Stack / environment
 
-- An Aspire stack was running during the session but on the **pre-modal build** — a restart is required
-  before any browser-verify. Not needed for the docs batch.
-- Docs items need no stack and no Docker.
+- **Docker must be up** (integration tests use Testcontainers). The **aspire stack is NOT required**
+  overnight — the loop runs deterministic gates only; all live/browser/trace checks are the supervised
+  morning pass's job.
+- Docs items need neither Docker nor the stack.
+- Branch: `overnight/2026-07-01` (create on first resume). `main` stays pristine.
 
 ## Blockers
 
