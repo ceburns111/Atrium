@@ -5,6 +5,17 @@ using Microsoft.Data.SqlClient;
 
 namespace Atrium.Services.Storefront.Orders;
 
+public interface IOrderRepository
+{
+    Task<int> CreateAsync(
+        string userName,
+        IReadOnlyList<OrderLineDto> lines,
+        CancellationToken ct = default
+    );
+
+    Task<IReadOnlyList<OrderDto>> GetOrdersAsync(string userName, CancellationToken ct = default);
+}
+
 /// <summary>
 /// Dapper-backed order store over stored procedures. Order creation inserts the header and each line
 /// inside one transaction owned here; reads group the flat sproc rows into <see cref="OrderDto"/>.

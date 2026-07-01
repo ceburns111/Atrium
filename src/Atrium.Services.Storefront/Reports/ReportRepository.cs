@@ -4,6 +4,13 @@ using Microsoft.Data.SqlClient;
 
 namespace Atrium.Services.Storefront.Reports;
 
+/// <summary>Read model for storefront analytics — aggregates this vertical's own order tables.</summary>
+public interface IReportRepository
+{
+    Task<IReadOnlyList<ProductSalesRow>> GetSalesByProductAsync(CancellationToken ct = default);
+    Task<int> GetOrderCountAsync(CancellationToken ct = default);
+}
+
 /// <summary>Dapper-backed analytics reads over the order tables (sproc-only, like the order store).</summary>
 public sealed class ReportRepository(SqlConnection db) : IReportRepository
 {

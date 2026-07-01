@@ -17,7 +17,9 @@ public class SessionExpiredTests
     {
         var client = CatalogClientReturning(HttpStatusCode.Unauthorized);
 
-        await Assert.ThrowsAsync<SessionExpiredException>(() => client.GetProductsAsync());
+        await Assert.ThrowsAsync<SessionExpiredException>(() =>
+            client.GetProductsAsync(ct: TestContext.Current.CancellationToken)
+        );
     }
 
     [Fact]
@@ -26,7 +28,9 @@ public class SessionExpiredTests
         var client = CatalogClientReturning(HttpStatusCode.InternalServerError);
 
         // A 500 is a genuine fault, not an expired session — it must not be masked as a session prompt.
-        await Assert.ThrowsAsync<HttpRequestException>(() => client.GetProductsAsync());
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            client.GetProductsAsync(ct: TestContext.Current.CancellationToken)
+        );
     }
 
     private static CatalogClient CatalogClientReturning(HttpStatusCode status)
