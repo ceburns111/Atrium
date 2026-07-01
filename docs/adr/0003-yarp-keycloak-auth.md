@@ -46,3 +46,5 @@ want a realistic auth model — real OIDC, real JWT validation, roles — not a 
   table that a gateway gives you.
 - **A hand-rolled auth / dev IdP** — wouldn't demonstrate a real OIDC + JWT + roles pipeline, which is
   the point.
+
+**Diagrams:** [auth-sequence.md](../diagrams/auth-sequence.md) — OIDC login → bearer → gateway forward → JWT validation; topology in [ARCHITECTURE.md](../ARCHITECTURE.md#topology).

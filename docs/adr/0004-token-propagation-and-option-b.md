@@ -69,3 +69,5 @@ production path is **`Duende.AccessTokenManagement`**, which also adds silent **
 - **Blazor WebAssembly / BFF token handoff** — different hosting model than this project targets.
 - **Jump straight to `Duende.AccessTokenManagement`** — the right prod answer, but more than a demo
   needs; option B is the cheaper intermediate that already fixes the cookie smell.
+
+**Diagrams:** [auth-sequence.md](../diagrams/auth-sequence.md) — token-in-claim → `AccessTokenHolder` → bearer attach.
