@@ -12,7 +12,15 @@
 
 @if (_orders is null)
 {
-    <p class="empty">Loading orders…</p>
+    @for (var i = 0; i < 3; i++)
+    {
+        <div class="card order-card">
+            <div class="order-card__head">
+                <span class="skeleton skeleton-line"></span>
+            </div>
+            <span class="skeleton skeleton-line"></span>
+        </div>
+    }
 }
 else if (_orders.Count == 0)
 {

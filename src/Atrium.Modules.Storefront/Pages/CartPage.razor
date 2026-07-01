@@ -16,57 +16,74 @@
 }
 else
 {
-    <table class="atrium-table cart-table">
-        <thead>
-            <tr>
-                <th>Item</th>
-                <th class="num">Price</th>
-                <th>Quantity</th>
-                <th class="num">Subtotal</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var line in Cart.Lines)
-            {
+    <div class="table-scroll">
+        <table class="atrium-table cart-table">
+            <thead>
                 <tr>
-                    <td>@line.Product.Name</td>
-                    <td class="num">$@line.Product.Price.ToString("N0")</td>
-                    <td>
-                        <div class="stepper">
-                            <button class="stepper__btn" @onclick="() => Cart.SetQuantity(line.Product.Id, line.Quantity - 1)" aria-label="Decrease quantity">&minus;</button>
-                            <span class="stepper__n">@line.Quantity</span>
-                            <button class="stepper__btn" @onclick="() => Cart.SetQuantity(line.Product.Id, line.Quantity + 1)" aria-label="Increase quantity">+</button>
-                        </div>
-                    </td>
-                    <td class="num">$@((line.Product.Price * line.Quantity).ToString("N0"))</td>
-                    <td class="num">
-                        <button class="btn btn--ghost btn--sm" @onclick="() => Cart.Remove(line.Product.Id)">Remove</button>
-                    </td>
+                    <th>Item</th>
+                    <th class="num">Price</th>
+                    <th>Quantity</th>
+                    <th class="num">Subtotal</th>
+                    <th></th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var line in Cart.Lines)
+                {
+                    <tr>
+                        <td>@line.Product.Name</td>
+                        <td class="num">$@line.Product.Price.ToString("N0")</td>
+                        <td>
+                            <div class="stepper">
+                                <button class="stepper__btn" @onclick="() => Cart.SetQuantity(line.Product.Id, line.Quantity - 1)" aria-label="Decrease quantity">&minus;</button>
+                                <span class="stepper__n">@line.Quantity</span>
+                                <button class="stepper__btn" @onclick="() => Cart.SetQuantity(line.Product.Id, line.Quantity + 1)" aria-label="Increase quantity">+</button>
+                            </div>
+                        </td>
+                        <td class="num">$@((line.Product.Price * line.Quantity).ToString("N0"))</td>
+                        <td class="num">
+                            <button class="btn btn--ghost btn--sm" @onclick="() => Cart.Remove(line.Product.Id)">Remove</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 
     <div class="cart-summary">
         <div class="cart-summary__total">
             <span>Total</span>
             <strong>$@Cart.Total.ToString("N0")</strong>
         </div>
-        <Button Variant="ButtonVariant.Accent" OnClick="PlaceOrder">Place order</Button>
+        <Button Variant="ButtonVariant.Accent" OnClick="PlaceOrder" Disabled="_placing">@(_placing ? "Placing…" : "Place order")</Button>
     </div>
 }
 
 @code {
+    private bool _placing;
+
     private async Task PlaceOrder()
     {
-        var request = new CreateOrderRequest(
-            Cart.Lines.Select(l => new OrderItemRequest(l.Product.Id, l.Quantity)).ToList()
-        );
-        var order = await Orders.CreateAsync(request);
-        Cart.Clear();
-        Toasts.Show($"Order placed — ${order?.Total ?? 0:N0}", ToastVariant.Success);
-        Nav.NavigateTo("/storefront/orders");
+        // Guard against a double-click placing the order twice while the request is in flight.
+        if (_placing)
+        {
+            return;
+        }
+        _placing = true;
+        try
+        {
+            var request = new CreateOrderRequest(
+                Cart.Lines.Select(l => new OrderItemRequest(l.Product.Id, l.Quantity)).ToList()
+            );
+            var order = await Orders.CreateAsync(request);
+            Cart.Clear();
+            Toasts.Show($"Order placed — ${order?.Total ?? 0:N0}", ToastVariant.Success);
+            Nav.NavigateTo("/storefront/orders");
+        }
+        finally
+        {
+            _placing = false;
+        }
     }
 
     protected override void OnInitialized() => Cart.Changed += Refresh;

@@ -42,7 +42,31 @@
 
 @if (_products is null)
 {
-    <p class="empty">Loading…</p>
+    <div class="table-scroll">
+        <table class="atrium-table admin-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th class="num">Price</th>
+                    <th>Blurb</th>
+                    <th aria-label="Actions"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (var i = 0; i < 5; i++)
+                {
+                    <tr>
+                        <td><span class="skeleton skeleton-line"></span></td>
+                        <td><span class="skeleton skeleton-line"></span></td>
+                        <td class="num"><span class="skeleton skeleton-line"></span></td>
+                        <td><span class="skeleton skeleton-line"></span></td>
+                        <td></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 else if (_products.Count == 0)
 {
@@ -50,6 +74,7 @@ else if (_products.Count == 0)
 }
 else
 {
+    <div class="table-scroll">
     <table class="atrium-table admin-table">
         <thead>
             <tr>
@@ -98,6 +123,7 @@ else
             }
         </tbody>
     </table>
+    </div>
 }
 
 @code {

@@ -518,6 +518,25 @@ a.card:hover {
     font-size: var(--text-sm);
 }
 
+/* Let wide data tables scroll horizontally instead of breaking the layout on narrow viewports. */
+.table-scroll {
+    overflow-x: auto;
+}
+
+/* ---------- Skeleton loading (shared shimmer) ---------- */
+/* One shimmer definition; page-specific skeletons (product/stat/line) just set their own size. */
+.skeleton {
+    background: var(--surface-2);
+    border-color: transparent;
+    animation: pulse 1.2s var(--ease) infinite;
+}
+.skeleton-line {
+    display: block;
+    width: 60%;
+    height: 0.75rem;
+    border-radius: var(--r-full);
+}
+
 /* ---------- Admin: product create form + editable table ---------- */
 .admin-form {
     display: grid;
@@ -547,9 +566,18 @@ a.card:hover {
     display: flex;
     justify-content: flex-end;
     gap: var(--space-2);
+    /* Never collapse below the buttons' own width — the "width: 1%" above squeezes the column, and in
+       edit mode (Save + Cancel) the flex row would otherwise overflow left onto the Blurb cell. */
+    min-width: max-content;
 }
 .admin-table .num .input {
     text-align: right;
+}
+/* The two-column create form collapses to one column when there isn't room for two. */
+@media (max-width: 620px) {
+    .admin-form {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* ---------- Reports: stat cards + CSS bar chart ---------- */
@@ -579,11 +607,9 @@ a.card:hover {
     color: var(--ink);
     font-variant-numeric: tabular-nums;
 }
+/* Shimmer comes from .skeleton (added in markup); this only sets the placeholder's size. */
 .stat--skeleton {
     height: 96px;
-    border-color: transparent;
-    background: var(--surface-2);
-    animation: pulse 1.2s var(--ease) infinite;
 }
 .bars {
     display: flex;
@@ -699,9 +725,6 @@ a.card:hover {
 }
 .product--skeleton {
     height: 268px;
-    border-color: transparent;
-    background: var(--surface-2);
-    animation: pulse 1.2s var(--ease) infinite;
 }
 @keyframes pulse {
     50% {

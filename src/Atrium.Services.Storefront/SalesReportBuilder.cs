@@ -10,6 +10,16 @@ namespace Atrium.Services.Storefront;
 /// </summary>
 public static class SalesReportBuilder
 {
+    /// <summary>
+    /// Builds the product-name → category lookup the report buckets by. Order lines reference products
+    /// by <em>name</em>, and names are not unique (admin can create two products with the same name), so
+    /// this collapses duplicates to one category per name (first wins) rather than throwing on a
+    /// duplicate key — the crash a plain <c>ToDictionary(p =&gt; p.Name)</c> would produce.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> CategoryByProductName(
+        IEnumerable<ProductDto> products
+    ) => products.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First().Category);
+
     public static SalesReportDto Build(
         IReadOnlyList<ProductSalesRow> sales,
         int orderCount,

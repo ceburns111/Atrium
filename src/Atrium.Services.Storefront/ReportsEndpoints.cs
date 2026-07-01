@@ -27,9 +27,9 @@ public static class ReportsEndpoints
     {
         var sales = await repository.GetSalesByProductAsync(ct);
         var orderCount = await repository.GetOrderCountAsync(ct);
-        var categoryByProduct = (await catalog.GetProductsAsync(ct)).ToDictionary(
-            p => p.Name,
-            p => p.Category
+        // Product names aren't unique, so dedupe when mapping name → category (see the helper's note).
+        var categoryByProduct = SalesReportBuilder.CategoryByProductName(
+            await catalog.GetProductsAsync(ct)
         );
 
         // The bucketing is a pure function (see SalesReportBuilder) so it can be unit-tested alone.

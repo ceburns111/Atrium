@@ -71,6 +71,24 @@ public class SalesReportBuilderTests
     }
 
     [Fact]
+    public void CategoryByProductName_collapses_duplicate_names_instead_of_throwing()
+    {
+        // Names aren't unique (admin can create two "Walnut Monitor Shelf" products); a plain
+        // ToDictionary(p => p.Name) throws on the duplicate key. Regression for that 500 on /reports.
+        var products = new[]
+        {
+            new ProductDto(1, "Walnut Monitor Shelf", "Desk", 89m, "blurb"),
+            new ProductDto(2, "Walnut Monitor Shelf", "Storage", 89m, "dup name"),
+            new ProductDto(3, "Headphones", "Audio", 199m, "blurb"),
+        };
+
+        var map = SalesReportBuilder.CategoryByProductName(products);
+
+        Assert.Equal("Desk", map["Walnut Monitor Shelf"]); // first wins
+        Assert.Equal("Audio", map["Headphones"]);
+    }
+
+    [Fact]
     public void Totals_roll_up_the_categories_and_pass_the_order_count_through()
     {
         var sales = new[] { Sale("Desk Mat", 2, 80m), Sale("Headphones", 3, 600m) };
