@@ -2,7 +2,29 @@
 
 **Read this first, then `docs/ARCHITECTURE.md` for how it fits together, `docs/adr/` for why, and
 `docs/ATRIUM-PLAN.md` for the original design.** This file is the "where we are and how to pick up"
-note. Last updated after **Phase 6** (2026-07-01).
+note. Last updated after **Phase 7 + a service reorg** (2026-07-01).
+
+## ▶ Start here (this session)
+
+**First task: a Playwright smoke test of the service reorg** (commit `6b59938` moved every service file
+into feature folders + nested namespaces — build + all 20 tests pass, but it hasn't been driven in a
+browser yet). Steps:
+
+1. **Start the stack** (Docker must be running): `cd src/Atrium.AppHost && aspire run`. Wait ~1–2 min,
+   then find the Portal's **https** port: `lsof -iTCP -sTCP:LISTEN -P -n | grep Atrium.Po` and probe
+   with `curl -k` (dynamic ports change every run).
+2. **Log out first, then log in** — an old cookie carries a dead token after a restart and 500s the
+   module pages (see Known limitations). Navigate to `/account/logout`, then to `/admin`, and sign in
+   as `admin` / `password` at Keycloak (`https://localhost:8080`).
+3. **Walk the flows** and confirm no 500s / correct render:
+   - Storefront → **add 2 items** → click the in-app **Cart** link (NOT `page.goto` — the cart is
+     circuit-scoped, so a full navigation starts a fresh empty circuit) → **Place order** → lands on
+     Orders with the order → **Reports** shows composed category data → **Admin**, click **Edit** on a
+     row and confirm Save/Cancel don't overlap the Blurb cell (that was a bug fixed in `0a5c75e`).
+   - Resize to ~420px: sidebar collapses to a "Menu" drawer; wide tables scroll **within** their
+     container (no page-level horizontal scroll).
+4. If green, the reorg is verified — move on to open work (nothing is pending; the build is at a clean
+   stopping point).
 
 ## TL;DR
 
@@ -12,7 +34,7 @@ Atrium is a modular-monolith **Blazor Server portal** (rebuild of CozenDemo, whi
 **Storefront app vertical** (its own DB), authenticated by **Keycloak**. Backend is **Dapper + stored
 procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 
-## Status: Phases 0–6 done + Phase 7 tests, committed. Next: Phase 7 polish (optional).
+## Status: Phases 0–7 done + service reorg, committed. Next: smoke-test the reorg (see ▶ above).
 
 | Phase | State | Commit |
 |---|---|---|
@@ -27,6 +49,7 @@ procedures + DbUp + Mapperly** (no EF), orchestrated by **Aspire**.
 | 6 Docs (ARCHITECTURE + 6 ADRs + BEYOND-THE-DEMO) | ✅ | `653911d` |
 | 7 Tests (curated 3-unit + 2-integration suite) | ✅ | `b0c1035` |
 | 7 Polish (responsive/focus/loading + 2 bug fixes) | ✅ | `0a5c75e` |
+| Service reorg (feature folders + ADR-0007) | ✅ (browser-smoke pending) | `6b59938` |
 
 (The TaskList tool is session-scoped — it starts empty each session; recreate tasks for the phase you pick up.)
 
@@ -58,9 +81,9 @@ cd /Users/ted/code/Atrium && dotnet csharpier format . && dotnet build Atrium.sl
 **Test.** Unit tests need nothing; integration tests spin a real SQL Server via Testcontainers, so
 **Docker must be running** for them.
 ```
-dotnet test tests/Atrium.UnitTests/Atrium.UnitTests.csproj          # 15 fast tests, no Docker
+dotnet test tests/Atrium.UnitTests/Atrium.UnitTests.csproj          # 16 fast tests, no Docker
 dotnet test tests/Atrium.IntegrationTests/Atrium.IntegrationTests.csproj   # 4 tests, needs Docker (~11s)
-dotnet test Atrium.slnx                                              # everything
+dotnet test Atrium.slnx                                              # everything (20 total)
 ```
 
 ## Solution layout (all under `src/`)
@@ -77,9 +100,12 @@ dotnet test Atrium.slnx                                              # everythin
 - `Atrium.Modules.Reports` — sales analytics: stat cards + CSS-drawn bar chart (ReportsClient →
   Storefront `/reports/sales`). Violet accent. (Hello module removed — three real modules now prove discovery.)
 - `Atrium.Services.Catalog` — core service: Dapper/sprocs/DbUp/Mapperly, JWT-secured. Product reads for
-  all; `POST`/`PUT /catalog/products` gated on the `admin` policy.
+  all; `POST`/`PUT /catalog/products` gated on the `admin` policy. Internals in a `Catalog/` feature
+  folder (namespace `…Catalog.Catalog`); DbUp under `Data/`.
 - `Atrium.Services.Storefront` — app vertical: own DB (orders), calls Catalog, JWT-secured. Adds a
-  `/storefront/reports/sales` aggregate that composes Catalog for the product→category map.
+  `/storefront/reports/sales` aggregate that composes Catalog for the product→category map. Internals
+  organized by feature — `Orders/`, `Reports/`, `Catalog/` (the shared slice→core client), `Data/` —
+  with namespaces nested per folder. **See ADR-0007** for the reorg + repository-testing rationale.
 - `Atrium.Gateway` — YARP reverse proxy + service discovery.
 - `Atrium.AppHost` — single-file Aspire (`apphost.cs`, run with `aspire run`).
 
@@ -194,11 +220,30 @@ uses sprocs). **Five tests, each a distinct concept**, split fast-unit vs slow-i
 - **Verified:** `dotnet test Atrium.slnx` → 19/19 pass (unit 15, integration 4 in ~11s); full
   `dotnet build` clean, 0 warnings.
 
-## Picking up Phase 7 polish (optional)
+## Phase 7 polish done — what landed (`0a5c75e`)
 
-Responsive + focus + loading-state pass across the three modules (see `ATRIUM-PLAN.md` Phase 7). Not
-started — the tests were the priority. Use the `frontend-design` skill for aesthetic direction and the
-`.claude/skills/atrium-ui` skill for consistency.
+Responsive / focus / loading pass across the three modules, all via shared design-system tokens, plus
+two **pre-existing** bugs the Playwright smoke surfaced:
+- **Loading consistency:** Orders + Admin now show skeletons (shared `.skeleton` + `.skeleton-line`)
+  instead of "Loading…" text, matching Shop/Reports. Cart/Admin tables wrapped in `.table-scroll` so
+  they scroll within their container on narrow screens; admin create form collapses to 1 column <620px.
+- **"Place order" double-submit guard** (`_placing` in-flight state).
+- **Bug: admin inline-edit row overlap** — the `width:1%` actions column collapsed and the Save/Cancel
+  buttons overflowed onto the Blurb cell. Fixed with `min-width:max-content` on `.admin-table__actions`.
+- **Bug: Reports 500 on duplicate product names** — `/storefront/reports/sales` built
+  `ToDictionary(p => p.Name)` which threw when two products shared a name (names aren't unique; orders
+  reference products by name). Fixed via a deduping `SalesReportBuilder.CategoryByProductName` helper
+  (first wins) + a regression unit test. Found because the admin created a duplicate "Walnut Monitor
+  Shelf" during the smoke.
+
+## Service reorg done — what landed (`6b59938`)
+
+Both backend services were flat (all files in the project root). Reorganized internals **by feature**
+(vertical slices), namespaces nested per folder — Storefront `Orders/` · `Reports/` · `Catalog/`
+(shared slice→core client) · `Data/`; Catalog `Catalog/` · `Data/`. Repository interfaces **kept**
+(DIP + convention + optionality); `DatabaseInitializer` left duplicated over a shared lib. Pure move —
+git renames, 20/20 tests green. Reasoning in **ADR-0007** (incl. the "why integration-test repos
+instead of mocking" writeup). **Not yet driven in a browser** → that's the ▶ Start-here task above.
 
 Workflow reminder (from prior phases): write code → `dotnet build` → run via `aspire run` → verify with
 Playwright → `code-simplifier`/`/code-review` pass → commit per phase (Co-Authored-By trailer).
