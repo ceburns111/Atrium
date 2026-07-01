@@ -21,13 +21,14 @@ gate → **C** basic payment/checkout → **D** architecture + UI-flow mermaid d
 
 ## Next concrete action
 
-**Items A–D DONE** (`afb89eb` / `7ab96e5` / `da4abba` / `6c015d0`). The four "core" items are complete.
-**Now the "## Last" bucket — best-effort + flag (subjective):** **item E** dark mode, then **item F** store
-images. Dispatch an implementer for E: add a `:root[data-theme="dark"]` (+ `prefers-color-scheme` fallback)
-token override in `tokens.css` (colors only; never touch component CSS — they read the vars) + a small
-theme-toggle primitive in `Atrium.Design` wired into the shell top-bar, persisting to `localStorage` via
-prerender-guarded interop (ADR-0010). Gate = build + test green; the *look* is subjective → mark `[~]`, flag
-for the user, do NOT declare "done." Then F (generated on-brand SVG placeholders; flag for real imagery).
+**Items A–D DONE** (`afb89eb` / `7ab96e5` / `da4abba` / `6c015d0`); **E dark mode `[~]` best-effort**
+(`cbf4fb2`, flagged for visual review). **Last item: F — store images** (best-effort). Dispatch an
+implementer: since real licensed photos can't be sourced unattended, add tasteful **generated SVG
+placeholders** keyed deterministically by product/category (design-token tints) so the storefront isn't
+image-less, wired through the existing product data + `Atrium.Design`; **flag** that curated imagery is a
+user call (or mark `BLOCKED: needs curated licensed images` if it can't be done cleanly). Gate = build +
+test green; mark `[~]`. After F, the queue is drained → wind down: write the wake-up summary + STATUS
+pointing at the supervised remainder.
 
 ## Autonomy boundary
 

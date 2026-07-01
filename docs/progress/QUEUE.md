@@ -117,7 +117,15 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
 
 ## "## Last" bucket — best-effort + flag (subjective / asset-driven)
 
-- [ ] **E · Dark mode** (code/CSS — best-effort, supervised look). `tokens.css` is already dark-ready
+- [~] **E · Dark mode** (code/CSS — best-effort) — `cbf4fb2`. **Committed but NOT "done" — needs the user's
+      eye.** `:root[data-theme="dark"]` token overrides (colors only) + `prefers-color-scheme` fallback
+      scoped to `:not([data-theme])`; new `ThemeToggle` primitive (persists to `localStorage`); anti-flash
+      inline script in `App.razor`; prerender-guarded interop (ADR-0010). Gate 0W/0E, 56/56. **Supervised
+      review spots:** module accent monogram chips (esp. Storefront amber `#b45309` on dark — lives in the
+      module `.cs`, not tokens), status badges, shadows/elevation, accent-button hover direction.
+
+      <details><summary>original spec</summary>
+      `tokens.css` is already dark-ready
       (every color is a CSS var; zero hard-coded values). **Plan:** add a `:root[data-theme="dark"]` (and
       an `@media (prefers-color-scheme: dark)` fallback) block overriding the color tokens (`--paper`,
       `--surface`, `--ink`, `--muted`, `--accent`, status colors) with a considered dark palette — do
@@ -126,6 +134,7 @@ Ordering rationale: **A** is a small, low-risk quick win that reuses the proven 
       a tiny JS-interop helper and applying `data-theme` on load (guard `IJSRuntime` for prerender per
       ADR-0010's interop lessons). Gate = build + test green. **Subjective → flag for the user's eye;
       don't declare "done," mark `[~]`.**
+      </details>
 
 - [ ] **F · Find store images** (assets — best-effort, likely needs the user). Storefront products render
       without imagery. **Honest constraint:** I can't unattended-browse and download real product photos

@@ -230,3 +230,15 @@ merged to `main`. Source of the new items: `TODO.md` "🆕 New work" + "## Last"
   gateway is pass-through (no auth box), the Storefront→Catalog hop is **direct** (`https+http://catalog`,
   not via the gateway), catalog GET is anonymous, `/storefront/checkout` + `/storefront/orders` exist, and
   `OrderPricing.cs` exists as named. Docs gate: accuracy check passed; build 0W/0E (markdown-only).
+- `cbf4fb2` — **Item E (dark mode)** done as **best-effort `[~]` — committed but NOT declared "done"**
+  (subjective; needs the user's eye, same handling as Run 1's Dialog polish). Dark palette as **token
+  overrides only** (`:root[data-theme="dark"]` in `tokens.css`) + a `prefers-color-scheme` fallback scoped
+  to `:root:not([data-theme])` so an explicit choice wins; component CSS untouched (reads the vars). New
+  `ThemeToggle` primitive (Ghost `Button`, sun/moon) persists to `localStorage`; wired into the shell
+  top-bar. Anti-flash: an inline `<script>` in `App.razor`'s `<head>` applies the saved/system theme before
+  first paint; runtime interop is prerender-guarded (`OnAfterRenderAsync`/click only, `JSDisconnected`/
+  `InvalidOperation` caught — ADR-0010 pattern). Orchestrator verified the anti-flash script + the media-
+  query scoping (both correct) and the gate. Implementer gave AA contrast reasoning. Gate: csharpier no-op,
+  build 0W/0E, `dotnet test` 56/56. **Supervised review spots (flagged for the user):** module accent
+  monogram chips (esp. Storefront amber `#b45309` on dark — value lives in the module `.cs`, outside
+  `tokens.css`), status badges, shadows/elevation, accent-button hover direction. **Live look = supervised.**
