@@ -131,7 +131,7 @@ deferred** (see below) — it is **not** in this run.
   convention (surface AG-UI error events + session expiry the standard way). Renders text + tool cards
   (design-doc v1 scope — no generative UI beyond that). **Pull from Atrium.Design tokens/primitives — no
   ad-hoc CSS** (per the `atrium-ui` skill). Also usable inline on a module page. Gate: build + test green.
-- [ ] **C5 · Storefront module surface + shell launcher.** `Atrium.Modules.Storefront` declares an
+- [~] **C5 · Storefront module surface + shell launcher.** `Atrium.Modules.Storefront` declares an
   `AgentSurface("Order Support", "/storefront/agent", StarterPrompts: […])`. The **Portal shell** reads
   `AgentSurfaces` from every discovered module and renders a context-aware assistant launcher (app-bar
   entry targeting the active module's agent), gated by the same step-up state — mirroring how the shell

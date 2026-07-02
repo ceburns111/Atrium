@@ -20,6 +20,11 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 // Design-system services available to every module.
 builder.Services.AddScoped<ToastService>();
 
+// AG-UI chat plumbing for the <AgentChat> primitive (named gateway client + circuit-scoped factory that
+// attaches the signed-in user's bearer). Registered here so it shares the AccessTokenHolder + service
+// discovery this host already sets up for module clients.
+builder.Services.AddAgentChat();
+
 // Every module HttpClient gets service discovery (resolve "https+http://gateway") and the signed-in
 // user's bearer token, applied by default so modules don't wire it themselves.
 builder.Services.AddServiceDiscovery();

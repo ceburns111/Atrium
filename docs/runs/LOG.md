@@ -442,3 +442,20 @@ down cleanly, wrote `GOOD-MORNING.md`. Remaining work is all supervised (live/vi
   tool-calling turn (needs Foundry Local); (4) autoscroll JS; (5) light/dark Playwright screenshots.
 - **Gate (orchestrator re-ran):** csharpier clean (87), build 0W/0E, `dotnet test` 80/80. Confidence: high
   on compile/handler; medium on live circuit-token flow (documented + mitigated, unproven).
+
+### Item C5 — module AgentSurface + Portal shell launcher (code, Tier-0/UI) — [~] best-effort
+- **Note on execution:** two C5 subagents died on a transient **API 529 overload** (the same outage took
+  the Bash safety classifier down for ~10 min). The tree was clean after each, so the **orchestrator wrote
+  C5 directly** (Run-2 item-G precedent) and gated it once the API recovered.
+- **Done (testable half):** `StorefrontModule.AgentSurfaces` declares `AgentSurface("Order Support",
+  "storefront/agent", StarterPrompts: ["Where's my order?", "Find me a desk lamp"])` — endpoint is
+  gateway-relative (no leading slash) so `<AgentChat>` resolves it against the gateway base → the C3
+  `/storefront/agent` route. Unit test `StorefrontModuleTests` asserts the surface (name/endpoint/prompts).
+- **`[~]` best-effort (UI, live-unverified):** `Program.cs` calls `AddAgentChat()` (shares AccessTokenHolder
+  + service discovery). New `AssistantLauncher.razor` (Portal shell): injects `ModuleCatalog`, picks the
+  active section's module surface (falls back to the first available), renders a topbar trigger inside
+  `<AuthorizeView><Authorized>` (authenticated-only) that opens a `Dialog` hosting `<AgentChat>`;
+  re-resolves on `LocationChanged`, disposes the handler. `MainLayout` drops `<AssistantLauncher/>` next to
+  `<ThemeToggle/>`. Design tokens/primitives only.
+- **Gate (orchestrator ran):** csharpier clean (88), build **0W/0E**, `dotnet test` **81/81** (+1 surface
+  test). **Live click-through / streaming / screenshots = supervised pass** (see `verification/`).

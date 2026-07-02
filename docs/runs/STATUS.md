@@ -1,13 +1,30 @@
 # STATUS — read me first
 
-**Updated:** 2026-07-01 (Run 2 merged; **Run 3 IN PROGRESS** on `feat/support-chatbot`).
+**Updated:** 2026-07-01 (Run 2 merged; **Run 3 COMPLETE** on `feat/support-chatbot` — queue drained,
+gate green; live checks are the supervised pass).
 
-## ▶ RUN 3 — IN PROGRESS (resume here)
+## ✅ RUN 3 COMPLETE — support-chatbot slice on `feat/support-chatbot` (resume/review here)
 
-**Branch:** `feat/support-chatbot` (off `main`). **Baseline (run start):** csharpier no-op, build 0W/0E,
-`dotnet test` **56/56** (MTP runner confirmed), Docker up — green, cleared to run.
+**Branch:** `feat/support-chatbot` (off `main`; `main` untouched). **Gate green throughout**; final
+**build 0W/0E, `dotnet test` 81/81**, csharpier clean, Docker up. **Wake-up summary:
+[`GOOD-MORNING.md`](GOOD-MORNING.md)** · **supervised live playbook: [`verification/`](verification/)**.
 
-**Current item:** **C5** — next (module AgentSurface + Portal shell launcher; wires AddAgentChat + renders <AgentChat>). ✅ **C4 [~]** (AgentChat primitive; compiles+handler-tested, live streaming SUPERVISED). Last item in the slice.
+**All items done + committed** (A + C0–C5). Commits: setup `2a995eb` · **A** `ff6c019` · **C0** `aa01623`
+· **C1** `1b99ff9` · **C2a** `3ba8300` · **C2b** `1437496` · **C3** `873a8a2` · **C4** `c91663f` `[~]`
+· **C5** (this run's final) — see `git log`. C4 + C5's launcher are **`[~]` best-effort** (UI compiles +
+unit-tested; live SSE streaming/rendering/token-flow are the supervised pass, NOT claimed working).
+
+**What shipped:** a working MAF **Order Support** agent in `Atrium.Services.Storefront` (tools
+`GetOrderStatus` user-scoped + `FindProduct`), a **config-driven `IChatClient`** (Dev fake / FoundryLocal
+/ AzureFoundry), exposed over **AG-UI SSE at `/storefront/agent`** behind a config-driven **step-up-MFA**
+policy (Entra `amr` / Keycloak `acr`, dev-simulate), a reusable **`<AgentChat>`** primitive, and a
+shell **assistant launcher** the Storefront module lights up via `IModule.AgentSurfaces`.
+
+**★ NEXT = supervised live pass** (needs a running stack + a model): see `verification/README.md`. The
+**#1 item to confirm**: the streamed `/storefront/agent` request actually carries the signed-in user's
+bearer (correct-by-construction, unproven without a circuit). Then set `SupportAgent:Provider=FoundryLocal`
+(+ Endpoint/ApiKey/Model) for real replies; flip `SupportAgent:StepUp:Enabled=true` (+ `Simulate=true`
+locally) to exercise the gate. **Then: review + merge `feat/support-chatbot` → `main`.**
 
 **C2 is split into two atomic commits** (per the spec guardrail — land framework-sensitive work in
 pieces): **C2a** = user-scoped "look up one order" data layer (`usp_Order_GetById` + `GetByIdAsync`

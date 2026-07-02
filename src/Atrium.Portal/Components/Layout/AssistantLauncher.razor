@@ -1,0 +1,74 @@
+@namespace Atrium.Portal.Components.Layout
+@implements IDisposable
+@inject Atrium.Portal.Modularity.ModuleCatalog Catalog
+@inject NavigationManager Nav
+
+@* The shell's assistant launcher: renders a chat surface contributed by a module (via
+   IModule.AgentSurfaces), context-aware to the active section. Placed in the topbar behind an
+   AuthorizeView (see MainLayout) so only signed-in users see it — the agent endpoint is authenticated
+   regardless. The chat itself lives in the shared <AgentChat> primitive. *@
+@if (_surface is not null)
+{
+    <button
+        type="button"
+        class="btn btn--ghost btn--sm"
+        @onclick="() => _open = true"
+        aria-label="Open @_surface.Name"
+    >
+        @_surface.Name
+    </button>
+
+    <Dialog @bind-Open="_open" Title="@_surface.Name">
+        <AgentChat
+            Endpoint="@_surface.Endpoint"
+            StarterPrompts="@_surface.StarterPrompts"
+            Title="@_surface.Name"
+        />
+    </Dialog>
+}
+
+@code {
+    private bool _open;
+    private Atrium.Abstractions.AgentSurface? _surface;
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+        _surface = ResolveSurface();
+    }
+
+    // Re-pick the surface when the section changes, so the launcher targets the module you're in.
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        var next = ResolveSurface();
+        if (!ReferenceEquals(next, _surface))
+        {
+            _surface = next;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    // Prefer the active top-level section's module surface; otherwise the first surface any module offers.
+    private Atrium.Abstractions.AgentSurface? ResolveSurface()
+    {
+        var section = new Uri(Nav.Uri)
+            .AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries)
+            .FirstOrDefault();
+
+        if (section is not null)
+        {
+            var active = Catalog.Modules.FirstOrDefault(m =>
+                string.Equals(m.BasePath.Trim('/'), section, StringComparison.OrdinalIgnoreCase)
+            );
+            var surface = active?.AgentSurfaces.FirstOrDefault();
+            if (surface is not null)
+            {
+                return surface;
+            }
+        }
+
+        return Catalog.Modules.SelectMany(m => m.AgentSurfaces).FirstOrDefault();
+    }
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}
