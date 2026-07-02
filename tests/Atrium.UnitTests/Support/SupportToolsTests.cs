@@ -93,4 +93,22 @@ public class SupportToolsTests
 
         Assert.Contains("couldn't find any products", result);
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task FindProduct_asks_for_a_keyword_when_query_is_blank(string query)
+    {
+        // A blank query must not match the whole catalog and return an arbitrary first five.
+        var tools = new SupportTools(
+            SupportTestDoubles.HttpContextFor("alice"),
+            new FakeOrderRepository(),
+            new FakeCatalogClient(new ProductDto(1, "Red Widget", "Tools", 9.99m, "A widget"))
+        );
+
+        var result = await tools.FindProduct(query);
+
+        Assert.Contains("What product are you looking for", result);
+        Assert.DoesNotContain("Red Widget", result);
+    }
 }
