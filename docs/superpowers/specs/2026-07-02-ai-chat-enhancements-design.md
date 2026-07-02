@@ -42,6 +42,12 @@ demo with zero extra infra. Named as deliberate scope cuts, not gaps.
    | Eval judge (#3) | independent **14–32B** (Qwen/Llama) | Separate judge avoids self-preference bias (Huyen Ch.3). Offline, so slowness is fine. |
    | Guardrail classifier (#4) | **~3B** (Llama Guard / Prompt Guard / Qwen-3B) | Cheap, fast input screen before the expensive model. |
    Exact tags confirmed at execution via `ollama pull` + a tool-calling smoke check.
+
+   <!-- Confirmed Ollama model tags (Task 1.1, 2026-07-02) — use verbatim as config values:
+        CHAT_MODEL      = qwen2.5:7b-instruct   (tool-calling smoke test passed: emitted GetOrderStatus{"orderId":1234})
+        GUARDRAIL_MODEL = llama3.2:3b
+        JUDGE_MODEL     = qwen2.5:14b-instruct -->
+
 3. **Hardware envelope:** M1 Max / 32 GB — keep chat + guardrail resident; load the judge only during
    eval runs.
 4. **Fully local observability + eval — no hosted platform.** OTel GenAI spans → the **Aspire
