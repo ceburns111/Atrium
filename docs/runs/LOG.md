@@ -412,3 +412,33 @@ down cleanly, wrote `GOOD-MORNING.md`. Remaining work is all supervised (live/vi
   is a keyed singleton; its tools resolve per request). Gate re-run green. Confidence: high.
 - **Supervised (live) checks deferred:** real SSE stream through the gateway; step-up 403→200 with a real
   Keycloak ACR / dev-simulate; a live model turn (Foundry Local).
+
+### Item C4 — `<AgentChat>` primitive in Atrium.Design (UI, Tier-0) — [~] best-effort (live-unverified)
+- **Marked `[~]` (NOT "done"):** the deterministic gate can't drive a browser/model, so SSE streaming +
+  rendering are supervised — same treatment as Run 2's dark-mode/images. What the gate DID verify: it
+  compiles, the bearer handler is unit-tested, packages resolve, build 0W/0E, **80 tests** (+4).
+- **Built:** `Atrium.Design/Components/AgentChat.razor` (+ scoped `.razor.css`, token-only — colors all
+  `var(--…)`; `Button`/`Badge`/`Notice` primitives reused; reduced-motion caret). Streams via
+  `IChatClient.GetStreamingResponseAsync`, switching `ChatResponseUpdate.Contents` — `TextContent` →
+  assistant bubble, `FunctionCallContent`/`FunctionResultContent` → minimal tool cards (Badge
+  running/done). `SessionExpiredException` → "sign in again" Notice; other errors → generic Notice;
+  Blazor-Server prerender/disposal guards (Dialog pattern) + `IAsyncDisposable`.
+- **★ Bearer-token scope pitfall solved (the subtle bit, orchestrator-verified):** `IHttpClientFactory`
+  builds handlers in a SEPARATE scope, so a bearer handler in the named-client pipeline would read an
+  empty per-circuit `AccessTokenHolder`. Instead `AgentChatClientFactory` (scoped) takes the pooled
+  gateway chain from `IHttpMessageHandlerFactory.CreateHandler` and wraps it with a `BearerTokenHandler`
+  built from THIS circuit's `AccessTokenHolder` (`HttpClient(..., disposeHandler:false)` so it never
+  disposes the pooled chain). `BearerTokenHandler` reuses the existing `Authorize` + `ThrowIfSessionExpired`
+  helpers; 4 host-free unit tests (attaches token / no token / 401→SessionExpired / 200 passthrough).
+- **Packages:** `Microsoft.Agents.AI.AGUI` 1.12.0-preview.260629.1 (client, same family as C3 server) +
+  `Microsoft.Extensions.Http` **10.0.0** (re-pinned from 10.0.9 to clear an NU1605 downgrade vs the
+  modules' 10.0.0). Build stayed 0W. New Atrium.Design coupling is limited to this feature.
+- **Wiring for C5:** `AddAgentChat()` (registers the named gateway client + `AgentChatClientFactory`) +
+  `AgentChatDefaults` (client name, `https+http://gateway`). C5 calls `AddAgentChat()` and renders
+  `<AgentChat Endpoint="storefront/agent" …>`.
+- **★ SUPERVISED live-verify list (carry to the morning pass):** (1) the streamed request actually carries
+  the signed-in user's token (the #1 item — the scope wrapping is correct-by-construction but unproven
+  without a circuit); (2) SSE token streaming + bubble render; (3) tool-card population on a real
+  tool-calling turn (needs Foundry Local); (4) autoscroll JS; (5) light/dark Playwright screenshots.
+- **Gate (orchestrator re-ran):** csharpier clean (87), build 0W/0E, `dotnet test` 80/80. Confidence: high
+  on compile/handler; medium on live circuit-token flow (documented + mitigated, unproven).

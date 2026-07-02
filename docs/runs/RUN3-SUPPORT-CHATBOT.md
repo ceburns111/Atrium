@@ -126,7 +126,7 @@ deferred** (see below) — it is **not** in this run.
   `Atrium.Services.*.Tests` shape): asserts the SSE event stream for a simple prompt AND that the step-up
   policy blocks a non-stepped-up caller / permits a stepped-up one. Gate: build + `dotnet test` green
   (**integration needs Docker**). **Live model/MFA run deferred to supervised pass.**
-- [ ] **C4 · `<AgentChat>` primitive (`Atrium.Design`).** A reusable component wrapping the **AG-UI .NET
+- [~] **C4 · `<AgentChat>` primitive (`Atrium.Design`).** A reusable component wrapping the **AG-UI .NET
   client**, reusing the module gateway + bearer pattern and the existing `ThrowIfSessionExpired()`
   convention (surface AG-UI error events + session expiry the standard way). Renders text + tool cards
   (design-doc v1 scope — no generative UI beyond that). **Pull from Atrium.Design tokens/primitives — no

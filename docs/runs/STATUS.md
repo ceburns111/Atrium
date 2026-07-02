@@ -7,7 +7,7 @@
 **Branch:** `feat/support-chatbot` (off `main`). **Baseline (run start):** csharpier no-op, build 0W/0E,
 `dotnet test` **56/56** (MTP runner confirmed), Docker up — green, cleared to run.
 
-**Current item:** **C4** — next (`<AgentChat>` primitive in Atrium.Design, AG-UI .NET client). ✅ **C3** done (AG-UI endpoint at /storefront/agent + step-up MFA policy). Service side COMPLETE; C4/C5 are UI.
+**Current item:** **C5** — next (module AgentSurface + Portal shell launcher; wires AddAgentChat + renders <AgentChat>). ✅ **C4 [~]** (AgentChat primitive; compiles+handler-tested, live streaming SUPERVISED). Last item in the slice.
 
 **C2 is split into two atomic commits** (per the spec guardrail — land framework-sensitive work in
 pieces): **C2a** = user-scoped "look up one order" data layer (`usp_Order_GetById` + `GetByIdAsync`
