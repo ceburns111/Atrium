@@ -1,0 +1,35 @@
+@namespace Atrium.Portal.Components.Layout
+
+@* Topbar account control: an avatar (the user's initial) that opens a dropdown with the signed-in
+   name and Sign out. Replaces the old inline username span + Sign out link so the right-hand cluster
+   is just icons + one avatar. *@
+<AuthorizeView>
+    <Authorized>
+        <Menu Label="Account menu" TriggerClass="menu__trigger--user">
+            <Trigger>
+                <span class="avatar">@Initial(context.User.Identity?.Name)</span>
+                <svg class="menu__caret" viewBox="0 0 24 24" width="14" height="14" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </Trigger>
+            <ChildContent>
+                <div class="menu__header">
+                    <span class="menu__name">@context.User.Identity?.Name</span>
+                    <span class="menu__meta">Signed in</span>
+                </div>
+                <a class="menu__item" role="menuitem" href="/account/logout">Sign out</a>
+            </ChildContent>
+        </Menu>
+    </Authorized>
+    <NotAuthorized>
+        <a class="btn btn--secondary btn--sm" href="/account/login">Sign in</a>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    // First letter of the signed-in name, upper-cased; "?" as a defensive fallback.
+    private static string Initial(string? name) =>
+        string.IsNullOrWhiteSpace(name) ? "?" : char.ToUpperInvariant(name.TrimStart()[0]).ToString();
+}

@@ -22,15 +22,7 @@
             </Authorized>
         </AuthorizeView>
         <ThemeToggle />
-        <AuthorizeView>
-            <Authorized>
-                <span class="topbar__user">@context.User.Identity?.Name</span>
-                <a class="btn btn--ghost btn--sm" href="/account/logout">Sign out</a>
-            </Authorized>
-            <NotAuthorized>
-                <a class="btn btn--secondary btn--sm" href="/account/login">Sign in</a>
-            </NotAuthorized>
-        </AuthorizeView>
+        <UserMenu />
     </header>
 
     <main class="app-main">
