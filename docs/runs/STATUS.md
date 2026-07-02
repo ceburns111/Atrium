@@ -1,5 +1,19 @@
 # STATUS — read me first
 
+## ▶ RUN 4 (2026-07-01) — MAF/AIUI review + refactor on `review/maf-slice`
+
+Reviewed the support-chatbot slice (C0–C5) for drift/jank/organization/convention (3 parallel domain
+reviewers on the `atrium-*` skills + orchestrator read), then **addressed the findings**: 13 fixed across
+4 atomic commits, 6 deferred with reasoning, 1 rejected as false. Full report + reasoning:
+**[`RUN4-MAF-REVIEW.md`](RUN4-MAF-REVIEW.md)**. Highlights: step-up `Simulate` is now Development-only +
+an inert-gate startup warning (security); the assistant launcher role-gates surfaces like NavMenu and no
+longer re-renders every navigation; endpoint symmetry (`SupportEndpoints`), `FindProduct` blank-query
+guard, `AgentChat` error logging, undisposed-401 fix, near-bottom scroll, caret tokens. **Gate: build
+0W/0E, `dotnet test` 84/84.** Interview-prep + "enable a real model locally" docs live in
+**[`../interview/`](../interview/)**. **Next: review + merge `review/maf-slice`.**
+
+---
+
 **Updated:** 2026-07-02 (Run 2 merged; **Run 3 code COMPLETE + supervised live pass PASSED** on
 `feat/support-chatbot` — **all 6 live checks ✅, no confirmed defect**. Ready to review + merge).
 

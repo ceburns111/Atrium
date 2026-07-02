@@ -511,3 +511,28 @@ Exercised the last playbook item (temp `SupportAgent__StepUp__*` env on the stor
   exercised ~15× live + `StepUpMfaHandlerTests` (9 cases), so no separate `Simulate=true` restart.
 - Minor UX polish noted: a 403 surfaces via the generic error Notice, not a step-up-specific one. Not a bug.
 - Config reverted; clean source, build 0W/0E, `dotnet test Atrium.slnx` 81/81. **All 6 playbook checks pass.**
+
+---
+
+## Run 4 — 2026-07-01 · MAF/AIUI review + refactor (`review/maf-slice`)
+
+- **Scope:** support-chatbot slice C0–C5 (`aa01623`..`9ff317c`). **Method:** 3 parallel domain reviewers
+  (backend/`atrium-service`, design/`atrium-ui`, module/`atrium-module`) + orchestrator full read; every
+  finding verified against code before acting. Report: `RUN4-MAF-REVIEW.md`.
+- **Baseline:** build 0W/0E, `dotnet test` 81/81, csharpier clean, Docker up.
+- **Commit A** — `refactor(support): harden step-up MFA gate` — `Simulate` Development-only
+  (`StepUpMfaHandler` takes `IHostEnvironment`); `WarnIfStepUpGateInert` startup warning outside Dev;
+  rename `SupportAgentServiceCollectionExtensions`→`SupportAgentBuilderExtensions`; +prod-simulate test.
+- **Commit B** — `fix(portal): role-gate + stabilize the assistant launcher` — surfaces filtered by module
+  `IsVisible` (like NavMenu); compare by `Endpoint` not `ReferenceEquals` (no more re-render/nav);
+  deterministic off-section fallback.
+- **Commit C** — `refactor(support): endpoint symmetry + FindProduct guard + contract doc` —
+  `SupportEndpoints.MapSupportAgent` (out of `Program.cs`); `FindProduct` blank-query guard (+tests);
+  `AgentSurface.Endpoint` doc slash fix.
+- **Commit D** — `fix(design): AgentChat observability + resource/scroll polish` — `ILogger<AgentChat>` on
+  error; dispose 401 response in `BearerTokenHandler`; near-bottom `scrollToEnd`; caret CSS tokens.
+- **Deferred (with reasoning in the report):** extract `Atrium.Client` infra project; chips→Button variant;
+  plural `AgentSurfaces`; `Icon` unused; hard-coded "Confirmed"; singleton-instance disposal.
+- **Rejected as false:** "`StepUpMfaHandler` untested" — `StepUpMfaHandlerTests` already covers the matrix.
+- **Result gate:** csharpier clean, build **0W/0E**, `dotnet test` **84/84** (81 + 3 new). Interview-prep
+  docs added under `docs/interview/`. Next: review + merge `review/maf-slice`.
