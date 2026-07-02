@@ -195,7 +195,9 @@ button {
     flex: 1;
 }
 .topbar__user {
-    font-size: var(--text-sm);
+    /* Match the adjacent topbar controls (.btn--sm = --text-xs) so the right-hand cluster shares one
+       type size; stays normal-weight + muted to read as identity, not another action button. */
+    font-size: var(--text-xs);
     color: var(--ink-2);
 }
 /* Two classes (.btn.menu-btn) to outrank .btn's own display, which is declared later. */

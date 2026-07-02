@@ -78,7 +78,7 @@ The nav (`Components/Layout/NavMenu.razor`) and homepage (`Components/Pages/Home
 
 - **Identity:** `Name`/`Description`/`BasePath = "/storefront"`, `Accent => "#b45309"` (amber, distinct from the shell's teal). It does *not* set `RequiredRole`, so it inherits the default `null` → visible to everyone including anonymous.
 - **Nav:** `NavItems => [new NavItem("Storefront", "/storefront")]`.
-- **Agent surface:** `AgentSurfaces => [new AgentSurface("Order Support", "storefront/agent", StarterPrompts: [...])]` — a gateway-relative endpoint (no leading slash) the shell's assistant launcher renders.
+- **Agent surface:** `AgentSurfaces => [new AgentSurface("Support", "storefront/agent", StarterPrompts: [...])]` — a gateway-relative endpoint (no leading slash) the shell's assistant launcher renders.
 - **Services:** `RegisterServices` adds `CartService`, `CartPersistence`, `PaymentService`, and two **typed HTTP clients** pointed at the gateway:
 
 ```csharp

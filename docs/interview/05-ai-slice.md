@@ -8,7 +8,7 @@
 
 ## The 90-second explanation
 
-"I added a customer **Order Support** agent to the Storefront vertical using the **Microsoft Agent
+"I added a customer **Support** agent to the Storefront vertical using the **Microsoft Agent
 Framework (MAF)**, exposed over **AG-UI** (an SSE streaming protocol) at `/storefront/agent` behind the
 same YARP gateway and the same Keycloak bearer as every other endpoint. The agent has two tools —
 `GetOrderStatus` (scoped to the signed-in user's own orders) and `FindProduct` (catalog search). The model

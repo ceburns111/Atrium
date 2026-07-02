@@ -25,7 +25,7 @@ public sealed class StorefrontModule : IModule
     public IEnumerable<AgentSurface> AgentSurfaces =>
         [
             new AgentSurface(
-                "Order Support",
+                "Support",
                 "storefront/agent",
                 StarterPrompts: ["Where's my order?", "Find me a desk lamp"]
             ),

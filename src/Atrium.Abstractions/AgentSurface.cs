@@ -1,7 +1,7 @@
 namespace Atrium.Abstractions;
 
 /// <summary>A chat surface a module contributes, rendered by the shell's assistant launcher.</summary>
-/// <param name="Name">Label shown in the assistant launcher, e.g. "Order Support".</param>
+/// <param name="Name">Label shown in the assistant launcher, e.g. "Support".</param>
 /// <param name="Endpoint">
 /// Gateway-relative path to the module's agent, with <b>no</b> leading slash, e.g. "storefront/agent" —
 /// &lt;AgentChat&gt; resolves it against the gateway base address. (This is a service-topology path, unlike

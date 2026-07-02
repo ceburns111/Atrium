@@ -25,7 +25,7 @@ public sealed class SupportAgent
     /// <see cref="SupportAgentBuilderExtensions"/>) and the <see cref="ChatClientAgent.Name"/>;
     /// the MAF hosting factory asserts these match, so they are pinned to this one constant.
     /// </summary>
-    public const string AgentName = "Order Support";
+    public const string AgentName = "Support";
 
     private const string Instructions =
         "You are Atrium's order-support assistant for signed-in customers. Help with questions "
