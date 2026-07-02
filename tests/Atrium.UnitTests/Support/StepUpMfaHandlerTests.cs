@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Atrium.Services.Storefront.Support;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Atrium.UnitTests.Support;
@@ -14,9 +16,16 @@ namespace Atrium.UnitTests.Support;
 /// </summary>
 public class StepUpMfaHandlerTests
 {
-    private static async Task<bool> EvaluateAsync(StepUpMfaOptions options, ClaimsPrincipal user)
+    // Defaults to the Development environment (the common case); the Simulate-guard tests pass an
+    // explicit environment name to exercise the Development-only escape hatch.
+    private static async Task<bool> EvaluateAsync(
+        StepUpMfaOptions options,
+        ClaimsPrincipal user,
+        string environmentName = "Development"
+    )
     {
-        var handler = new StepUpMfaHandler(Options.Create(options));
+        var environment = new FakeHostEnvironment(environmentName);
+        var handler = new StepUpMfaHandler(Options.Create(options), environment);
         var requirement = new StepUpMfaRequirement();
         var context = new AuthorizationHandlerContext([requirement], user, resource: null);
 
@@ -43,14 +52,29 @@ public class StepUpMfaHandlerTests
     }
 
     [Fact]
-    public async Task Enabled_and_simulated_authenticated_user_succeeds_without_step_up_claim()
+    public async Task Enabled_and_simulated_in_development_succeeds_without_step_up_claim()
     {
         var succeeded = await EvaluateAsync(
             new StepUpMfaOptions { Enabled = true, Simulate = true },
-            Authenticated(new Claim("preferred_username", "alice"))
+            Authenticated(new Claim("preferred_username", "alice")),
+            environmentName: Environments.Development
         );
 
         Assert.True(succeeded);
+    }
+
+    [Fact]
+    public async Task Simulate_is_ignored_outside_development_so_a_stray_prod_flag_cannot_bypass()
+    {
+        // Simulate is a Development-only escape hatch: in Production it must NOT treat an authenticated
+        // user as stepped-up — a real step-up claim is still required.
+        var succeeded = await EvaluateAsync(
+            new StepUpMfaOptions { Enabled = true, Simulate = true },
+            Authenticated(new Claim("preferred_username", "alice")),
+            environmentName: Environments.Production
+        );
+
+        Assert.False(succeeded);
     }
 
     [Theory]
@@ -133,5 +157,15 @@ public class StepUpMfaHandlerTests
         var succeeded = await EvaluateAsync(new StepUpMfaOptions { Enabled = false }, Anonymous());
 
         Assert.False(succeeded);
+    }
+
+    // Minimal IHostEnvironment so the handler's Development-only Simulate guard can be exercised without
+    // a host. Only EnvironmentName is consulted (via IsDevelopment()); the rest are inert defaults.
+    private sealed class FakeHostEnvironment(string environmentName) : IHostEnvironment
+    {
+        public string EnvironmentName { get; set; } = environmentName;
+        public string ApplicationName { get; set; } = "Tests";
+        public string ContentRootPath { get; set; } = "";
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 }

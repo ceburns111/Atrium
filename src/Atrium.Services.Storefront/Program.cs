@@ -71,6 +71,9 @@ var connectionString =
     ?? throw new InvalidOperationException("Connection string 'storefrontdb' was not configured.");
 DatabaseInitializer.Initialize(connectionString, app.Logger);
 
+// Surface a misconfigured (inert) step-up gate outside Development, where it is opt-in by default.
+app.WarnIfStepUpGateInert();
+
 // One structured log event per request (method, path, status, elapsed); early so it wraps handlers.
 app.UseAtriumRequestLogging();
 

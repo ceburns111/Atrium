@@ -1,7 +1,11 @@
 using System.ClientModel;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using OpenAI;
 
 namespace Atrium.Services.Storefront.Support;
@@ -23,7 +27,7 @@ namespace Atrium.Services.Storefront.Support;
 ///     these values.</item>
 /// </list>
 /// </remarks>
-public static class SupportAgentServiceCollectionExtensions
+public static class SupportAgentBuilderExtensions
 {
     public static IHostApplicationBuilder AddSupportAgent(this IHostApplicationBuilder builder)
     {
@@ -109,4 +113,28 @@ public static class SupportAgentServiceCollectionExtensions
         ?? throw new InvalidOperationException(
             $"'{key}' must be configured for the selected SupportAgent provider."
         );
+
+    /// <summary>
+    /// Emits a startup warning when the step-up gate is inert outside Development — the gate is opt-in
+    /// (<c>Enabled=false</c> by default), so a deploy that forgets <c>SupportAgent:StepUp:Enabled=true</c>
+    /// silently downgrades <c>/storefront/agent</c> to authenticated-only with no other signal. In
+    /// Development the gate is expected to be off, so nothing is logged there.
+    /// </summary>
+    public static void WarnIfStepUpGateInert(this WebApplication app)
+    {
+        if (app.Environment.IsDevelopment())
+        {
+            return;
+        }
+
+        var stepUp = app.Services.GetRequiredService<IOptions<StepUpMfaOptions>>().Value;
+        if (!stepUp.Enabled)
+        {
+            app.Logger.LogWarning(
+                "SupportAgent step-up MFA is DISABLED (SupportAgent:StepUp:Enabled=false) in {Environment}; "
+                    + "the /storefront/agent endpoint is authenticated-only. Set Enabled=true to require step-up here.",
+                app.Environment.EnvironmentName
+            );
+        }
+    }
 }
