@@ -28,12 +28,20 @@
 }
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
     private bool _open;
     private Atrium.Abstractions.AgentSurface? _surface;
+    private System.Security.Claims.ClaimsPrincipal? _user;
 
-    protected override void OnInitialized()
+    protected override void OnInitialized() => Nav.LocationChanged += OnLocationChanged;
+
+    // Resolve the signed-in user once per parameter set, then pick the surface. The cached principal lets
+    // the (synchronous) LocationChanged handler re-pick without re-awaiting the auth state each navigation.
+    protected override async Task OnParametersSetAsync()
     {
-        Nav.LocationChanged += OnLocationChanged;
+        _user = AuthState is null ? null : (await AuthState).User;
         _surface = ResolveSurface();
     }
 
@@ -41,23 +49,35 @@
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         var next = ResolveSurface();
-        if (!ReferenceEquals(next, _surface))
+        // Compare by Endpoint (the surface's stable identity), not the record itself: AgentSurfaces is a
+        // computed property that allocates a fresh record — and a fresh StarterPrompts array — every call,
+        // so record value-equality (which compares the array by reference) would always differ and force a
+        // re-render on every navigation. The endpoint is what actually changes when the surface changes.
+        if (next?.Endpoint != _surface?.Endpoint)
         {
             _surface = next;
             InvokeAsync(StateHasChanged);
         }
     }
 
-    // Prefer the active top-level section's module surface; otherwise the first surface any module offers.
+    // Prefer the active top-level section's module surface; otherwise the first surface any visible module
+    // offers. Only modules the user can actually see are considered — the same role gate the nav and home
+    // cards use — so a role-gated module's agent never leaks to a user without the role.
     private Atrium.Abstractions.AgentSurface? ResolveSurface()
     {
+        // Ordered deterministically so the off-section fallback doesn't depend on module discovery order.
+        var visible = Catalog
+            .Modules.Where(m => IsVisible(m, _user))
+            .OrderBy(m => m.BasePath, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
         var section = new Uri(Nav.Uri)
             .AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries)
             .FirstOrDefault();
 
         if (section is not null)
         {
-            var active = Catalog.Modules.FirstOrDefault(m =>
+            var active = visible.FirstOrDefault(m =>
                 string.Equals(m.BasePath.Trim('/'), section, StringComparison.OrdinalIgnoreCase)
             );
             var surface = active?.AgentSurfaces.FirstOrDefault();
@@ -67,8 +87,15 @@
             }
         }
 
-        return Catalog.Modules.SelectMany(m => m.AgentSurfaces).FirstOrDefault();
+        return visible.SelectMany(m => m.AgentSurfaces).FirstOrDefault();
     }
+
+    // A module (and thus its agent surface) is visible when it has no required role, or the signed-in user
+    // is in that role — identical to NavMenu.IsVisible / the home-card gate.
+    private static bool IsVisible(
+        Atrium.Abstractions.IModule module,
+        System.Security.Claims.ClaimsPrincipal? user
+    ) => module.RequiredRole is null || (user?.IsInRole(module.RequiredRole) ?? false);
 
     public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
 }

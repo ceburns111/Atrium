@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Atrium.Services.Storefront.Support;
@@ -10,9 +11,11 @@ namespace Atrium.Services.Storefront.Support;
 /// <list type="bullet">
 ///   <item><see cref="Enabled"/> — master switch. <c>false</c> (the default) means the policy requires
 ///     only an authenticated user, so local browsing/dev is never blocked by a step-up ceremony.</item>
-///   <item><see cref="Simulate"/> — the dev escape hatch. When <see cref="Enabled"/> is <c>true</c> and
-///     this is <c>true</c>, any authenticated user is treated as stepped-up, so the gated path can be
-///     exercised locally without a real MFA ceremony.</item>
+///   <item><see cref="Simulate"/> — the dev escape hatch, honored <b>only in the Development
+///     environment</b>. When <see cref="Enabled"/> is <c>true</c>, this is <c>true</c>, and the host is
+///     Development, any authenticated user is treated as stepped-up, so the gated path can be exercised
+///     locally without a real MFA ceremony. Outside Development it is ignored (a real step-up claim is
+///     still required), so a stray <c>Simulate=true</c> in a deployed config cannot weaken the gate.</item>
 ///   <item><see cref="AcceptedAmrValues"/> / <see cref="AcceptedAcrValues"/> — when
 ///     <see cref="Enabled"/> is <c>true</c> and <see cref="Simulate"/> is <c>false</c>, a real step-up
 ///     claim is required: an <c>amr</c> claim in the accepted set (what Entra stamps for MFA) OR an
@@ -59,8 +62,10 @@ public sealed class StepUpMfaRequirement : IAuthorizationRequirement
 /// <see cref="StepUpMfaOptions"/>. The claim checks are the cloud/local seam: an Entra token satisfies
 /// them via <c>amr</c>, a Keycloak step-up flow via <c>acr</c> — the handler is identical either way.
 /// </summary>
-public sealed class StepUpMfaHandler(IOptions<StepUpMfaOptions> options)
-    : AuthorizationHandler<StepUpMfaRequirement>
+public sealed class StepUpMfaHandler(
+    IOptions<StepUpMfaOptions> options,
+    IHostEnvironment environment
+) : AuthorizationHandler<StepUpMfaRequirement>
 {
     private readonly StepUpMfaOptions _options = options.Value;
 
@@ -76,8 +81,10 @@ public sealed class StepUpMfaHandler(IOptions<StepUpMfaOptions> options)
             return Task.CompletedTask;
         }
 
-        // Disabled (the default) or dev-simulate: an authenticated caller is enough, no step-up claim.
-        if (!_options.Enabled || _options.Simulate)
+        // Disabled (the default): an authenticated caller is enough, no step-up claim. Simulate is a
+        // DEVELOPMENT-ONLY escape hatch — honored only in the Development environment so a stray
+        // `Simulate=true` in a deployed config can never silently bypass the real step-up ceremony.
+        if (!_options.Enabled || (_options.Simulate && environment.IsDevelopment()))
         {
             context.Succeed(requirement);
             return Task.CompletedTask;

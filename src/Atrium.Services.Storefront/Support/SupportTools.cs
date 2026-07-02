@@ -42,9 +42,16 @@ public sealed class SupportTools(
     [Description("Find products in the catalog by name.")]
     public async Task<string> FindProduct(string query)
     {
+        // A blank query would otherwise match every product and return an arbitrary first five; ask the
+        // caller to narrow it instead of guessing.
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return "What product are you looking for? Tell me a name or keyword and I'll search the catalog.";
+        }
+
         var products = await catalog.GetProductsAsync();
         var matches = products
-            .Where(p => p.Name.Contains(query ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+            .Where(p => p.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
             .Take(5)
             .ToList();
 

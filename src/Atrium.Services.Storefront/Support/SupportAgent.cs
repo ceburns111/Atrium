@@ -6,7 +6,7 @@ namespace Atrium.Services.Storefront.Support;
 /// <summary>
 /// The Storefront order-support agent: a Microsoft Agent Framework <see cref="ChatClientAgent"/> over
 /// the configured <see cref="IChatClient"/> (Fake / FoundryLocal / AzureFoundry — see
-/// <see cref="SupportAgentServiceCollectionExtensions"/>), with the two <see cref="SupportTools"/>
+/// <see cref="SupportAgentBuilderExtensions"/>), with the two <see cref="SupportTools"/>
 /// functions registered so the model can look up orders and products.
 /// </summary>
 /// <remarks>
@@ -22,7 +22,7 @@ public sealed class SupportAgent
 {
     /// <summary>
     /// The agent's name. It is both the AG-UI keyed registration name (see
-    /// <see cref="SupportAgentServiceCollectionExtensions"/>) and the <see cref="ChatClientAgent.Name"/>;
+    /// <see cref="SupportAgentBuilderExtensions"/>) and the <see cref="ChatClientAgent.Name"/>;
     /// the MAF hosting factory asserts these match, so they are pinned to this one constant.
     /// </summary>
     public const string AgentName = "Order Support";

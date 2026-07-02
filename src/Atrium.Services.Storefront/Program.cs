@@ -4,7 +4,6 @@ using Atrium.Services.Storefront.Data;
 using Atrium.Services.Storefront.Orders;
 using Atrium.Services.Storefront.Reports;
 using Atrium.Services.Storefront.Support;
-using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +70,9 @@ var connectionString =
     ?? throw new InvalidOperationException("Connection string 'storefrontdb' was not configured.");
 DatabaseInitializer.Initialize(connectionString, app.Logger);
 
+// Surface a misconfigured (inert) step-up gate outside Development, where it is opt-in by default.
+app.WarnIfStepUpGateInert();
+
 // One structured log event per request (method, path, status, elapsed); early so it wraps handlers.
 app.UseAtriumRequestLogging();
 
@@ -119,15 +121,7 @@ var storefront = app.MapGroup("/storefront").RequireAuthorization();
 storefront.MapOrderEndpoints();
 storefront.MapReportEndpoints();
 
-// The AG-UI support-agent endpoint at /storefront/agent (SSE). MapAGUI captures the keyed AIAgent once
-// (a singleton), but each tool call resolves a fresh request-scoped SupportTools, so the tools still see
-// the signed-in caller and that caller's scoped services. The gateway's existing /storefront/{**catch-all} route
-// already proxies this (YARP forwards SSE) — no gateway change is needed. Step-up MFA gates it: the
-// stronger StepUpMfa policy overrides the group's authenticated-only default (never anonymous). No
-// AgentSessionStore is registered, so AG-UI threads are ephemeral (no cross-user ThreadId resume risk).
-storefront
-    .MapAGUI(SupportAgent.AgentName, "/agent")
-    .RequireAuthorization(StepUpMfaRequirement.PolicyName)
-    .WithTags("Support");
+// The AG-UI support-agent endpoint at /storefront/agent (SSE), step-up-MFA gated (see SupportEndpoints).
+storefront.MapSupportAgent();
 
 app.Run();

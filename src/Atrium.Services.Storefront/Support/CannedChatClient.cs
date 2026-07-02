@@ -6,7 +6,7 @@ namespace Atrium.Services.Storefront.Support;
 /// <summary>
 /// A deterministic in-service <see cref="IChatClient"/> that ignores the prompt and returns a fixed
 /// assistant message. It is the <c>Fake</c> provider: the Development default (see
-/// <see cref="SupportAgentServiceCollectionExtensions"/>) so the service boots and the test gate runs
+/// <see cref="SupportAgentBuilderExtensions"/>) so the service boots and the test gate runs
 /// with no AI endpoint, key, or network. Swapping to a real model is config-only.
 /// </summary>
 internal sealed class CannedChatClient : IChatClient

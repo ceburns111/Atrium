@@ -102,8 +102,8 @@
 }
 
 .agent-chat__caret {
-    width: 0.5rem;
-    height: 1rem;
+    width: var(--space-2);
+    height: var(--space-4);
     background: var(--accent);
     border-radius: var(--r-sm);
     animation: agent-chat-blink 1s var(--ease) infinite;

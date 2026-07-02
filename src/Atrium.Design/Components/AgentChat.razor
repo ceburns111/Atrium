@@ -2,7 +2,9 @@
 @implements IAsyncDisposable
 @inject AgentChatClientFactory Factory
 @inject IJSRuntime JS
+@inject ILogger<AgentChat> Logger
 @using Microsoft.Extensions.AI
+@using Microsoft.Extensions.Logging
 
 @* A reusable support-agent chat over AG-UI. The shell and modules render it pointed at a gateway-relative
    agent endpoint (e.g. "storefront/agent"); it streams the assistant reply token-by-token via the
@@ -121,6 +123,8 @@
         _turns.Add(reply);
         await ScrollToEndAsync();
 
+        // Built once and reused for the component's lifetime. Endpoint is EditorRequired and effectively
+        // static per surface, so a later Endpoint change would not rebuild the client (fine in practice).
         _chat ??= Factory.Create(Endpoint);
         _cts = new CancellationTokenSource();
         try
@@ -167,8 +171,11 @@
         {
             // Teardown/navigation cancelled the stream — nothing to surface.
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            // Log the real failure (module typed clients log too); the user sees only a generic notice.
+            // Endpoint is safe to log; the bearer token is never part of it.
+            Logger.LogError(ex, "Support agent request to {Endpoint} failed.", Endpoint);
             _error = "Something went wrong reaching the agent. Try again in a moment.";
             _turns.Remove(reply);
         }
