@@ -1,4 +1,6 @@
 using System.ClientModel;
+using Microsoft.Agents.AI.Hosting;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.AI;
 using OpenAI;
 
@@ -29,7 +31,30 @@ public static class SupportAgentServiceCollectionExtensions
         builder.Services.AddSingleton(chatClient);
 
         builder.Services.AddScoped<SupportTools>();
-        builder.Services.AddScoped<SupportAgent>();
+
+        // AG-UI serving support, plus the agent registered as a keyed AIAgent. MapAGUI captures ONE agent
+        // instance at map time (resolved from the root provider), so the registration is Singleton and the
+        // factory only depends on root-resolvable singletons (IChatClient, IHttpContextAccessor). The agent
+        // resolves the request-scoped SupportTools per tool call from the caller's request scope (see
+        // SupportAgent), so GetOrderStatus/FindProduct still answer for the signed-in user. The endpoint
+        // (Program.cs) binds it by name via MapAGUI(AgentName, "/agent").
+        builder.Services.AddAGUI();
+        builder.Services.AddAIAgent(
+            SupportAgent.AgentName,
+            (serviceProvider, _) =>
+                new SupportAgent(
+                    serviceProvider.GetRequiredService<IChatClient>(),
+                    serviceProvider.GetRequiredService<IHttpContextAccessor>()
+                ).Agent,
+            ServiceLifetime.Singleton
+        );
+
+        // Step-up MFA policy plumbing: config binding + the handler. The policy itself is registered on
+        // the app's AuthorizationBuilder (Program.cs), alongside the "admin" policy.
+        builder.Services.Configure<StepUpMfaOptions>(
+            builder.Configuration.GetSection(StepUpMfaOptions.SectionName)
+        );
+        builder.Services.AddSingleton<IAuthorizationHandler, StepUpMfaHandler>();
 
         return builder;
     }

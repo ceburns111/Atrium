@@ -384,3 +384,31 @@ down cleanly, wrote `GOOD-MORNING.md`. Remaining work is all supervised (live/vi
   correct scoping.
 - **Gate (orchestrator re-ran):** csharpier clean (81), build **0W/0E**, `dotnet test` **66/66**.
   Confidence: high. **C2 complete (C2a + C2b).** Live model run = supervised (Foundry Local).
+
+### Item C3 — AG-UI endpoint + step-up MFA policy + tests (code, Tier-1 auth/runtime) — GO
+- **Done.** SupportAgent exposed over **AG-UI SSE at `/storefront/agent`**, gated by a config-driven
+  **StepUpMfa** policy. Build 0W/0E, **76 tests** (+10). No new packages (MAF/AG-UI already pinned in C0);
+  **no gateway change** — the existing `/storefront/{**catch-all}` route already proxies it (YARP forwards SSE).
+- **★ Scoped-agent-vs-singleton solution (the subtle bit):** `MapAGUI` resolves its agent ONCE at map
+  time from the root provider (decompiled: all 3 overloads collapse to that; a Scoped registration threw
+  "cannot resolve scoped from root"). Fix: register the `AIAgent` as a **keyed singleton** via MAF
+  hosting's `AddAIAgent(name, factory, Singleton)` (factory depends only on singletons: `IChatClient`,
+  `IHttpContextAccessor`); and build each tool with `AIFunctionFactory.Create(method, createInstanceFunc:
+  _ => HttpContext.RequestServices.GetRequiredService<SupportTools>())` so **every tool call resolves a
+  fresh request-scoped `SupportTools`** — the caller's identity + own `SqlConnection`, concurrency-safe.
+  `MapAGUI(AgentName, "/agent")` binds by keyed name; agent `.Name` must match the key (factory asserts).
+- **Step-up policy (`StepUpMfa.cs`, config `SupportAgent:StepUp`):** `Enabled` (default false → authenticated
+  is enough, local browsing unblocked), `Simulate` (dev escape hatch → authenticated treated as stepped-up),
+  else require a real claim — `amr` in `AcceptedAmrValues` (Entra) OR `acr` in `AcceptedAcrValues` (Keycloak),
+  both overridable. Policy = `RequireAuthenticatedUser()` + requirement → **anonymous 401**, authenticated-
+  but-not-stepped-up **403**. Same policy cloud + local, config only.
+- **Tests:** 9 unit cases (`StepUpMfaHandlerTests`) cover the policy logic authoritatively (disabled/
+  simulate/amr/acr/missing/override/unauthenticated); 1 integration (`Anonymous_support_agent_request_is_
+  rejected` → 401, confirms the endpoint is mapped + non-anonymous). Authenticated-403 left to the unit
+  tests (a test auth scheme would be needed for the HTTP path) — flagged for the supervised pass.
+- **Orchestrator review:** read `SupportAgent`, `StepUpMfa`, the DI extension, `Program.cs` wiring, and the
+  tests — the singleton/scoped split is correct + documented; 401-vs-403 is right; `amr` multivalued
+  handling correct. **Fixed one misleading `Program.cs` comment** ("Scoped agent per request" → the agent
+  is a keyed singleton; its tools resolve per request). Gate re-run green. Confidence: high.
+- **Supervised (live) checks deferred:** real SSE stream through the gateway; step-up 403→200 with a real
+  Keycloak ACR / dev-simulate; a live model turn (Foundry Local).

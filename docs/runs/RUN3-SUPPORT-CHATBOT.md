@@ -118,7 +118,7 @@ deferred** (see below) — it is **not** in this run.
   `IChatClient` from config with three providers: **fake** (tests/default-when-unconfigured), **Foundry
   Local** (dev), **Azure AI Foundry** (cloud) — selection is config only. **Unit-test the tools directly**
   (plain methods) + the config resolution. Gate: build + `dotnet test` green.
-- [ ] **C3 · AG-UI endpoint + gateway route + step-up MFA policy + tests.** Map the agent over AG-UI SSE
+- [x] **C3 · AG-UI endpoint + gateway route + step-up MFA policy + tests.** Map the agent over AG-UI SSE
   at the service's `/agent`; add the gateway route `/storefront/agent/{**catch-all}` → storefront
   (mirror the existing `/storefront/*` cluster in `Atrium.Gateway/appsettings.json`). Add the
   feature-flagged `RequireStepUpMfa` policy (checks `amr`/`acr`; Keycloak-ACR + dev-simulate locally,
