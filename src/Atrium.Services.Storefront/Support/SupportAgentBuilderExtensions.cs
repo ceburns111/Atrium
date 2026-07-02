@@ -31,11 +31,18 @@ public static class SupportAgentBuilderExtensions
 {
     public static IHostApplicationBuilder AddSupportAgent(this IHostApplicationBuilder builder)
     {
-        var chatClient = BuildChatClient(
-            builder.Configuration,
-            builder.Environment.IsDevelopment()
-        );
-        builder.Services.AddSingleton(chatClient);
+        // Register the raw provider client + the instrumented pipeline. Factory-based so later decorators
+        // (cache, guardrail) can resolve their own dependencies from DI.
+        builder.Services.AddSingleton<IChatClient>(sp =>
+        {
+            var inner = BuildChatClient(builder.Configuration, builder.Environment.IsDevelopment());
+            return new ChatClientBuilder(inner)
+                .UseOpenTelemetry(
+                    sourceName: SupportTelemetry.ChatSourceName,
+                    configure: o => o.EnableSensitiveData = true /* demo-only: logs prompts/responses */
+                )
+                .Build(sp);
+        });
 
         builder.Services.AddScoped<SupportTools>();
 
