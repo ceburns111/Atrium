@@ -23,7 +23,16 @@ public sealed class BearerTokenHandler(AccessTokenHolder tokens) : DelegatingHan
     {
         request.Authorize(tokens);
         var response = await base.SendAsync(request, cancellationToken);
-        response.ThrowIfSessionExpired();
+        try
+        {
+            response.ThrowIfSessionExpired();
+        }
+        catch (SessionExpiredException)
+        {
+            // The 401 response won't be returned to (or disposed by) the caller, so dispose it here.
+            response.Dispose();
+            throw;
+        }
         return response;
     }
 }
