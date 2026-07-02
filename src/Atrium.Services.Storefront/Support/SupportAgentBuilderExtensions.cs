@@ -31,7 +31,10 @@ public static class SupportAgentBuilderExtensions
 {
     public static IHostApplicationBuilder AddSupportAgent(this IHostApplicationBuilder builder)
     {
-        var chatClient = BuildChatClient(builder.Configuration, builder.Environment);
+        var chatClient = BuildChatClient(
+            builder.Configuration,
+            builder.Environment.IsDevelopment()
+        );
         builder.Services.AddSingleton(chatClient);
 
         builder.Services.AddScoped<SupportTools>();
@@ -63,20 +66,20 @@ public static class SupportAgentBuilderExtensions
         return builder;
     }
 
-    private static IChatClient BuildChatClient(IConfiguration config, IHostEnvironment environment)
+    private static IChatClient BuildChatClient(IConfiguration config, bool isDevelopment)
     {
         var provider = config["SupportAgent:Provider"];
         if (string.IsNullOrWhiteSpace(provider))
         {
             // The Development default is the in-service fake, so a fresh checkout boots (and the test
             // gate runs) with no model configured. Elsewhere, a missing provider is a misconfiguration.
-            if (environment.IsDevelopment())
+            if (isDevelopment)
             {
                 return new CannedChatClient();
             }
 
             throw new InvalidOperationException(
-                "SupportAgent:Provider is not configured. Set it to 'Fake', 'FoundryLocal', or "
+                "SupportAgent:Provider is not configured. Set it to 'Fake', 'Ollama', 'FoundryLocal', or "
                     + "'AzureFoundry' (the Fake default only applies in the Development environment)."
             );
         }
@@ -86,12 +89,29 @@ public static class SupportAgentBuilderExtensions
         return provider.ToLowerInvariant() switch
         {
             "fake" => new CannedChatClient(),
+            "ollama" => BuildOllamaClient(config),
             "foundrylocal" or "azurefoundry" => BuildOpenAICompatibleClient(config),
             _ => throw new InvalidOperationException(
-                $"Unknown SupportAgent:Provider '{provider}'. Expected 'Fake', 'FoundryLocal', or 'AzureFoundry'."
+                $"Unknown SupportAgent:Provider '{provider}'. Expected 'Fake', 'Ollama', 'FoundryLocal', or 'AzureFoundry'."
             ),
         };
     }
+
+    // Ollama exposes an OpenAI-compatible API at /v1; the key is ignored but the SDK requires a non-empty value.
+    private static IChatClient BuildOllamaClient(IConfiguration config)
+    {
+        var endpoint = config["SupportAgent:Endpoint"] ?? "http://localhost:11434/v1";
+        var model = Require(config, "SupportAgent:Model");
+        var client = new OpenAIClient(
+            new ApiKeyCredential("ollama"),
+            new OpenAIClientOptions { Endpoint = new Uri(endpoint) }
+        );
+        return client.GetChatClient(model).AsIChatClient();
+    }
+
+    // Test seam: exercise provider selection without standing up a host.
+    internal static IChatClient BuildChatClientForTest(IConfiguration config, bool isDevelopment) =>
+        BuildChatClient(config, isDevelopment);
 
     private static IChatClient BuildOpenAICompatibleClient(IConfiguration config)
     {
