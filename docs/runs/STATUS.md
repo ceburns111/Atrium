@@ -1,9 +1,29 @@
 # STATUS — read me first
 
-**Updated:** 2026-07-01 (Run 2 merged; **Run 3 COMPLETE** on `feat/support-chatbot` — queue drained,
-gate green; live checks are the supervised pass).
+**Updated:** 2026-07-02 (Run 2 merged; **Run 3 code COMPLETE + supervised live pass PASSED** on
+`feat/support-chatbot` — **all 6 live checks ✅, no confirmed defect**. Ready to review + merge).
 
-## ✅ RUN 3 COMPLETE — support-chatbot slice on `feat/support-chatbot` (resume/review here)
+## ▶ NEXT (2026-07-02): review + merge `feat/support-chatbot` → `main`
+
+The supervised live pass ran with a real model (Ollama `qwen3:14b` via the `FoundryLocal` path). **All 6
+checks passed** — launcher visibility, the **#1 risk (bearer reaches `/storefront/agent`)**, real-model
+replies, **`GetOrderStatus`** (order #9002, honest status), **`FindProduct`** (Task Lamp $79), and
+**user-scoping** (order #2 belongs to `admin` → *"I don't see an order #2 associated with your account"*).
+Full report + screenshots: **[`verification/2026-07-02/`](verification/2026-07-02/)**.
+
+**No fix needed.** A "wedge after ~3 turns" reported mid-session was a **test-harness false alarm** (the
+poller misread the correctly empty-draft-disabled Send button as "busy"). A `systematic-debugging` session
+— instrumenting portal → gateway → storefront → model + the client loop — confirmed every turn completes
+end-to-end (server `OUT 200`, both model calls, client `loop-exit`/`finally`), across ~15 tool turns incl.
+a post-idle one. All temp instrumentation + config were reverted; **build 0W/0E, `dotnet test
+Atrium.slnx` 81/81** on clean source. **C4/C5 `[~]` are now effectively confirmed working.**
+
+**Step-up MFA gate also verified:** with `StepUp:Enabled=true, Simulate=false`, `testuser`'s password-only
+token → `POST /storefront/agent` **403** (graceful Notice); anon/expired → **401**. Pass path is the same
+succeed-branch already exercised live + unit-tested. Minor UX polish noted (403 shows the generic
+"agent unavailable" Notice, not a step-up-specific one) — not a blocker. **All 6 playbook checks pass.**
+
+## ✅ RUN 3 code COMPLETE — support-chatbot slice on `feat/support-chatbot` (resume/review here)
 
 **Branch:** `feat/support-chatbot` (off `main`; `main` untouched). **Gate green throughout**; final
 **build 0W/0E, `dotnet test` 81/81**, csharpier clean, Docker up. **Wake-up summary:

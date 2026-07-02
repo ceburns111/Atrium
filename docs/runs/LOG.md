@@ -459,3 +459,55 @@ down cleanly, wrote `GOOD-MORNING.md`. Remaining work is all supervised (live/vi
   `<ThemeToggle/>`. Design tokens/primitives only.
 - **Gate (orchestrator ran):** csharpier clean (88), build **0W/0E**, `dotnet test` **81/81** (+1 surface
   test). **Live click-through / streaming / screenshots = supervised pass** (see `verification/`).
+
+## 2026-07-02 — supervised live verification pass (Opus 4.8, interactive)
+
+Ran the deferred live pass for the Run 3 support-chatbot slice (`feat/support-chatbot`), driven through the
+Playwright MCP against `aspire run`, with a **real model** wired in: local **Ollama** `qwen3:14b-q4_K_M`
+via the `FoundryLocal` provider path (Ollama = OpenAI-compatible; `SupportAgent:Endpoint=http://localhost:11434/v1`).
+Model config was injected as temp `WithEnvironment` on the storefront resource in `apphost.cs` **and
+reverted after** — repo left clean (only pre-existing `TODO.md`/`docs/bugs/`).
+
+- **Baseline reconfirmed:** build 0W/0E; `dotnet test Atrium.slnx` **81/81**. (Gate runner is MTP —
+  invoke as `dotnet test Atrium.slnx`; extra `-c`/`--nologo` flags get forwarded to the platform and error.)
+- **5 of 6 checks ✅:** launcher visibility (signed out/in); **the #1 risk proven** — bearer reaches
+  `/storefront/agent` (anon POST → 401 gateway+direct; signed-in → 200 streamed; Fake canned reply);
+  real-model reply + **`GetOrderStatus`** tool → honest status for order **#9002**; **`FindProduct`** →
+  "Task Lamp $79". Full write-up + 5 screenshots: `verification/2026-07-02/`.
+- **⚠️ Bug found (robustness, `[~]` C4/C5 streaming path):** after 3 good turns the agent **wedges** — 4th
+  turn hangs, model never called, service stays healthy, **a fresh circuit doesn't recover it** (shared
+  pooled state). First wedge ~2 min after the chat's `HttpClient` was created (≈ `IHttpClientFactory`'s
+  default handler lifetime). Hypothesis: leaked/undisposed per-turn SSE response over the single long-lived
+  per-chat `HttpClient` on the shared pooled gateway handler (`AgentChatClientFactory`). Blocked live
+  verification of the cross-user (#2 → not found) scoping negative path (scoping itself is integration-tested).
+  Needs a focused `systematic-debugging` session before merge — details in `verification/2026-07-02/README.md`.
+
+## 2026-07-02 — CORRECTION: the "agent wedge" was a test-harness artifact (Opus 4.8)
+
+Followed up the earlier entry's "⚠️ Bug found (robustness)" with a `systematic-debugging` session. **The
+wedge was NOT real** — it was my Playwright detector treating the `Send` button (correctly disabled when the
+draft is empty: `Disabled="@(_busy || IsNullOrWhiteSpace(_draft))"`) as "still busy." The true busy signal
+is the input (`disabled="@_busy"`).
+
+- Instrumented every boundary (portal `BearerTokenHandler`, storefront `/storefront/agent` middleware,
+  client streaming loop) and reproduced: server always completes (`IN`→`OUT 200`, both model calls fire),
+  client loop always reaches `loop-exit` + `finally` (`_busy=false`). ~15 tool turns incl. a post-2.5-min-idle
+  turn all completed. **User-scoping verified**: order #2 (admin's) → "I don't see an order #2 associated
+  with your account."
+- The one earlier occurrence (Ollama silent for one turn, via snapshot) **did not reproduce**; per the Iron
+  Law (no fix without a confirmed reproducible root cause) **no code change was made**.
+- **All temp instrumentation + the Ollama `apphost.cs` config were reverted.** Clean source: build 0W/0E,
+  `dotnet test Atrium.slnx` **81/81**. Corrected report: `verification/2026-07-02/README.md`.
+- **Outcome: all 6 live checks pass; `feat/support-chatbot` is ready to review + merge.** C4/C5 `[~]`
+  best-effort items are now effectively confirmed working live.
+
+## 2026-07-02 — step-up MFA gate verified live (Opus 4.8)
+
+Exercised the last playbook item (temp `SupportAgent__StepUp__*` env on the storefront, reverted after):
+- `Enabled=true, Simulate=false` + `testuser` password-only token (no `amr`/`acr`) → storefront request log
+  `POST /storefront/agent responded 403`; `<AgentChat>` shows a graceful "agent is unavailable" Notice.
+- Anonymous/expired token → **401** ("session expired" Notice). (`ThrowIfSessionExpired` maps 401 only.)
+- Pass path (`Enabled=false` / `Simulate=true` / valid claim) = same `context.Succeed` branch already
+  exercised ~15× live + `StepUpMfaHandlerTests` (9 cases), so no separate `Simulate=true` restart.
+- Minor UX polish noted: a 403 surfaces via the generic error Notice, not a step-up-specific one. Not a bug.
+- Config reverted; clean source, build 0W/0E, `dotnet test Atrium.slnx` 81/81. **All 6 playbook checks pass.**
