@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="bunit" Version="2.7.2" />
     <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2" />
     <!-- Microsoft Agent Framework: lets the MAF smoke test drive a ChatClientAgent over a fake
          IChatClient (the Microsoft.Extensions.AI abstractions flow in transitively). -->
@@ -29,5 +30,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Atrium.Modules.Storefront\Atrium.Modules.Storefront.csproj" />
     <ProjectReference Include="..\..\src\Atrium.Services.Storefront\Atrium.Services.Storefront.csproj" />
+    <ProjectReference Include="..\..\src\Atrium.Design\Atrium.Design.csproj" />
   </ItemGroup>
 </Project>

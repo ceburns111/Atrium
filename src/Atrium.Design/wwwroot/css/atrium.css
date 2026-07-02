@@ -194,11 +194,11 @@ button {
 .topbar__spacer {
     flex: 1;
 }
-.topbar__user {
-    /* Match the adjacent topbar controls (.btn--sm = --text-xs) so the right-hand cluster shares one
-       type size; stays normal-weight + muted to read as identity, not another action button. */
-    font-size: var(--text-xs);
-    color: var(--ink-2);
+/* Every topbar glyph shares one size + the stroke-SVG house style, so no icon reads as "filled"
+   next to another that's outlined. */
+.topbar__icon {
+    width: 16px;
+    height: 16px;
 }
 /* Two classes (.btn.menu-btn) to outrank .btn's own display, which is declared later. */
 .btn.menu-btn {
@@ -393,6 +393,105 @@ button {
 }
 .btn--ghost:hover:not(:disabled) {
     background: var(--surface-2);
+}
+
+/* ---------- Menu (dropdown) ---------- */
+.menu {
+    position: relative;
+    display: inline-flex;
+}
+.menu__trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 30px;
+    padding: 0 var(--space-2);
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: background var(--dur) var(--ease);
+}
+.menu__trigger:hover {
+    background: var(--surface-2);
+}
+.menu__caret {
+    color: var(--muted);
+}
+/* Backdrop sits under the panel but over everything else, so any outside click closes the menu. */
+.menu__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+}
+.menu__panel {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    right: 0;
+    z-index: 30;
+    min-width: 200px;
+    padding: var(--space-2);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-md);
+}
+.menu__header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-2) var(--space-3) var(--space-3);
+    margin-bottom: var(--space-2);
+    border-bottom: 1px solid var(--line);
+}
+.menu__name {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--ink);
+}
+.menu__meta {
+    font-size: var(--text-xs);
+    color: var(--muted);
+}
+.menu__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: none;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    text-align: left;
+    cursor: pointer;
+    transition:
+        background var(--dur) var(--ease),
+        color var(--dur) var(--ease);
+}
+.menu__item:hover {
+    background: var(--surface-2);
+    color: var(--ink);
+    text-decoration: none;
+}
+
+/* ---------- Avatar ---------- */
+.avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    flex: none;
+    border-radius: var(--r-full);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    line-height: 1;
+    text-transform: uppercase;
 }
 
 /* ---------- Badge ---------- */
