@@ -19,6 +19,18 @@ public sealed class StorefrontModule : IModule
 
     public IEnumerable<NavItem> NavItems => [new NavItem("Storefront", "/storefront")];
 
+    // The order-support chat surface the shell's assistant launcher renders. Endpoint is gateway-relative
+    // (no leading slash) so <AgentChat> resolves it against the gateway base — reaching the AG-UI SSE
+    // endpoint the Storefront service maps at /storefront/agent.
+    public IEnumerable<AgentSurface> AgentSurfaces =>
+        [
+            new AgentSurface(
+                "Order Support",
+                "storefront/agent",
+                StarterPrompts: ["Where's my order?", "Find me a desk lamp"]
+            ),
+        ];
+
     public void RegisterServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<CartService>();

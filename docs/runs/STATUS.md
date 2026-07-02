@@ -1,29 +1,86 @@
 # STATUS — read me first
 
-**Updated:** 2026-07-01 (Run 2 complete + live-verified; **Run 3 planned, not started**).
+**Updated:** 2026-07-02 (Run 2 merged; **Run 3 code COMPLETE + supervised live pass PASSED** on
+`feat/support-chatbot` — **all 6 live checks ✅, no confirmed defect**. Ready to review + merge).
 
-## ⏭ NEXT: RUN 3 — planned, NOT started (resume here)
+## ▶ NEXT (2026-07-02): review + merge `feat/support-chatbot` → `main`
 
-The user will **clear context**, then re-engage. **The flow is DISCUSSION-LED, not paste-and-run** (user's
-call, 2026-07-01): first *discuss* the `[DISCUSS FIRST]` items, optionally produce **research/plan docs (NO
-code)**, then an unattended session executes only what's been agreed. **Do NOT autonomously start coding the
-`[DISCUSS FIRST]` items — or writing their plans — before that conversation happens.**
+The supervised live pass ran with a real model (Ollama `qwen3:14b` via the `FoundryLocal` path). **All 6
+checks passed** — launcher visibility, the **#1 risk (bearer reaches `/storefront/agent`)**, real-model
+replies, **`GetOrderStatus`** (order #9002, honest status), **`FindProduct`** (Task Lamp $79), and
+**user-scoping** (order #2 belongs to `admin` → *"I don't see an order #2 associated with your account"*).
+Full report + screenshots: **[`verification/2026-07-02/`](verification/2026-07-02/)**.
 
-**The `TODO.md` backlog (updated 2026-07-01) + unattended-ability:**
-| Item | Status | Unattended? |
-|---|---|---|
-| **NavMenu: "loaded vs visible" module count** — the `nav__foot` shows `@Catalog.Modules.Count … loaded` (e.g. "3 modules loaded") even when a customer/anon only *sees* 1 in the left-nav; add an indicator of how many are visible vs loaded so it isn't misleading. | ready | ✅ full — small, deterministic, role-aware count (mirror the `RequiredRole`/`AuthorizeView` gating already on the cards+nav). |
-| **Microsoft Test Platform + xUnit** | ready | ✅ full — pure code+config; build/test gate catches it. |
-| **Azure deploy via IaC** (+ prereq: user's Azure account w/ cost limits; Qs: can IaC be tested locally? deploy-approach pros/cons — cost/availability; MAYBE GitHub CI/CD) | **[DISCUSS FIRST]** | ❌ discuss → maybe a **research/plan doc (no code)**. No live deploy unattended (needs the user's account/creds/cost setup). |
-| **Support chatbot + MFA + Azure AI Foundry** | **[DISCUSS FIRST]** | ❌ discuss → maybe a plan doc. Foundry/MFA need cloud creds/decisions. |
+**No fix needed.** A "wedge after ~3 turns" reported mid-session was a **test-harness false alarm** (the
+poller misread the correctly empty-draft-disabled Send button as "busy"). A `systematic-debugging` session
+— instrumenting portal → gateway → storefront → model + the client loop — confirmed every turn completes
+end-to-end (server `OUT 200`, both model calls, client `loop-exit`/`finally`), across ~15 tool turns incl.
+a post-idle one. All temp instrumentation + config were reverted; **build 0W/0E, `dotnet test
+Atrium.slnx` 81/81** on clean source. **C4/C5 `[~]` are now effectively confirmed working.**
 
-**So the unattended-safe slice = the NavMenu count fix + MTP/xUnit only.** Everything else is gated on the
-discussion; after discussing, the agreed output may be research/plan docs (no code) and/or scoped local
-scaffolding — the user decides then.
+**Step-up MFA gate also verified:** with `StepUp:Enabled=true, Simulate=false`, `testuser`'s password-only
+token → `POST /storefront/agent` **403** (graceful Notice); anon/expired → **401**. Pass path is the same
+succeed-branch already exercised live + unit-tested. Minor UX polish noted (403 shows the generic
+"agent unavailable" Notice, not a step-up-specific one) — not a blocker. **All 6 playbook checks pass.**
 
-**Open decision to confirm at run start:**
-- Whether to run the unattended-safe slice **now** vs. **discuss the [DISCUSS FIRST] items first**, then run.
-  (Branch base is settled: **off `main`** — Run 2 is now merged, so `main` is the clean base.)
+## ✅ RUN 3 code COMPLETE — support-chatbot slice on `feat/support-chatbot` (resume/review here)
+
+**Branch:** `feat/support-chatbot` (off `main`; `main` untouched). **Gate green throughout**; final
+**build 0W/0E, `dotnet test` 81/81**, csharpier clean, Docker up. **Wake-up summary:
+[`GOOD-MORNING.md`](GOOD-MORNING.md)** · **supervised live playbook: [`verification/`](verification/)**.
+
+**All items done + committed** (A + C0–C5). Commits: setup `2a995eb` · **A** `ff6c019` · **C0** `aa01623`
+· **C1** `1b99ff9` · **C2a** `3ba8300` · **C2b** `1437496` · **C3** `873a8a2` · **C4** `c91663f` `[~]`
+· **C5** (this run's final) — see `git log`. C4 + C5's launcher are **`[~]` best-effort** (UI compiles +
+unit-tested; live SSE streaming/rendering/token-flow are the supervised pass, NOT claimed working).
+
+**What shipped:** a working MAF **Order Support** agent in `Atrium.Services.Storefront` (tools
+`GetOrderStatus` user-scoped + `FindProduct`), a **config-driven `IChatClient`** (Dev fake / FoundryLocal
+/ AzureFoundry), exposed over **AG-UI SSE at `/storefront/agent`** behind a config-driven **step-up-MFA**
+policy (Entra `amr` / Keycloak `acr`, dev-simulate), a reusable **`<AgentChat>`** primitive, and a
+shell **assistant launcher** the Storefront module lights up via `IModule.AgentSurfaces`.
+
+**★ NEXT = supervised live pass** (needs a running stack + a model): see `verification/README.md`. The
+**#1 item to confirm**: the streamed `/storefront/agent` request actually carries the signed-in user's
+bearer (correct-by-construction, unproven without a circuit). Then set `SupportAgent:Provider=FoundryLocal`
+(+ Endpoint/ApiKey/Model) for real replies; flip `SupportAgent:StepUp:Enabled=true` (+ `Simulate=true`
+locally) to exercise the gate. **Then: review + merge `feat/support-chatbot` → `main`.**
+
+**C2 is split into two atomic commits** (per the spec guardrail — land framework-sensitive work in
+pieces): **C2a** = user-scoped "look up one order" data layer (`usp_Order_GetById` + `GetByIdAsync`
+scoped by UserName for security + integration tests; NO status column exists, so no invented lifecycle).
+**C2b** = `SupportAgent` + tools (`GetOrderStatus` wrapping C2a's method + derives an honest
+"Confirmed"-style status; product lookup via `StorefrontCatalogClient`) + config-driven `IChatClient`
+(Dev default = fake, `FoundryLocal`/`AzureFoundry` via config) + unit tests.
+
+**★ Real MAF 1.12.0 API shape (verified in C0 — use in C1–C5, docs sketch was wrong):** create via
+`new ChatClientAgent(IChatClient, instructions:, name:, tools: IList<AITool>?)` → `AIAgent`; run via
+`agent.RunAsync(string, ...)` → **`AgentResponse`** (`.Text`, `.Messages`); session type is
+`AgentSession`. There is **no** `IChatClient.CreateAIAgent(...)` and **no** `AgentRunResponse` in this
+release. Tools built via `AIFunctionFactory.Create(...)`. Fake for tests:
+`tests/Atrium.UnitTests/Support/FakeChatClient.cs`.
+Spec: **[`RUN3-SUPPORT-CHATBOT.md`](RUN3-SUPPORT-CHATBOT.md)**. Execute under `README.md` (thin
+orchestrator, one implementer subagent per item, deterministic gate, atomic commit per item). Keep this
+file + `LOG.md` current after every step. **`docs/bugs/CARROTPAD.png` is the user's stray asset — leave
+untracked, never `git add -A`.**
+
+**The [DISCUSS FIRST] discussion happened (2026-07-01).** Outcome + full queue:
+**[`RUN3-SUPPORT-CHATBOT.md`](RUN3-SUPPORT-CHATBOT.md)** ← the run spec.
+
+**What was decided (so it isn't re-litigated):**
+- **Azure deploy — DEFERRED, not in this run** (user's call). It's a *supervised* effort later (needs the
+  user's Azure account/creds). Agreed direction (ACA via `azd`, Entra/Keycloak split, cost/teardown,
+  CI/CD) is captured in the spec's "Deferred" section.
+- **Support chatbot — IN this run, agreed shape:** slice-first, **MAF/AG-UI (mandatory)** + Azure AI
+  Foundry (cloud) / Foundry Local (dev) / fake (tests); a **Storefront support agent** (`GetOrderStatus`
+  + product lookup) gated by **step-up MFA** (Entra `amr` in cloud; Keycloak-ACR + dev-simulate locally,
+  config-driven). Design basis: `../ATRIUM-AI-EXTENSIBILITY-DESIGN.md`.
+- **MTP + xUnit — ALREADY DONE** (discovered 2026-07-01: `global.json` runner = MTP, `xunit.v3.mtp-v2`,
+  no legacy VSTest SDK). Ticked in `TODO.md`; **not a queue item.**
+
+**The Run 3 queue:** **A** NavMenu visible-vs-loaded count → **C0–C5** the chatbot slice (C0 = MAF/AG-UI
+package spike = **go/no-go**; `BLOCKED` if the preview stack won't wire — **no MEAI substitution
+unattended**). Full specs + gate + guardrails in the spec file.
 
 **Run 2 is MERGED to `main`** (merge commit `09b42b8`, 2026-07-01; `main` green — build 0W/0E, tests 56/56).
 Branch `feat/storefront-checkout-diagrams` can be deleted at leisure. `HANDOFF.md` retirement is still

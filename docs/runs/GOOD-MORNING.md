@@ -1,50 +1,48 @@
-# ☀️ Good morning — Run 2 summary (storefront / checkout / diagrams)
+# Good morning — Run 3 (support chatbot) is done
 
-**Branch:** `feat/storefront-checkout-diagrams` (off the unmerged `fix/modal-center-and-reports-gate`).
-**`main` is untouched.** Gate green throughout: `dotnet build` **0W/0E**, `dotnet test` **56/56**, Docker up.
-Full detail in `docs/runs/` (STATUS / QUEUE / LOG); this is the TL;DR.
+**Branch `feat/support-chatbot`** (off `main`; `main` untouched). Queue drained, gate green throughout —
+final **build 0W/0E, `dotnet test` 81/81**, csharpier clean. Nothing to babysit. Details:
+`STATUS.md` (source of truth), `LOG.md` (per-item), `RUN3-SUPPORT-CHATBOT.md` (the spec).
 
-> Run 1 (the overnight ADRs/OpenAPI/OTel/role-gating run) is already merged to `main`. This is a **new**
-> queue built the same way — thin orchestrator + one implementer subagent per item, deterministic gate,
-> Tier-1 adversarial review on the risky items, live/visual checks deferred to you.
+## What you asked for → what shipped
+A **customer-support chatbot** on the mandated **Microsoft Agent Framework + AG-UI** stack, with **step-up
+MFA**, wired the same way every other Atrium capability is (service owns the runtime, module lights up a
+surface, shell renders it):
 
-## What shipped (7 items, each an atomic commit + Tier-1 review where it mattered)
+- **`Atrium.Services.Storefront/Support/`** — a MAF **Order Support** agent with two real tools:
+  `GetOrderStatus` (user-scoped — a new `usp_Order_GetById` filters by owner, so you can't read someone
+  else's order) and `FindProduct` (via the Catalog client). Honest status only — no invented
+  Shipped/Delivered (the store has no status column).
+- **Config-driven model** (`IChatClient`): **Fake** (Dev default — boots with zero AI config), **Foundry
+  Local** (dev), **Azure AI Foundry** (cloud). Provider swap = config only.
+- **AG-UI SSE** endpoint at **`/storefront/agent`**, behind a config-driven **step-up-MFA** policy
+  (`amr` for Entra / `acr` for Keycloak, dev-simulate). Existing gateway catch-all already proxies it.
+- **`<AgentChat>`** primitive in `Atrium.Design` + an **assistant launcher** in the shell top bar that the
+  Storefront module lights up via the new `IModule.AgentSurfaces` seam.
 
-| # | Item | Commit | Notes |
-|---|------|--------|-------|
-| A | Home cards role-gated | `afb89eb` | Customers/anon see only Storefront; admins see all three. Reuses the `RequiredRole`/`AuthorizeView` pattern. **SAFE-REVERT-POINT.** |
-| B | Storefront browsable anonymously + checkout sign-in gate | `7ab96e5` | Catalog GET reads `AllowAnonymous` (writes stay admin); cart shows a "Sign in to check out" Notice; `POST orders` still auth-gated. **+2 HTTP auth tests.** Tier-1 APPROVE. |
-| C | Simulated payment checkout + persistent cart | `da4abba` | New `/storefront/checkout`, card form (Luhn/expiry/CVC), mock `PaymentService` (decline card ends `0002`), order placed once on approval. Cart persists to localStorage across sign-in. **+30 tests.** Tier-1 APPROVE. |
-| D | Architecture + UI-flow **mermaid** diagrams | `6c015d0` | Topology in `ARCHITECTURE.md` + `docs/diagrams/` (auth sequence, checkout flow, module discovery). Grep-verified accurate. |
-| E | Dark mode | `cbf4fb2` | `data-theme="dark"` token overrides + toggle + no-FOUC script. **Best-effort `[~]`.** |
-| F | Store image placeholders | `3ab697a` | Deterministic on-brand `ProductThumb` SVGs (no external assets); one-line seam for real images later. **Best-effort `[~]`.** |
-| G | Dark-mode button contrast fix | `b332388` | Your feedback: the dark Save button was invisible (white text on a near-white `--ink` fill). Fixed that + accent/chip/toast with theme-aware tokens. **`[~]`.** |
+Plus the two smaller TODO items: **NavMenu now shows "N of M modules visible"** (was misleading for
+customers/anon), and **MTP+xUnit was already done** → verified + ticked, dropped from the queue.
+**Azure deploy stayed deferred** (supervised; agreed direction captured in the spec).
 
-(Each item also has a small `chore(run2): …` bookkeeping commit that ticks the queue.)
+## Commits (A + C0–C5, atomic)
+setup `2a995eb` · A `ff6c019` · C0 `aa01623` · C1 `1b99ff9` · C2a `3ba8300` · C2b `1437496` ·
+C3 `873a8a2` · C4 `c91663f` · C5 `9ff317c`. C0 also cleared a newly-surfaced NU1903 advisory repo-wide.
 
-## Two things the orchestrator caught (not just rubber-stamped)
+## What's NOT verified (deliberately — deterministic gate only)
+**C4 (`<AgentChat>`) and C5's launcher are `[~]` best-effort** — they compile and their logic is
+unit-tested (bearer handler, step-up policy, surface declaration), but **live SSE streaming, rendering,
+and the token-flow are unproven without a running circuit + model.** That's the supervised pass.
 
-- **A new security warning (item B):** adding the `Mvc.Testing` test dep transitively pulled the
-  **vulnerable `Microsoft.OpenApi` 2.0.0** (NU1903), taking the build from 0→2 warnings. Pinned the patched
-  `2.9.0` in the test project → back to 0 warnings.
-- **A gap in "cart survives sign-in" (item C):** a direct/deep-link visit to `/storefront/checkout` landed in
-  a fresh circuit that never rehydrated the cart. Repaired before commit (checkout now hydrates too).
+## ▶ Your move
+1. **Live pass:** follow **[`verification/RUN3-support-chatbot.md`](verification/RUN3-support-chatbot.md)**.
+   Start with check #2 (the Fake provider proves the whole transport + auth without a model); the **#1
+   thing to confirm is that the streamed request carries your bearer**. Then wire Foundry Local for real
+   replies, and flip `StepUp:Enabled` to exercise the gate.
+2. **Try it:** `aspire run` → dashboard **https://atrium.dev.localhost:17250** → `portal` → sign in
+   (`testuser`/`password`) → **"Order Support"** in the top bar.
+3. **Review + merge** `feat/support-chatbot` → `main` when you're happy.
 
-## What needs YOU (supervised — nothing here was safe to do unattended)
+---
 
-1. **Bring the stack up** (`cd src/Atrium.AppHost && aspire run`) and eyeball the flows:
-   - **A:** anon + `testuser` see only the Storefront card on home; `admin` sees all three.
-   - **B:** anon can browse Shop/product/cart; checkout shows the sign-in Notice; sign in as `testuser`,
-     cart survives, checkout proceeds. (Anon `POST orders` → 401 is already proven by a test.)
-   - **C:** payment form validates; `…0002` declines and places nothing; any other card approves, places the
-     order once, shows the confirmation. **Confirm no card number/CVC is ever stored or logged** (reviewed
-     clean, but worth a live glance).
-2. **Dark mode look (E + G):** toggle it and check the storefront/admin/reports. The invisible-Save bug is
-   fixed; still eyeball the **module accent monogram chips** (esp. Storefront amber `#b45309` on dark — that
-   value lives in the module `.cs`, not the tokens), status badges, and shadows.
-3. **Images (F):** the placeholders are on-brand but generated — swap in real curated/licensed photography
-   when you want (the `ProductThumb ImageUrl` seam makes it a one-spot change).
-4. **Review + merge** `feat/storefront-checkout-diagrams` → `main` when you're happy.
-
-`SAFE-REVERT-POINT = afb89eb` — `git reset --hard afb89eb` drops the whole B–G phase and keeps the
-low-risk card fix + run setup, if you want to take it in smaller bites.
+_(Prior wake-up summaries: Run 2 = storefront/checkout/diagrams, merged to `main` at `09b42b8`; Run 1 =
+overnight docs/observability, merged. Their detail lives in `LOG.md`.)_

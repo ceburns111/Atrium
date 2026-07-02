@@ -34,5 +34,33 @@
     }
 
     <div class="nav__spacer"></div>
-    <div class="nav__foot">@Catalog.Modules.Count module@(Catalog.Modules.Count == 1 ? "" : "s") loaded</div>
+    @* When some modules are role-gated away, show what this user can see vs what's loaded. *@
+    <div class="nav__foot">
+        @if (_visibleCount == Catalog.Modules.Count)
+        {
+            @($"{Catalog.Modules.Count} module{(Catalog.Modules.Count == 1 ? "" : "s")} loaded")
+        }
+        else
+        {
+            @($"{_visibleCount} of {Catalog.Modules.Count} modules visible")
+        }
+    </div>
 </nav>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
+    private int _visibleCount;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var user = AuthState is null ? null : (await AuthState).User;
+        _visibleCount = Catalog.Modules.Count(m => IsVisible(m, user));
+    }
+
+    // A module is visible when it has no required role, or the signed-in user is in that role —
+    // the same gate the nav links and home cards use.
+    private static bool IsVisible(Atrium.Abstractions.IModule module, System.Security.Claims.ClaimsPrincipal? user) =>
+        module.RequiredRole is null || (user?.IsInRole(module.RequiredRole) ?? false);
+}

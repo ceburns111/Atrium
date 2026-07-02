@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using Atrium.Contracts;
 using Atrium.Services.Catalog.Catalog;
 using Atrium.Services.Storefront.Orders;
@@ -73,6 +74,26 @@ public sealed class EndpointAuthorizationTests(SqlServerFixture sql)
         // No Authorization header: the /storefront group's RequireAuthorization must reject checkout
         // before the handler runs — the server-side gate holds regardless of the anonymous UI.
         using var response = await client.PostAsJsonAsync("/storefront/orders", request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Anonymous_support_agent_request_is_rejected()
+    {
+        using var factory = new ServiceFactory<OrderRepository>(
+            "storefrontdb",
+            sql.ConnectionStringFor("storefront_agent_authz")
+        );
+        using var client = factory.CreateClient();
+
+        // The AG-UI support endpoint is mapped and carries the StepUpMfa policy, so an anonymous POST
+        // (no Authorization header) must be challenged with 401 before the agent runs — it is never
+        // anonymous. A POST is required because the route is POST-only; the body is irrelevant since
+        // authorization short-circuits before model binding. (The policy's step-up logic itself is
+        // covered deterministically by StepUpMfaHandlerTests.)
+        using var content = new StringContent("{}", Encoding.UTF8, "application/json");
+        using var response = await client.PostAsync("/storefront/agent", content);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }

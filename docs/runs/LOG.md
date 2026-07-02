@@ -275,3 +275,239 @@ merged to `main`. Source of the new items: `TODO.md` "🆕 New work" + "## Last"
 ### ✅ RUN 2 COMPLETE (2026-07-01)
 Queue A–G drained on `feat/storefront-checkout-diagrams`; `main` untouched; gate green throughout. Wound
 down cleanly, wrote `GOOD-MORNING.md`. Remaining work is all supervised (live/visual) — see `QUEUE.md`.
+
+---
+
+## Run 3 — support chatbot slice (branch `feat/support-chatbot`, off `main`)
+
+- **Run start (2026-07-01).** Discussion-led plan agreed (spec: `RUN3-SUPPORT-CHATBOT.md`). Azure deploy
+  **deferred** (supervised, needs user's account). MTP/xUnit found **already done** (`global.json` runner =
+  Microsoft.Testing.Platform; both test projects on `xunit.v3.mtp-v2`; no legacy `Microsoft.NET.Test.Sdk`)
+  → ticked in `TODO.md`, dropped from the queue. Queue = **A** (NavMenu visible-vs-loaded count) → **C0–C5**
+  (Storefront support-agent slice on MAF/AG-UI). Branch created off `main`.
+- **Baseline:** csharpier no-op (71 files), `dotnet build Atrium.slnx` **0W/0E**, `dotnet test` **56/56**
+  (unit + integration under MTP; Docker up). Green — cleared to run.
+- **Working-tree note:** the user moved `ATRIUM-AI-EXTENSIBILITY-DESIGN.md` root→`docs/` (pure move) and
+  added `docs/bugs/CARROTPAD.png` (a stray screenshot) out-of-band during planning. The doc-move is folded
+  into the run-setup commit (spec links updated `../../`→`../`); the PNG is left untracked (the user's,
+  unrelated to Run 3). No `git add -A` during this run.
+
+### Item A — NavMenu visible-vs-loaded module count (code, Tier-1 auth-adjacent/display-only)
+- **Done.** Footer (`nav__foot`) now shows `"{visible} of {loaded} modules visible"` when role-gating
+  hides modules, collapsing to the original `"{N} module(s) loaded"` when the user sees all of them.
+  `src/Atrium.Portal/Components/Layout/NavMenu.razor` only. Visible count =
+  `Catalog.Modules.Count(m => m.RequiredRole is null || user.IsInRole(m.RequiredRole))`, using the
+  existing `[CascadingParameter] Task<AuthenticationState>` idiom (same as `MainLayout`/`Home.razor`);
+  no hard-coded module names, no new auth plumbing, no CSS.
+- **Orchestrator review (light — display-only count, not an enforcement change):** verified the footer
+  agrees with the links the nav actually renders for all three personas — anon → "1 of 3", customer
+  (`[user,customer]`) → "1 of 3", admin → "3 modules loaded". Confirmed `IModule.RequiredRole` exists
+  (default null). **Latent assumption (flagged):** the footer counts by `IModule.RequiredRole` while the
+  nav links gate per `NavItem.RequiredRole`; they agree today because each module has one nav item at the
+  same role. If a future module contributes multiple nav items at differing roles, revisit.
+- **Gate (orchestrator re-ran authoritative):** csharpier check clean (71 files), build **0W/0E**,
+  `dotnet test` **56/56**. Implementer confidence: high. **Live check (supervised):** anon/testuser/admin
+  each see a correct, non-misleading count.
+
+### Item C0 — MAF + AG-UI spike & pin — **GO** (code, Tier-1 framework go/no-go)
+- **GO.** MAF + AG-UI restore, compile, and run an agent turn over a fake `IChatClient` on this .NET 10
+  repo. Pinned on `Atrium.Services.Storefront`: `Microsoft.Agents.AI` **1.12.0** (stable) +
+  `Microsoft.Agents.AI.Hosting.AGUI.AspNetCore` **1.12.0-preview.260629.1** (prerelease; `AddAGUI`/
+  `MapAGUI`, wired in C3). `Microsoft.Agents.AI` **1.12.0** also on `Atrium.UnitTests` for the smoke.
+  `Microsoft.Extensions.AI` resolves transitively at **10.6.0** (`IChatClient` lives there) — no explicit
+  ref, no conflict.
+- **Kept smoke (seed for C2):** `tests/Atrium.UnitTests/Support/FakeChatClient.cs` (deterministic
+  `IChatClient`, reused by later items) + `tests/Atrium.UnitTests/MafAgentSmokeTests.cs` (builds a
+  `ChatClientAgent` over the fake, runs a turn, asserts `.Text`).
+- **★ Real 1.12.0 API (docs sketch was wrong — recorded for C1–C5):** `new ChatClientAgent(IChatClient,
+  instructions:, name:, tools: IList<AITool>?)` → `AIAgent`; `RunAsync(string,...)` → **`AgentResponse`**
+  (`.Text`/`.Messages`); conversation type `AgentSession`. **No** `CreateAIAgent` extension, **no**
+  `AgentRunResponse`. Tools via `AIFunctionFactory.Create(...)`.
+- **NU1903 (build-integrity) — folded into this item.** C0's fresh restore surfaced a newly-published
+  high-severity advisory: `Microsoft.AspNetCore.OpenApi 10.0.9` pulls `Microsoft.OpenApi 2.0.0`
+  transitively (GHSA-v5pm-xwqc-g5wc). A clean restore showed it in **3** projects (Catalog + Storefront
+  services + UnitTests) — latent repo-wide, only masked at baseline by restore caching. Fixed the same
+  way Run 2's item B did: pin `Microsoft.OpenApi` **2.9.0** on the two service projects (UnitTests clears
+  transitively). Orchestrator verified: base build was 0W only due to cache; forced restore reproduced
+  the 3-project blast radius; the two pins bring a forced-restore build back to **0W**.
+- **Gate (orchestrator re-ran authoritative, forced restore):** csharpier clean (73 files), build
+  **0W/0E**, `dotnet test` **57/57** (56 + the new MAF smoke). Implementer confidence: high (its
+  "NU1903 pre-existing / independent" claim was partly wrong — it IS pre-existing transitively via
+  AspNetCore.OpenApi, but the baseline was 0W, so the run must clear it; done).
+
+### Item C1 — `AgentSurface` on `Atrium.Abstractions` (contract, Tier-0, MAF-free)
+- **Done.** New `src/Atrium.Abstractions/AgentSurface.cs` — `public sealed record AgentSurface(string
+  Name, string Endpoint, string[]? StarterPrompts = null, string? Icon = null)`, mirroring `NavItem`
+  (own file, param-style XML docs, nullable optionals). Added default interface member to `IModule`:
+  `IEnumerable<AgentSurface> AgentSurfaces => [];` (right after `NavItems`) — so every existing module
+  compiles unchanged. **Abstractions stays MAF-free** (orchestrator-verified: csproj references only the
+  two `Microsoft.Extensions.*.Abstractions` packages; no `Microsoft.Agents.AI`/`Microsoft.Extensions.AI`).
+- **Gate (orchestrator re-ran):** csharpier clean (74 files), build **0W/0E**, `dotnet test` **57/57**.
+  Confidence: high. Pure additive contract; nothing to verify live.
+
+### Item C2a — user-scoped "look up one order" data layer (code, Tier-1 security-scoped)
+- **Done.** New sproc `usp_Order_GetById.sql` (`@OrderId, @UserName`; same flat header×line projection
+  as GetList, `WHERE o.Id=@OrderId AND o.UserName=@UserName`). New `IOrderRepository.GetByIdAsync(int
+  orderId, string userName, ct)` → `OrderDto?`; Dapper sproc call, reuses `OrderRow` + an extracted
+  `private static GroupRows(...)` helper (so GetOrders + GetById group identically), `.SingleOrDefault()`
+  → **null** for both not-found and not-owned (no exists-but-forbidden leak). No status column exists →
+  no invented lifecycle; returns the real order only.
+- **Security:** the `@UserName` predicate is the boundary — a support agent under the user's bearer can
+  only read that user's order. **Orchestrator review (security-scoped):** verified the sproc filters on
+  both id+owner and the repo collapses zero-rows to null; the new integration test proves an "intruder"
+  user gets null while the owner still reads the same order.
+- **Tests (+3, real SQL via Testcontainers):** owner reads (total+lines), unknown id → null, other-user →
+  null. **Gate (orchestrator re-ran):** csharpier clean (74), build **0W/0E**, `dotnet test` **60/60**.
+  Confidence: high. (C2a is the data half of C2; the tool that wraps it is C2b.)
+
+### Item C2b — SupportAgent + tools + config-driven IChatClient (code, Tier-1 service/runtime) — GO
+- **Done.** New `Support/` feature folder in the Storefront service:
+  - **Config-driven `IChatClient`** (`SupportAgentServiceCollectionExtensions.AddSupportAgent`): provider
+    from `SupportAgent:Provider` — `Fake` (in-service `CannedChatClient`; **Development default** so the
+    service boots + gate runs with no AI config), `FoundryLocal`/`AzureFoundry` (shared OpenAI-compatible
+    client from `SupportAgent:Endpoint`/`ApiKey`/`Model`, api-key auth — DefaultAzureCredential deferred).
+    Non-Development + missing/unknown provider → throws at startup. `IChatClient` singleton; agent+tools scoped.
+  - **`SupportTools`** — `GetOrderStatus(int)` (resolves the signed-in user via `IHttpContextAccessor`
+    preferred_username, calls C2a's user-scoped `GetByIdAsync`, returns an **honest** "Confirmed. Placed
+    {date}, {N} item(s), total {total}" — no invented lifecycle; friendly not-found/not-signed-in msgs);
+    `FindProduct(string)` (case-insensitive name filter over the Catalog client, top 5).
+  - **`SupportAgent`** — a MAF `ChatClientAgent` over the configured `IChatClient` with both tools via
+    `AIFunctionFactory.Create`; instructions explicitly forbid inventing order progress.
+  - **`IStorefrontCatalogClient`** extracted (mirrors `IOrderRepository`); typed-client registration +
+    `OrdersEndpoints`/`ReportsEndpoints` consumers updated to the interface (makes `FindProduct` testable).
+- **Packages (build stayed 0W):** `Microsoft.Extensions.AI.OpenAI` 10.6.0 + `OpenAI` 2.10.0, both stable,
+  pinned to match MEAI core 10.6.0 (no advisory; no `Microsoft.OpenApi`-style pin needed for these).
+- **Tests (+6):** honest-status format; **user-scoping (recording fake asserts the repo got "alice")**;
+  not-found message; FindProduct match + nothing-found; SupportAgent builds over `FakeChatClient` and
+  `RunAsync` returns (tools register + agent runs). **Orchestrator review:** read the provider selector,
+  tools, agent, Program.cs wiring, canned client, and the tests — all genuine assertions, honest wording,
+  correct scoping.
+- **Gate (orchestrator re-ran):** csharpier clean (81), build **0W/0E**, `dotnet test` **66/66**.
+  Confidence: high. **C2 complete (C2a + C2b).** Live model run = supervised (Foundry Local).
+
+### Item C3 — AG-UI endpoint + step-up MFA policy + tests (code, Tier-1 auth/runtime) — GO
+- **Done.** SupportAgent exposed over **AG-UI SSE at `/storefront/agent`**, gated by a config-driven
+  **StepUpMfa** policy. Build 0W/0E, **76 tests** (+10). No new packages (MAF/AG-UI already pinned in C0);
+  **no gateway change** — the existing `/storefront/{**catch-all}` route already proxies it (YARP forwards SSE).
+- **★ Scoped-agent-vs-singleton solution (the subtle bit):** `MapAGUI` resolves its agent ONCE at map
+  time from the root provider (decompiled: all 3 overloads collapse to that; a Scoped registration threw
+  "cannot resolve scoped from root"). Fix: register the `AIAgent` as a **keyed singleton** via MAF
+  hosting's `AddAIAgent(name, factory, Singleton)` (factory depends only on singletons: `IChatClient`,
+  `IHttpContextAccessor`); and build each tool with `AIFunctionFactory.Create(method, createInstanceFunc:
+  _ => HttpContext.RequestServices.GetRequiredService<SupportTools>())` so **every tool call resolves a
+  fresh request-scoped `SupportTools`** — the caller's identity + own `SqlConnection`, concurrency-safe.
+  `MapAGUI(AgentName, "/agent")` binds by keyed name; agent `.Name` must match the key (factory asserts).
+- **Step-up policy (`StepUpMfa.cs`, config `SupportAgent:StepUp`):** `Enabled` (default false → authenticated
+  is enough, local browsing unblocked), `Simulate` (dev escape hatch → authenticated treated as stepped-up),
+  else require a real claim — `amr` in `AcceptedAmrValues` (Entra) OR `acr` in `AcceptedAcrValues` (Keycloak),
+  both overridable. Policy = `RequireAuthenticatedUser()` + requirement → **anonymous 401**, authenticated-
+  but-not-stepped-up **403**. Same policy cloud + local, config only.
+- **Tests:** 9 unit cases (`StepUpMfaHandlerTests`) cover the policy logic authoritatively (disabled/
+  simulate/amr/acr/missing/override/unauthenticated); 1 integration (`Anonymous_support_agent_request_is_
+  rejected` → 401, confirms the endpoint is mapped + non-anonymous). Authenticated-403 left to the unit
+  tests (a test auth scheme would be needed for the HTTP path) — flagged for the supervised pass.
+- **Orchestrator review:** read `SupportAgent`, `StepUpMfa`, the DI extension, `Program.cs` wiring, and the
+  tests — the singleton/scoped split is correct + documented; 401-vs-403 is right; `amr` multivalued
+  handling correct. **Fixed one misleading `Program.cs` comment** ("Scoped agent per request" → the agent
+  is a keyed singleton; its tools resolve per request). Gate re-run green. Confidence: high.
+- **Supervised (live) checks deferred:** real SSE stream through the gateway; step-up 403→200 with a real
+  Keycloak ACR / dev-simulate; a live model turn (Foundry Local).
+
+### Item C4 — `<AgentChat>` primitive in Atrium.Design (UI, Tier-0) — [~] best-effort (live-unverified)
+- **Marked `[~]` (NOT "done"):** the deterministic gate can't drive a browser/model, so SSE streaming +
+  rendering are supervised — same treatment as Run 2's dark-mode/images. What the gate DID verify: it
+  compiles, the bearer handler is unit-tested, packages resolve, build 0W/0E, **80 tests** (+4).
+- **Built:** `Atrium.Design/Components/AgentChat.razor` (+ scoped `.razor.css`, token-only — colors all
+  `var(--…)`; `Button`/`Badge`/`Notice` primitives reused; reduced-motion caret). Streams via
+  `IChatClient.GetStreamingResponseAsync`, switching `ChatResponseUpdate.Contents` — `TextContent` →
+  assistant bubble, `FunctionCallContent`/`FunctionResultContent` → minimal tool cards (Badge
+  running/done). `SessionExpiredException` → "sign in again" Notice; other errors → generic Notice;
+  Blazor-Server prerender/disposal guards (Dialog pattern) + `IAsyncDisposable`.
+- **★ Bearer-token scope pitfall solved (the subtle bit, orchestrator-verified):** `IHttpClientFactory`
+  builds handlers in a SEPARATE scope, so a bearer handler in the named-client pipeline would read an
+  empty per-circuit `AccessTokenHolder`. Instead `AgentChatClientFactory` (scoped) takes the pooled
+  gateway chain from `IHttpMessageHandlerFactory.CreateHandler` and wraps it with a `BearerTokenHandler`
+  built from THIS circuit's `AccessTokenHolder` (`HttpClient(..., disposeHandler:false)` so it never
+  disposes the pooled chain). `BearerTokenHandler` reuses the existing `Authorize` + `ThrowIfSessionExpired`
+  helpers; 4 host-free unit tests (attaches token / no token / 401→SessionExpired / 200 passthrough).
+- **Packages:** `Microsoft.Agents.AI.AGUI` 1.12.0-preview.260629.1 (client, same family as C3 server) +
+  `Microsoft.Extensions.Http` **10.0.0** (re-pinned from 10.0.9 to clear an NU1605 downgrade vs the
+  modules' 10.0.0). Build stayed 0W. New Atrium.Design coupling is limited to this feature.
+- **Wiring for C5:** `AddAgentChat()` (registers the named gateway client + `AgentChatClientFactory`) +
+  `AgentChatDefaults` (client name, `https+http://gateway`). C5 calls `AddAgentChat()` and renders
+  `<AgentChat Endpoint="storefront/agent" …>`.
+- **★ SUPERVISED live-verify list (carry to the morning pass):** (1) the streamed request actually carries
+  the signed-in user's token (the #1 item — the scope wrapping is correct-by-construction but unproven
+  without a circuit); (2) SSE token streaming + bubble render; (3) tool-card population on a real
+  tool-calling turn (needs Foundry Local); (4) autoscroll JS; (5) light/dark Playwright screenshots.
+- **Gate (orchestrator re-ran):** csharpier clean (87), build 0W/0E, `dotnet test` 80/80. Confidence: high
+  on compile/handler; medium on live circuit-token flow (documented + mitigated, unproven).
+
+### Item C5 — module AgentSurface + Portal shell launcher (code, Tier-0/UI) — [~] best-effort
+- **Note on execution:** two C5 subagents died on a transient **API 529 overload** (the same outage took
+  the Bash safety classifier down for ~10 min). The tree was clean after each, so the **orchestrator wrote
+  C5 directly** (Run-2 item-G precedent) and gated it once the API recovered.
+- **Done (testable half):** `StorefrontModule.AgentSurfaces` declares `AgentSurface("Order Support",
+  "storefront/agent", StarterPrompts: ["Where's my order?", "Find me a desk lamp"])` — endpoint is
+  gateway-relative (no leading slash) so `<AgentChat>` resolves it against the gateway base → the C3
+  `/storefront/agent` route. Unit test `StorefrontModuleTests` asserts the surface (name/endpoint/prompts).
+- **`[~]` best-effort (UI, live-unverified):** `Program.cs` calls `AddAgentChat()` (shares AccessTokenHolder
+  + service discovery). New `AssistantLauncher.razor` (Portal shell): injects `ModuleCatalog`, picks the
+  active section's module surface (falls back to the first available), renders a topbar trigger inside
+  `<AuthorizeView><Authorized>` (authenticated-only) that opens a `Dialog` hosting `<AgentChat>`;
+  re-resolves on `LocationChanged`, disposes the handler. `MainLayout` drops `<AssistantLauncher/>` next to
+  `<ThemeToggle/>`. Design tokens/primitives only.
+- **Gate (orchestrator ran):** csharpier clean (88), build **0W/0E**, `dotnet test` **81/81** (+1 surface
+  test). **Live click-through / streaming / screenshots = supervised pass** (see `verification/`).
+
+## 2026-07-02 — supervised live verification pass (Opus 4.8, interactive)
+
+Ran the deferred live pass for the Run 3 support-chatbot slice (`feat/support-chatbot`), driven through the
+Playwright MCP against `aspire run`, with a **real model** wired in: local **Ollama** `qwen3:14b-q4_K_M`
+via the `FoundryLocal` provider path (Ollama = OpenAI-compatible; `SupportAgent:Endpoint=http://localhost:11434/v1`).
+Model config was injected as temp `WithEnvironment` on the storefront resource in `apphost.cs` **and
+reverted after** — repo left clean (only pre-existing `TODO.md`/`docs/bugs/`).
+
+- **Baseline reconfirmed:** build 0W/0E; `dotnet test Atrium.slnx` **81/81**. (Gate runner is MTP —
+  invoke as `dotnet test Atrium.slnx`; extra `-c`/`--nologo` flags get forwarded to the platform and error.)
+- **5 of 6 checks ✅:** launcher visibility (signed out/in); **the #1 risk proven** — bearer reaches
+  `/storefront/agent` (anon POST → 401 gateway+direct; signed-in → 200 streamed; Fake canned reply);
+  real-model reply + **`GetOrderStatus`** tool → honest status for order **#9002**; **`FindProduct`** →
+  "Task Lamp $79". Full write-up + 5 screenshots: `verification/2026-07-02/`.
+- **⚠️ Bug found (robustness, `[~]` C4/C5 streaming path):** after 3 good turns the agent **wedges** — 4th
+  turn hangs, model never called, service stays healthy, **a fresh circuit doesn't recover it** (shared
+  pooled state). First wedge ~2 min after the chat's `HttpClient` was created (≈ `IHttpClientFactory`'s
+  default handler lifetime). Hypothesis: leaked/undisposed per-turn SSE response over the single long-lived
+  per-chat `HttpClient` on the shared pooled gateway handler (`AgentChatClientFactory`). Blocked live
+  verification of the cross-user (#2 → not found) scoping negative path (scoping itself is integration-tested).
+  Needs a focused `systematic-debugging` session before merge — details in `verification/2026-07-02/README.md`.
+
+## 2026-07-02 — CORRECTION: the "agent wedge" was a test-harness artifact (Opus 4.8)
+
+Followed up the earlier entry's "⚠️ Bug found (robustness)" with a `systematic-debugging` session. **The
+wedge was NOT real** — it was my Playwright detector treating the `Send` button (correctly disabled when the
+draft is empty: `Disabled="@(_busy || IsNullOrWhiteSpace(_draft))"`) as "still busy." The true busy signal
+is the input (`disabled="@_busy"`).
+
+- Instrumented every boundary (portal `BearerTokenHandler`, storefront `/storefront/agent` middleware,
+  client streaming loop) and reproduced: server always completes (`IN`→`OUT 200`, both model calls fire),
+  client loop always reaches `loop-exit` + `finally` (`_busy=false`). ~15 tool turns incl. a post-2.5-min-idle
+  turn all completed. **User-scoping verified**: order #2 (admin's) → "I don't see an order #2 associated
+  with your account."
+- The one earlier occurrence (Ollama silent for one turn, via snapshot) **did not reproduce**; per the Iron
+  Law (no fix without a confirmed reproducible root cause) **no code change was made**.
+- **All temp instrumentation + the Ollama `apphost.cs` config were reverted.** Clean source: build 0W/0E,
+  `dotnet test Atrium.slnx` **81/81**. Corrected report: `verification/2026-07-02/README.md`.
+- **Outcome: all 6 live checks pass; `feat/support-chatbot` is ready to review + merge.** C4/C5 `[~]`
+  best-effort items are now effectively confirmed working live.
+
+## 2026-07-02 — step-up MFA gate verified live (Opus 4.8)
+
+Exercised the last playbook item (temp `SupportAgent__StepUp__*` env on the storefront, reverted after):
+- `Enabled=true, Simulate=false` + `testuser` password-only token (no `amr`/`acr`) → storefront request log
+  `POST /storefront/agent responded 403`; `<AgentChat>` shows a graceful "agent is unavailable" Notice.
+- Anonymous/expired token → **401** ("session expired" Notice). (`ThrowIfSessionExpired` maps 401 only.)
+- Pass path (`Enabled=false` / `Simulate=true` / valid claim) = same `context.Succeed` branch already
+  exercised ~15× live + `StepUpMfaHandlerTests` (9 cases), so no separate `Simulate=true` restart.
+- Minor UX polish noted: a 403 surfaces via the generic error Notice, not a step-up-specific one. Not a bug.
+- Config reverted; clean source, build 0W/0E, `dotnet test Atrium.slnx` 81/81. **All 6 playbook checks pass.**

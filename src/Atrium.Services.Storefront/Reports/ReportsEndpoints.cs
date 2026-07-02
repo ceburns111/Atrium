@@ -26,7 +26,7 @@ public static class ReportsEndpoints
 
     private static async Task<Ok<SalesReportDto>> GetSalesReport(
         IReportRepository repository,
-        StorefrontCatalogClient catalog,
+        IStorefrontCatalogClient catalog,
         CancellationToken ct
     )
     {

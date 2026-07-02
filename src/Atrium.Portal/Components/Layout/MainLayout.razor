@@ -16,6 +16,11 @@
             <span class="crumbs__here">@Section</span>
         </nav>
         <div class="topbar__spacer"></div>
+        <AuthorizeView>
+            <Authorized>
+                <AssistantLauncher />
+            </Authorized>
+        </AuthorizeView>
         <ThemeToggle />
         <AuthorizeView>
             <Authorized>
