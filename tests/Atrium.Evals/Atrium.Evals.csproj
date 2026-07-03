@@ -6,6 +6,8 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- Suppress: eval API types are marked experimental (AIEVAL001); intentional usage here. -->
+    <NoWarn>$(NoWarn);AIEVAL001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
