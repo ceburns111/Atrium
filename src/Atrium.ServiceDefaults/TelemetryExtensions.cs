@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Serilog;
 using Serilog.Events;
@@ -58,7 +59,13 @@ public static class TelemetryExtensions
                 {
                     tracing.AddSqlClientInstrumentation();
                 }
-            });
+            })
+            .WithMetrics(metrics =>
+                metrics
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddRuntimeInstrumentation()
+            );
 
         // Aspire injects OTEL_EXPORTER_OTLP_ENDPOINT into every launched resource; export there so a
         // single trace spans Portal → Gateway → Service → SQL in the dashboard. Guarded so tests and
