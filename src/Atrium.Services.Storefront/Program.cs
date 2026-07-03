@@ -135,5 +135,6 @@ storefront.MapReportEndpoints();
 
 // The AG-UI support-agent endpoint at /storefront/agent (SSE), step-up-MFA gated (see SupportEndpoints).
 storefront.MapSupportAgent();
+storefront.MapSupportFeedback();
 
 app.Run();
