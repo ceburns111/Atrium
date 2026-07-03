@@ -40,7 +40,11 @@ public static class SupportAgentBuilderExtensions
         {
             var inner = BuildChatClient(builder.Configuration, builder.Environment.IsDevelopment());
             var cache = sp.GetRequiredService<IDistributedCache>();
-            return BuildSupportPipeline(inner, cache, sp);
+            var classifier = BuildGuardrailClassifier(
+                builder.Configuration,
+                builder.Environment.IsDevelopment()
+            );
+            return BuildSupportPipeline(inner, cache, classifier, sp);
         });
 
         builder.Services.AddScoped<SupportTools>();
@@ -119,19 +123,23 @@ public static class SupportAgentBuilderExtensions
     internal static IChatClient BuildChatClientForTest(IConfiguration config, bool isDevelopment) =>
         BuildChatClient(config, isDevelopment);
 
-    // The Support chat pipeline: cache (innermost) -> OpenTelemetry (outermost) around the model client.
+    // The Support chat pipeline: cache (#5 innermost) → guardrail (#4) → OpenTelemetry (#1 outermost).
+    // The guardrail is outside the cache so blocked requests never warm the cache; it is inside OTel
+    // so the classifier call and refusal decisions are captured in traces.
     // Extracted so tests can drive the real pipeline construction with a controllable inner client.
     internal static IChatClient BuildSupportPipeline(
         IChatClient inner,
         IDistributedCache cache,
+        IChatClient classifier,
         IServiceProvider services
     ) =>
         new ChatClientBuilder(inner)
-            .UseDistributedCache(cache)
+            .UseDistributedCache(cache) // #5 innermost
+            .Use((c, _) => new GuardrailChatClient(c, classifier)) // #4 outside cache, inside OTel
             .UseOpenTelemetry(
                 sourceName: SupportTelemetry.ChatSourceName,
                 configure: o => o.EnableSensitiveData = true
-            )
+            ) // #1 outermost
             .Build(services);
 
     private static IChatClient BuildOpenAICompatibleClient(IConfiguration config)
@@ -144,6 +152,27 @@ public static class SupportAgentBuilderExtensions
         // with the rest of the Azure work.
         var client = new OpenAIClient(
             new ApiKeyCredential(apiKey),
+            new OpenAIClientOptions { Endpoint = new Uri(endpoint) }
+        );
+        return client.GetChatClient(model).AsIChatClient();
+    }
+
+    // Builds the cheap classifier client used by GuardrailChatClient. When no GuardrailModel is
+    // configured (Fake / dev / unit tests) it returns a permissive canned classifier that always
+    // answers "ALLOW", so the pipeline boots and tests pass with no Ollama instance running.
+    // In production the AppHost sets SupportAgent__GuardrailModel=llama3.2:3b (Task 1.3).
+    private static IChatClient BuildGuardrailClassifier(IConfiguration config, bool isDevelopment)
+    {
+        var model = config["SupportAgent:GuardrailModel"];
+        if (string.IsNullOrWhiteSpace(model))
+        {
+            // No guardrail model configured → permissive canned classifier (always ALLOW).
+            return new CannedChatClient("ALLOW");
+        }
+
+        var endpoint = config["SupportAgent:Endpoint"] ?? "http://localhost:11434/v1";
+        var client = new OpenAIClient(
+            new ApiKeyCredential("ollama"),
             new OpenAIClientOptions { Endpoint = new Uri(endpoint) }
         );
         return client.GetChatClient(model).AsIChatClient();

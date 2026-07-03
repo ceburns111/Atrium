@@ -41,9 +41,11 @@ public class ChatCacheTests
         );
         IServiceProvider services = new ServiceCollection().BuildServiceProvider();
 
+        // Pass a permissive classifier so the guardrail always ALLOWs: caching behaviour is unchanged.
         IChatClient client = SupportAgentBuilderExtensions.BuildSupportPipeline(
             counting,
             cache,
+            new CannedChatClient("ALLOW"),
             services
         );
 

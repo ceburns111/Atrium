@@ -9,16 +9,20 @@ namespace Atrium.Services.Storefront.Support;
 /// <see cref="SupportAgentBuilderExtensions"/>) so the service boots and the test gate runs
 /// with no AI endpoint, key, or network. Swapping to a real model is config-only.
 /// </summary>
-internal sealed class CannedChatClient : IChatClient
+/// <remarks>
+/// The optional <paramref name="reply"/> lets tests inject a specific canned response — most usefully
+/// <c>"ALLOW"</c> to create a permissive guardrail classifier stub without an additional test double.
+/// The parameterless default reproduces the original behaviour exactly.
+/// </remarks>
+internal sealed class CannedChatClient(
+    string reply = "Support is running in local (Fake) mode — no live model is configured."
+) : IChatClient
 {
-    private const string Reply =
-        "Support is running in local (Fake) mode — no live model is configured.";
-
     public Task<ChatResponse> GetResponseAsync(
         IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
         CancellationToken cancellationToken = default
-    ) => Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, Reply)));
+    ) => Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, reply)));
 
     public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
         IEnumerable<ChatMessage> messages,
@@ -26,7 +30,7 @@ internal sealed class CannedChatClient : IChatClient
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
-        yield return new ChatResponseUpdate(ChatRole.Assistant, Reply);
+        yield return new ChatResponseUpdate(ChatRole.Assistant, reply);
         await Task.CompletedTask;
     }
 
