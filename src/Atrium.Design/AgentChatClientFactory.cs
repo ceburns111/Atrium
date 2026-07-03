@@ -4,6 +4,15 @@ using Microsoft.Extensions.AI;
 namespace Atrium.Design;
 
 /// <summary>
+/// Testability seam: lets unit tests inject a fake factory without depending on the sealed concrete type.
+/// </summary>
+public interface IAgentChatClientFactory
+{
+    /// <summary>Creates a chat client for a gateway-relative agent endpoint (e.g. <c>"storefront/agent"</c>).</summary>
+    IChatClient Create(string endpoint);
+}
+
+/// <summary>
 /// Builds the AG-UI <see cref="IChatClient"/> the chat talks to, inside the signed-in Blazor circuit.
 /// It takes the gateway handler chain from <see cref="IHttpMessageHandlerFactory"/> (so service
 /// discovery and telemetry apply) and wraps it with a <see cref="BearerTokenHandler"/> constructed from
@@ -13,7 +22,7 @@ namespace Atrium.Design;
 public sealed class AgentChatClientFactory(
     IHttpMessageHandlerFactory handlerFactory,
     AccessTokenHolder tokens
-)
+) : IAgentChatClientFactory
 {
     /// <summary>
     /// Creates a chat client for a gateway-relative agent endpoint (e.g. <c>"storefront/agent"</c>).
