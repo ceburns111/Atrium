@@ -1,6 +1,5 @@
 using Atrium.Services.Storefront.Support;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 
 namespace Atrium.UnitTests.Support;
 

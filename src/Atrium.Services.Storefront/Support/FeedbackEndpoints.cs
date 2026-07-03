@@ -20,7 +20,7 @@ public static class SupportFeedback
     public static void Record(FeedbackRequest request, string user, ILogger? logger = null)
     {
         using var activity = Source.StartActivity("support.feedback");
-        activity?.SetTag("feedback.turn_id", request.TurnId);
+        activity?.SetTag("feedback.turn_id", Truncate(request.TurnId));
         activity?.SetTag("feedback.value", request.Value); // +1 up, -1 down
         activity?.SetTag("feedback.user", user);
         activity?.SetTag("feedback.question", Truncate(request.Question));
@@ -43,6 +43,11 @@ public static class SupportFeedback
                 "/agent/feedback",
                 (FeedbackRequest request, HttpContext http, ILoggerFactory lf) =>
                 {
+                    if (request.Value is not (1 or -1))
+                    {
+                        return Results.BadRequest();
+                    }
+
                     SupportFeedback.Record(
                         request,
                         http.User.Identity?.Name ?? "unknown",

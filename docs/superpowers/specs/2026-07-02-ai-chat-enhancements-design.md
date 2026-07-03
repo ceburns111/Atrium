@@ -68,10 +68,11 @@ pipeline (today it's a bare `.AsIChatClient()`):
 // BuildChatClient(...) in SupportAgentBuilderExtensions
 IChatClient inner = ollamaOpenAiCompatibleClient;         // Ollama /v1
 IChatClient pipeline = new ChatClientBuilder(inner)
-    .UseDistributedCache(cache)                            // #5  innermost (caches real model calls)
-    .Use((c, sp) => new GuardrailChatClient(c, classifier))// #4  outside cache: a block never hits model
+    // NB: first-added = outermost (ChatClientBuilder builds factories in reverse), so source order == outer→inner.
     .UseOpenTelemetry(sourceName: AtriumGenAiSource,       // #1  outermost: measures everything
                       configure: o => o.EnableSensitiveData = true /* demo-only: logs prompts */)
+    .Use((c, sp) => new GuardrailChatClient(c, classifier))// #4  outside cache: a block never hits model
+    .UseDistributedCache(cache)                            // #5  innermost (caches real model calls)
     .Build();
 ```
 
@@ -80,7 +81,7 @@ Agent-level spans are separate: wrap the agent with `.WithOpenTelemetry()` (MAF 
 the TracerProvider so the trace shows: *agent turn → model call (tokens) → tool exec → model call →
 answer*.
 
-- Ordering rationale confirmed from `dotnet/extensions`: last `.Use` = outermost.
+- Ordering rationale confirmed from `dotnet/extensions`: **first** `.Use` = outermost (ChatClientBuilder builds factories in reverse). The pipeline is therefore built OTel → guardrail → cache (OTel first in source = outermost at runtime).
 - `EnableSensitiveData = true` is a **demo-only** choice (prompts/responses in traces) — itself a
   talking point about PII-in-telemetry; would be gated off in prod.
 

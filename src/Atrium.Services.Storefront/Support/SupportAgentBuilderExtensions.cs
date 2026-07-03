@@ -123,9 +123,11 @@ public static class SupportAgentBuilderExtensions
     internal static IChatClient BuildChatClientForTest(IConfiguration config, bool isDevelopment) =>
         BuildChatClient(config, isDevelopment);
 
-    // The Support chat pipeline: cache (#5 innermost) → guardrail (#4) → OpenTelemetry (#1 outermost).
-    // The guardrail is outside the cache so blocked requests never warm the cache; it is inside OTel
-    // so the classifier call and refusal decisions are captured in traces.
+    // The Support chat pipeline: OTel (#1 outermost) → guardrail (#4) → cache (#5 innermost).
+    // ChatClientBuilder makes the FIRST-added decorator outermost (factories are built in reverse).
+    // OTel outermost: every request — hits, misses, and blocks — is captured in a span.
+    // Guardrail outside cache: a blocked request never warms the cache or reaches the model.
+    // Cache innermost: only real model responses are cached.
     // Extracted so tests can drive the real pipeline construction with a controllable inner client.
     internal static IChatClient BuildSupportPipeline(
         IChatClient inner,
@@ -134,12 +136,12 @@ public static class SupportAgentBuilderExtensions
         IServiceProvider services
     ) =>
         new ChatClientBuilder(inner)
-            .UseDistributedCache(cache) // #5 innermost
-            .Use((c, _) => new GuardrailChatClient(c, classifier)) // #4 outside cache, inside OTel
             .UseOpenTelemetry(
                 sourceName: SupportTelemetry.ChatSourceName,
                 configure: o => o.EnableSensitiveData = true
-            ) // #1 outermost
+            ) // #1 outermost — measures every request (hits, misses, blocks)
+            .Use((c, _) => new GuardrailChatClient(c, classifier)) // #4 outside cache — a block never warms cache or hits model
+            .UseDistributedCache(cache) // #5 innermost — caches only real model responses
             .Build(services);
 
     private static IChatClient BuildOpenAICompatibleClient(IConfiguration config)

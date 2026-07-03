@@ -54,12 +54,12 @@
                                 class="agent-chat__fb-btn @(turn.Feedback == 1 ? "is-active" : null)"
                                 data-testid="fb-up"
                                 aria-label="Helpful"
-                                @onclick="() => SendFeedback(turn, 1)">&#x2191;</button>
+                                @onclick="() => SendFeedback(turn, 1)">👍</button>
                         <button type="button"
                                 class="agent-chat__fb-btn @(turn.Feedback == -1 ? "is-active" : null)"
                                 data-testid="fb-down"
                                 aria-label="Not helpful"
-                                @onclick="() => SendFeedback(turn, -1)">&#x2193;</button>
+                                @onclick="() => SendFeedback(turn, -1)">👎</button>
                     </div>
                 }
             </div>
@@ -238,10 +238,22 @@
             .TakeWhile(t => !ReferenceEquals(t, turn))
             .LastOrDefault(t => t.Role == ChatRole.User)
             ?.Text;
-        await FeedbackClient.SendAsync(
-            Endpoint,
-            new FeedbackDto(turn.Id.ToString(), value, question, turn.Text)
-        );
+        try
+        {
+            await FeedbackClient.SendAsync(
+                Endpoint,
+                new FeedbackDto(turn.Id.ToString(), value, question, turn.Text)
+            );
+        }
+        catch (SessionExpiredException)
+        {
+            _sessionExpired = true;
+        }
+        catch (Exception ex)
+        {
+            // Feedback is fire-and-forget telemetry; swallow to protect the circuit.
+            Logger.LogError(ex, "Support feedback POST failed.");
+        }
     }
 
     public async ValueTask DisposeAsync()
