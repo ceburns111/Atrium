@@ -39,7 +39,8 @@ public static class AgentChatServiceCollectionExtensions
             client => client.BaseAddress = new Uri(AgentChatDefaults.GatewayAddress)
         );
 
-        services.AddScoped<AgentChatClientFactory>();
+        services.AddScoped<IAgentChatClientFactory, AgentChatClientFactory>();
+        services.AddScoped<IFeedbackClient, FeedbackClient>();
         return services;
     }
 }

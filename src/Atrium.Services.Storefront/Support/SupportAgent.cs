@@ -47,7 +47,12 @@ public sealed class SupportAgent
                 ToolFor(nameof(SupportTools.GetOrderStatus), httpContextAccessor),
                 ToolFor(nameof(SupportTools.FindProduct), httpContextAccessor),
             ]
-        );
+        )
+            .AsBuilder()
+            .UseOpenTelemetry() // emits agent-turn + tool-orchestration spans under OpenTelemetryConsts.DefaultSourceName
+            // SupportAgent has no IServiceProvider here; MAF's AIAgentBuilder.Build(null) falls back to
+            // an empty provider (OpenTelemetry agent middleware needs no DI services), so null! is intentional.
+            .Build(null!);
     }
 
     /// <summary>

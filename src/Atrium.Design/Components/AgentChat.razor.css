@@ -195,3 +195,38 @@
         animation: none;
     }
 }
+
+/* Per-turn thumbs feedback — only visible on completed assistant bubbles. */
+.agent-chat__feedback {
+    display: flex;
+    gap: var(--space-1);
+    margin-top: var(--space-1);
+}
+
+.agent-chat__fb-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--r-sm);
+    opacity: 0.55;
+    line-height: 1;
+    transition:
+        opacity var(--dur) var(--ease),
+        background var(--dur) var(--ease);
+}
+
+.agent-chat__fb-btn:hover {
+    opacity: 1;
+    background: var(--surface-2);
+}
+
+.agent-chat__fb-btn:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--accent, currentColor);
+    outline-offset: 2px;
+}
+
+.agent-chat__fb-btn.is-active {
+    opacity: 1;
+}
