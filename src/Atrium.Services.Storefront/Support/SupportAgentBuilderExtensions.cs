@@ -3,6 +3,7 @@ using Microsoft.Agents.AI.Hosting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -33,15 +34,13 @@ public static class SupportAgentBuilderExtensions
     {
         // Register the raw provider client + the instrumented pipeline. Factory-based so later decorators
         // (cache, guardrail) can resolve their own dependencies from DI.
+        builder.Services.AddDistributedMemoryCache();
+
         builder.Services.AddSingleton<IChatClient>(sp =>
         {
             var inner = BuildChatClient(builder.Configuration, builder.Environment.IsDevelopment());
-            return new ChatClientBuilder(inner)
-                .UseOpenTelemetry(
-                    sourceName: SupportTelemetry.ChatSourceName,
-                    configure: o => o.EnableSensitiveData = true /* demo-only: logs prompts/responses */
-                )
-                .Build(sp);
+            var cache = sp.GetRequiredService<IDistributedCache>();
+            return BuildSupportPipeline(inner, cache, sp);
         });
 
         builder.Services.AddScoped<SupportTools>();
@@ -119,6 +118,21 @@ public static class SupportAgentBuilderExtensions
     // Test seam: exercise provider selection without standing up a host.
     internal static IChatClient BuildChatClientForTest(IConfiguration config, bool isDevelopment) =>
         BuildChatClient(config, isDevelopment);
+
+    // The Support chat pipeline: cache (innermost) -> OpenTelemetry (outermost) around the model client.
+    // Extracted so tests can drive the real pipeline construction with a controllable inner client.
+    internal static IChatClient BuildSupportPipeline(
+        IChatClient inner,
+        IDistributedCache cache,
+        IServiceProvider services
+    ) =>
+        new ChatClientBuilder(inner)
+            .UseDistributedCache(cache)
+            .UseOpenTelemetry(
+                sourceName: SupportTelemetry.ChatSourceName,
+                configure: o => o.EnableSensitiveData = true
+            )
+            .Build(services);
 
     private static IChatClient BuildOpenAICompatibleClient(IConfiguration config)
     {
