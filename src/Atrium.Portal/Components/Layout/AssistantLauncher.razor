@@ -6,7 +6,7 @@
 @* The shell's assistant launcher: renders a chat surface contributed by a module (via
    IModule.AgentSurfaces), context-aware to the active section. Placed in the topbar behind an
    AuthorizeView (see MainLayout) so only signed-in users see it — the agent endpoint is authenticated
-   regardless. The chat itself lives in the shared <AgentChat> primitive. *@
+   regardless. The chat itself lives in the shared Atrium.Design <AgentChat> primitive. *@
 @if (_surface is not null)
 {
     @* Icon-only in the topbar (name lives in the tooltip) so it matches the theme toggle's treatment —
@@ -36,10 +36,16 @@
     </button>
 
     <Dialog @bind-Open="_open" Title="@_surface.Name">
+        @* @key on the endpoint: AgentChat pins its client + transcript for its lifetime, so when the
+           active surface changes the component must be recreated — otherwise messages would keep going
+           to the old agent with the old history. ShowHeader=false: the Dialog title already names the
+           surface. *@
         <AgentChat
+            @key="_surface.Endpoint"
             Endpoint="@_surface.Endpoint"
             StarterPrompts="@_surface.StarterPrompts"
             Title="@_surface.Name"
+            ShowHeader="false"
         />
     </Dialog>
 }
@@ -84,7 +90,7 @@
     {
         // Ordered deterministically so the off-section fallback doesn't depend on module discovery order.
         var visible = Catalog
-            .Modules.Where(m => IsVisible(m, _user))
+            .Modules.Where(m => Modularity.ModuleVisibility.IsVisible(m, _user))
             .OrderBy(m => m.BasePath, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -106,13 +112,6 @@
 
         return visible.SelectMany(m => m.AgentSurfaces).FirstOrDefault();
     }
-
-    // A module (and thus its agent surface) is visible when it has no required role, or the signed-in user
-    // is in that role — identical to NavMenu.IsVisible / the home-card gate.
-    private static bool IsVisible(
-        Atrium.Abstractions.IModule module,
-        System.Security.Claims.ClaimsPrincipal? user
-    ) => module.RequiredRole is null || (user?.IsInRole(module.RequiredRole) ?? false);
 
     public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
 }

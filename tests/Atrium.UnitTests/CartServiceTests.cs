@@ -83,4 +83,61 @@ public class CartServiceTests
 
         Assert.Equal(1, fired);
     }
+
+    // MergeRestored is the hydration seam: persisted lines land in a cart the user may already have
+    // started filling (items added while the hydrate round-trip was in flight must survive).
+
+    [Fact]
+    public void MergeRestored_keeps_lines_added_before_hydration_completed()
+    {
+        var cart = new CartService();
+        cart.Add(Product(2, 5m)); // added during the hydrate window
+
+        cart.MergeRestored([new CartLine { Product = Product(1, 10m), Quantity = 2 }]);
+
+        Assert.Equal(2, cart.Lines.Count);
+        Assert.Equal(1, cart.Lines.Single(l => l.Product.Id == 2).Quantity);
+        Assert.Equal(2, cart.Lines.Single(l => l.Product.Id == 1).Quantity);
+    }
+
+    [Fact]
+    public void MergeRestored_sums_quantities_when_the_same_product_is_on_both_sides()
+    {
+        var cart = new CartService();
+        cart.Add(Product(1, 10m)); // fresh click during the hydrate window
+
+        cart.MergeRestored([new CartLine { Product = Product(1, 10m), Quantity = 2 }]);
+
+        var line = Assert.Single(cart.Lines);
+        Assert.Equal(3, line.Quantity); // 2 restored + 1 added since
+    }
+
+    [Fact]
+    public void MergeRestored_into_an_empty_cart_restores_the_persisted_lines()
+    {
+        var cart = new CartService();
+
+        cart.MergeRestored([
+            new CartLine { Product = Product(1, 10m), Quantity = 2 },
+            new CartLine { Product = Product(2, 4.50m), Quantity = 1 },
+        ]);
+
+        Assert.Equal(2, cart.Lines.Count);
+        Assert.Equal(24.50m, cart.Total);
+    }
+
+    [Fact]
+    public void MergeRestored_notifies_subscribers_once()
+    {
+        var cart = new CartService();
+        var fired = 0;
+        cart.Changed += () => fired++;
+
+        cart.MergeRestored([
+            new CartLine { Product = Product(1, 10m), Quantity = 1 },
+            new CartLine { Product = Product(2, 4.50m), Quantity = 1 },
+        ]);
+
+        Assert.Equal(1, fired);
+    }
 }

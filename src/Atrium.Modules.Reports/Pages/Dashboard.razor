@@ -29,7 +29,7 @@ else
     <div class="stat-grid">
         <div class="stat">
             <div class="stat__label">Revenue</div>
-            <div class="stat__value">$@_report.TotalRevenue.ToString("N0")</div>
+            <div class="stat__value">@Money.Format(_report.TotalRevenue)</div>
         </div>
         <div class="stat">
             <div class="stat__label">Orders</div>
@@ -57,7 +57,7 @@ else
                     <div class="bar__track">
                         <div class="bar__fill" style="width: @Percent(category.Revenue)%"></div>
                     </div>
-                    <div class="bar__value">$@category.Revenue.ToString("N0") · @category.Units u</div>
+                    <div class="bar__value">@Money.Format(category.Revenue) · @category.Units u</div>
                 </div>
             }
         </div>

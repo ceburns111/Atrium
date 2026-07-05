@@ -7,7 +7,9 @@
    Two-way bind Open; close via Esc, the X, or whatever the caller puts in Footer (e.g. a Cancel button).
    Backdrop clicks intentionally do NOT dismiss — that would discard in-progress edits. *@
 <dialog @ref="_dialog" class="dialog" @onclose="OnClose">
-    <div class="dialog__panel">
+    @* tabindex="-1" makes the panel a valid programmatic focus target: on open, dialog.js parks focus
+       here unless the body supplies an [autofocus] control, so the ✕ never opens with a stray ring. *@
+    <div class="dialog__panel" tabindex="-1">
         <header class="dialog__header">
             <h2 class="dialog__title">@Title</h2>
             <button type="button" class="dialog__close" aria-label="Close" @onclick="RequestClose">✕</button>

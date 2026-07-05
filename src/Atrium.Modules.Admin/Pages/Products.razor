@@ -71,7 +71,7 @@ else
                     <tr>
                         <td>@product.Name</td>
                         <td><Badge>@product.Category</Badge></td>
-                        <td class="num">$@product.Price.ToString("N0")</td>
+                        <td class="num">@Money.Format(product.Price)</td>
                         <td class="admin-table__blurb">@product.Blurb</td>
                         <td class="admin-table__actions">
                             <Button Small Variant="ButtonVariant.Secondary" OnClick="() => StartEdit(product)">Edit</Button>
@@ -86,24 +86,24 @@ else
 @* One dialog + one form serves both create and edit — _editingId (null = create) picks the mode. *@
 <Dialog Open="_dialogOpen" OpenChanged="OnDialogOpenChanged" Title="@DialogTitle">
     <ChildContent>
-        <Field Label="Name">
-            <input class="input" required @bind="_form.Name" @bind:event="oninput"
+        <Field Label="Name" For="product-name">
+            <input id="product-name" class="input" required @bind="_form.Name" @bind:event="oninput"
                    placeholder="Walnut Monitor Shelf" />
         </Field>
-        <Field Label="Category">
-            <select class="select" @bind="_form.Category">
+        <Field Label="Category" For="product-category">
+            <select id="product-category" class="select" @bind="_form.Category">
                 @foreach (var category in _categories)
                 {
                     <option value="@category">@category</option>
                 }
             </select>
         </Field>
-        <Field Label="Price">
-            <input class="input" type="number" min="1" step="1" required
+        <Field Label="Price" For="product-price">
+            <input id="product-price" class="input" type="number" min="0.01" step="0.01" required
                    @bind="_form.Price" @bind:event="oninput" />
         </Field>
-        <Field Label="Blurb">
-            <input class="input" required @bind="_form.Blurb" @bind:event="oninput"
+        <Field Label="Blurb" For="product-blurb">
+            <input id="product-blurb" class="input" required @bind="_form.Blurb" @bind:event="oninput"
                    placeholder="One-line description." />
         </Field>
     </ChildContent>
@@ -126,12 +126,15 @@ else
     private string SaveLabel => _editingId is null ? "Add product" : "Save";
 
     // Client-side gate so an empty Name/Blurb or a zero Price can't be submitted for a server 400
-    // round-trip; the Save button stays disabled until the form is valid.
+    // round-trip; the Save button stays disabled until the form is valid. Price must round-trip
+    // through the displayed cents precision (DECIMAL(10,2) in the schema, Money.Format on screen),
+    // so anything past two decimals is rejected here rather than silently truncated later.
     private bool FormValid =>
         !string.IsNullOrWhiteSpace(_form.Name)
         && !string.IsNullOrWhiteSpace(_form.Blurb)
         && !string.IsNullOrWhiteSpace(_form.Category)
-        && _form.Price > 0;
+        && _form.Price > 0
+        && decimal.Round(_form.Price, 2) == _form.Price;
 
     protected override Task OnInitializedAsync() => Load();
 
@@ -177,34 +180,51 @@ else
     private async Task Save()
     {
         // Belt-and-suspenders with the disabled Save button: ignore a re-entrant call while a save is
-        // already in flight, matching CartPage.PlaceOrder's guard.
+        // already in flight, matching Checkout.Pay's guard.
         if (_saving)
         {
             return;
         }
         _saving = true;
-        var (product, error) = _editingId is null
-            ? await Catalog.CreateProductAsync(
-                new CreateProductRequest(_form.Name, _form.Category, _form.Price, _form.Blurb)
-            )
-            : await Catalog.UpdateProductAsync(
-                _editingId.Value,
-                new UpdateProductRequest(_form.Name, _form.Category, _form.Price, _form.Blurb)
-            );
-        _saving = false;
-
-        if (error is not null)
+        try
         {
-            Toasts.Show(error, ToastVariant.Danger);
-            return; // keep the dialog open so the user can fix and retry
-        }
+            var (product, error) = _editingId is null
+                ? await Catalog.CreateProductAsync(
+                    new CreateProductRequest(_form.Name, _form.Category, _form.Price, _form.Blurb)
+                )
+                : await Catalog.UpdateProductAsync(
+                    _editingId.Value,
+                    new UpdateProductRequest(_form.Name, _form.Category, _form.Price, _form.Blurb)
+                );
 
-        Toasts.Show(
-            $"{(_editingId is null ? "Created" : "Saved")} {product!.Name}",
-            ToastVariant.Success
-        );
-        _dialogOpen = false;
-        await Load();
+            if (error is not null)
+            {
+                Toasts.Show(error, ToastVariant.Danger);
+                return; // keep the dialog open so the user can fix and retry
+            }
+
+            Toasts.Show(
+                $"{(_editingId is null ? "Created" : "Saved")} {product!.Name}",
+                ToastVariant.Success
+            );
+            _dialogOpen = false;
+            await Load();
+        }
+        catch (Exception ex) when (ex is not SessionExpiredException)
+        {
+            // A transient failure (e.g. a 502 from the gateway) stays an inline toast, matching
+            // Checkout.Pay's shape: the dialog stays open with the typed edits intact so the user
+            // can just retry. A 401 still bubbles as SessionExpiredException for the shell's
+            // re-login prompt.
+            Toasts.Show(
+                "Something went wrong saving the product. Please try again.",
+                ToastVariant.Danger
+            );
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
     private sealed class ProductForm

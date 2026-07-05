@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using Atrium.Contracts;
 using Atrium.Design;
 using Microsoft.Extensions.Logging;
@@ -8,7 +7,8 @@ namespace Atrium.Modules.Storefront.Orders;
 /// <summary>
 /// Typed client for the Storefront app vertical's order API, reached through the gateway. Attaches the
 /// signed-in user's access token (shared via <see cref="AccessTokenHolder"/>) so orders are placed and
-/// listed as that user.
+/// listed as that user. Both calls ride the shared <see cref="TypedClientSendExtensions"/> pipeline,
+/// which keeps session expiry ordered before the generic success check.
 /// </summary>
 public sealed class OrdersClient(
     HttpClient http,
@@ -16,31 +16,24 @@ public sealed class OrdersClient(
     ILogger<OrdersClient> logger
 )
 {
-    public async Task<OrderDto?> CreateAsync(
-        CreateOrderRequest request,
-        CancellationToken ct = default
-    )
-    {
-        using var message = new HttpRequestMessage(HttpMethod.Post, "storefront/orders")
-        {
-            Content = JsonContent.Create(request),
-        };
-        message.Authorize(tokens);
-        using var response = await http.SendAsync(message, ct);
-        response.LogIfUnsuccessful(logger, message);
-        response.ThrowIfSessionExpired();
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<OrderDto>(ct);
-    }
+    // Never returns null: an unexpected empty success body throws (with the request in the message)
+    // instead of handing the checkout a phantom "Order #0" to guard against.
+    public Task<OrderDto> CreateAsync(CreateOrderRequest request, CancellationToken ct = default) =>
+        http.SendForJsonAsync<OrderDto>(
+            HttpMethod.Post,
+            "storefront/orders",
+            tokens,
+            logger,
+            request,
+            ct
+        );
 
-    public async Task<IReadOnlyList<OrderDto>> GetOrdersAsync(CancellationToken ct = default)
-    {
-        using var message = new HttpRequestMessage(HttpMethod.Get, "storefront/orders");
-        message.Authorize(tokens);
-        using var response = await http.SendAsync(message, ct);
-        response.LogIfUnsuccessful(logger, message);
-        response.ThrowIfSessionExpired();
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<IReadOnlyList<OrderDto>>(ct) ?? [];
-    }
+    public Task<IReadOnlyList<OrderDto>> GetOrdersAsync(CancellationToken ct = default) =>
+        http.SendForJsonAsync<IReadOnlyList<OrderDto>>(
+            HttpMethod.Get,
+            "storefront/orders",
+            tokens,
+            logger,
+            ct: ct
+        );
 }

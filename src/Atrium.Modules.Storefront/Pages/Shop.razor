@@ -56,7 +56,7 @@ else
                 <div class="product__name">@product.Name</div>
                 <div class="product__blurb">@product.Blurb</div>
                 <div class="product__foot">
-                    <span class="product__price">$@product.Price.ToString("N0")</span>
+                    <span class="product__price">@Money.Format(product.Price)</span>
                     <Button Small Variant="ButtonVariant.Secondary" OnClick="() => Add(product)">Add</Button>
                 </div>
             </div>
@@ -69,6 +69,7 @@ else
     private IReadOnlyList<ProductDto>? _products;
     private string? _category;
     private bool _failed;
+    private int _loadSequence;
 
     protected override async Task OnInitializedAsync()
     {
@@ -81,6 +82,11 @@ else
     // shell's re-login prompt wins.
     private async Task Load()
     {
+        // Sequence guard: rapid chip clicks overlap requests, and responses can land out of order.
+        // Only the latest Load may assign _products (or flag a failure) — a stale response for a
+        // previously selected category is dropped instead of winning last-write. UI events run on
+        // the circuit's sync context, so a plain int is race-free here.
+        var sequence = ++_loadSequence;
         _failed = false;
         try
         {
@@ -90,11 +96,18 @@ else
             }
             _products = null;
             StateHasChanged();
-            _products = await Catalog.GetProductsAsync(_category);
+            var products = await Catalog.GetProductsAsync(_category);
+            if (sequence == _loadSequence)
+            {
+                _products = products;
+            }
         }
         catch (Exception ex) when (ex is not SessionExpiredException)
         {
-            _failed = true;
+            if (sequence == _loadSequence)
+            {
+                _failed = true;
+            }
         }
     }
 

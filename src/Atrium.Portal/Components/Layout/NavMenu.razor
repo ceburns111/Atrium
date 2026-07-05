@@ -16,19 +16,25 @@
     {
         <div class="nav__label">Apps</div>
         @* Navigation is contributed by discovered modules, not hard-coded. *@
-        @foreach (var item in Catalog.Modules.SelectMany(m => m.NavItems))
+        @foreach (var module in Catalog.Modules)
         {
-            @if (item.RequiredRole is null)
+            @foreach (var item in module.NavItems)
             {
-                <NavLink class="nav__link" href="@item.Path">@item.Title</NavLink>
-            }
-            else
-            {
-                <AuthorizeView Roles="@item.RequiredRole">
-                    <Authorized>
-                        <NavLink class="nav__link" href="@item.Path">@item.Title</NavLink>
-                    </Authorized>
-                </AuthorizeView>
+                @* A link inherits its module's role when it declares none of its own — otherwise a
+                   role-gated module's links would render for everyone while the route stays forbidden. *@
+                var role = item.RequiredRole ?? module.RequiredRole;
+                @if (role is null)
+                {
+                    <NavLink class="nav__link" href="@item.Path">@item.Title</NavLink>
+                }
+                else
+                {
+                    <AuthorizeView Roles="@role">
+                        <Authorized>
+                            <NavLink class="nav__link" href="@item.Path">@item.Title</NavLink>
+                        </Authorized>
+                    </AuthorizeView>
+                }
             }
         }
     }
@@ -56,11 +62,8 @@
     protected override async Task OnParametersSetAsync()
     {
         var user = AuthState is null ? null : (await AuthState).User;
-        _visibleCount = Catalog.Modules.Count(m => IsVisible(m, user));
+        _visibleCount = Catalog.Modules.Count(m =>
+            Atrium.Portal.Modularity.ModuleVisibility.IsVisible(m, user)
+        );
     }
-
-    // A module is visible when it has no required role, or the signed-in user is in that role —
-    // the same gate the nav links and home cards use.
-    private static bool IsVisible(Atrium.Abstractions.IModule module, System.Security.Claims.ClaimsPrincipal? user) =>
-        module.RequiredRole is null || (user?.IsInRole(module.RequiredRole) ?? false);
 }

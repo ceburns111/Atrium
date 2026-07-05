@@ -2,6 +2,12 @@
 
 **Status:** Accepted · **Deciders:** Atrium build · **Context phase:** 4a–4b
 
+> **Amended 2026-07-03:** the claim below that the portal client secret "never lives in the repo" is
+> wrong as written — `dev-portal-secret` is committed twice (the AppHost env literal and the realm
+> export), a deliberate dev-only convenience for a self-contained demo. Production would inject the
+> secret (user-secrets/env/vault); the mechanism is one `WithEnvironment` line. The JWT wiring this
+> ADR describes now lives once, in `AddAtriumJwtAuth()` (see [ADR-0012](0012-shared-deployment-infrastructure.md)).
+
 ## Context
 
 Multiple backend services need a single ingress and a single identity story. We don't want the Portal

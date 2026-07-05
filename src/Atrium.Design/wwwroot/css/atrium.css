@@ -734,13 +734,20 @@ button {
         color var(--dur) var(--ease),
         border-color var(--dur) var(--ease);
 }
-.chip:hover {
+/* Hover must not apply to the selected chip: .chip:hover outranks .chip--on, so the generic
+   --surface-2 hover fill sat under the selected chip's --paper label — near-invisible text,
+   worst in dark mode (dark label on dark fill). The selected chip gets its own ink-based nudge. */
+.chip:hover:not(.chip--on) {
     background: var(--surface-2);
 }
 .chip--on {
     background: var(--ink);
     border-color: var(--ink);
     color: var(--paper);
+}
+.chip--on:hover {
+    /* Same theme-agnostic treatment as .btn--primary:hover — ink nudged toward the page colour. */
+    background: color-mix(in srgb, var(--ink) 85%, var(--paper));
 }
 .product-grid {
     display: grid;

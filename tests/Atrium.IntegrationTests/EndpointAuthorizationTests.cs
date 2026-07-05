@@ -61,6 +61,24 @@ public sealed class EndpointAuthorizationTests(SqlServerFixture sql)
     }
 
     [Fact]
+    public async Task Anonymous_product_write_is_rejected()
+    {
+        using var factory = new ServiceFactory<CatalogRepository>(
+            "catalogdb",
+            sql.ConnectionStringFor("catalog_write_authz")
+        );
+        using var client = factory.CreateClient();
+
+        var request = new CreateProductRequest("Widget", "Desk", 10m, "A widget.");
+
+        // No Authorization header: catalog reads are anonymous by exception, but the admin-gated
+        // POST must be challenged before the handler (or its validation) ever runs.
+        using var response = await client.PostAsJsonAsync("/catalog/products", request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Anonymous_order_placement_is_rejected()
     {
         using var factory = new ServiceFactory<OrderRepository>(

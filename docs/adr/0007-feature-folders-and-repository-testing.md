@@ -2,6 +2,12 @@
 
 **Status:** Accepted · **Deciders:** Atrium build · **Context phase:** 7 (post-tests refactor)
 
+> **Amended 2026-07-03:** the "keep `DatabaseInitializer` duplicated" clause is superseded — the
+> copies drifted in practice, and the runner now lives once in `Atrium.ServiceDefaults`.
+> [ADR-0012](0012-shared-deployment-infrastructure.md) records the sharpened rule (domain/data code is
+> never shared between services; deployment-infrastructure defaults may be). The feature-folder and
+> repository-testing decisions in this ADR stand untouched.
+
 ## Context
 
 The two backend services (`Atrium.Services.Catalog`, `Atrium.Services.Storefront`) had grown to ~15–20

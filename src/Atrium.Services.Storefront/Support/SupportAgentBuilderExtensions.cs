@@ -19,17 +19,29 @@ namespace Atrium.Services.Storefront.Support;
 /// <remarks>
 /// Config keys:
 /// <list type="bullet">
-///   <item><c>SupportAgent:Provider</c> — <c>Fake</c> | <c>FoundryLocal</c> | <c>AzureFoundry</c>.
-///     Defaults to <c>Fake</c> in Development so the service boots with no AI config; in any other
-///     environment a missing or unknown provider throws at startup.</item>
+///   <item><c>SupportAgent:Provider</c> — <c>Fake</c> | <c>Ollama</c> | <c>FoundryLocal</c> |
+///     <c>AzureFoundry</c>. <c>Ollama</c> is the flagship local provider (the AppHost configures it);
+///     Provider defaults to <c>Fake</c> in Development so the service boots with no AI config; in any
+///     other environment a missing or unknown provider throws at startup.</item>
 ///   <item><c>SupportAgent:Endpoint</c>, <c>SupportAgent:ApiKey</c>, <c>SupportAgent:Model</c> — the
-///     OpenAI-compatible endpoint, key, and deployment/model name used by the real providers. Foundry
-///     Local and Azure AI Foundry share the same OpenAI-compatible client shape and differ only in
-///     these values.</item>
+///     OpenAI-compatible endpoint, key, and deployment/model name used by the real providers. Ollama
+///     exposes the same OpenAI-compatible surface at <c>/v1</c> (no key needed); Foundry Local and
+///     Azure AI Foundry differ only in these values.</item>
+///   <item><c>SupportAgent:GuardrailModel</c> — the cheap classifier model for the input guardrail
+///     (e.g. <c>llama3.2:3b</c>), served from the same Ollama endpoint. When unset the guardrail is a
+///     permissive no-op (see <see cref="BuildGuardrailClassifier"/>).</item>
 /// </list>
 /// </remarks>
 public static class SupportAgentBuilderExtensions
 {
+    // The one service-side default for the local Ollama daemon's OpenAI-compatible surface — used by
+    // both the chat provider and the guardrail classifier when SupportAgent:Endpoint is unset.
+    private const string DefaultOllamaEndpoint = "http://localhost:11434/v1";
+
+    // Chat cache entries expire after this TTL; without one, DistributedCachingChatClient writes
+    // never-expiring entries (see TtlDistributedCache).
+    private static readonly TimeSpan ChatCacheTtl = TimeSpan.FromMinutes(15);
+
     public static IHostApplicationBuilder AddSupportAgent(this IHostApplicationBuilder builder)
     {
         // Register the raw provider client + the instrumented pipeline. Factory-based so later decorators
@@ -42,7 +54,8 @@ public static class SupportAgentBuilderExtensions
             var cache = sp.GetRequiredService<IDistributedCache>();
             var classifier = BuildGuardrailClassifier(
                 builder.Configuration,
-                builder.Environment.IsDevelopment()
+                sp.GetRequiredService<ILoggerFactory>()
+                    .CreateLogger(nameof(SupportAgentBuilderExtensions))
             );
             return BuildSupportPipeline(inner, cache, classifier, sp);
         });
@@ -110,7 +123,7 @@ public static class SupportAgentBuilderExtensions
     // Ollama exposes an OpenAI-compatible API at /v1; the key is ignored but the SDK requires a non-empty value.
     private static IChatClient BuildOllamaClient(IConfiguration config)
     {
-        var endpoint = config["SupportAgent:Endpoint"] ?? "http://localhost:11434/v1";
+        var endpoint = config["SupportAgent:Endpoint"] ?? DefaultOllamaEndpoint;
         var model = Require(config, "SupportAgent:Model");
         var client = new OpenAIClient(
             new ApiKeyCredential("ollama"),
@@ -140,8 +153,21 @@ public static class SupportAgentBuilderExtensions
                 sourceName: SupportTelemetry.ChatSourceName,
                 configure: o => o.EnableSensitiveData = true
             ) // #1 outermost — measures every request (hits, misses, blocks)
-            .Use((c, _) => new GuardrailChatClient(c, classifier)) // #4 outside cache — a block never warms cache or hits model
-            .UseDistributedCache(cache) // #5 innermost — caches only real model responses
+            .Use(
+                (c, s) =>
+                    new GuardrailChatClient(
+                        c,
+                        classifier,
+                        s.GetService<ILoggerFactory>()?.CreateLogger<GuardrailChatClient>()
+                    )
+            ) // #4 outside cache — a block never warms cache or hits model
+            // Cache safety note: entries are keyed on the FULL serialized transcript + options, with no
+            // user partitioning. That is deliberate and currently safe: identical transcripts produce
+            // identical answers, and any user-specific reply only exists downstream of a tool call whose
+            // RESULT TEXT is part of the follow-up request (so the key), which keeps one user's order
+            // data from ever answering another user's request. If a per-user input (claims, profile)
+            // ever reaches the prompt outside the message list, add the user to the cache key.
+            .UseDistributedCache(new TtlDistributedCache(cache, ChatCacheTtl)) // #5 innermost — caches only real model responses, TTL-bounded
             .Build(services);
 
     private static IChatClient BuildOpenAICompatibleClient(IConfiguration config)
@@ -163,21 +189,49 @@ public static class SupportAgentBuilderExtensions
     // configured (Fake / dev / unit tests) it returns a permissive canned classifier that always
     // answers "ALLOW", so the pipeline boots and tests pass with no Ollama instance running.
     // In production the AppHost sets SupportAgent__GuardrailModel=llama3.2:3b (Task 1.3).
-    private static IChatClient BuildGuardrailClassifier(IConfiguration config, bool isDevelopment)
+    private static IChatClient BuildGuardrailClassifier(IConfiguration config, ILogger logger)
     {
         var model = config["SupportAgent:GuardrailModel"];
         if (string.IsNullOrWhiteSpace(model))
         {
+            // A real model with no guardrail is the same silent-downgrade failure mode the step-up
+            // gate warns about (WarnIfStepUpGateInert): everything still works, but every user message
+            // reaches the model unscreened. Warn loudly instead of degrading silently.
+            var provider = config["SupportAgent:Provider"];
+            if (
+                !string.IsNullOrWhiteSpace(provider)
+                && !provider.Equals("fake", StringComparison.OrdinalIgnoreCase)
+            )
+            {
+                logger.LogWarning(
+                    "SupportAgent guardrail is INERT: provider '{Provider}' is configured but "
+                        + "SupportAgent:GuardrailModel is not set, so every message is allowed through "
+                        + "unscreened. Set SupportAgent:GuardrailModel (e.g. llama3.2:3b) to enable the "
+                        + "input guardrail.",
+                    provider
+                );
+            }
+
             // No guardrail model configured → permissive canned classifier (always ALLOW).
             return new CannedChatClient("ALLOW");
         }
 
-        var endpoint = config["SupportAgent:Endpoint"] ?? "http://localhost:11434/v1";
+        var endpoint = config["SupportAgent:Endpoint"] ?? DefaultOllamaEndpoint;
         var client = new OpenAIClient(
             new ApiKeyCredential("ollama"),
             new OpenAIClientOptions { Endpoint = new Uri(endpoint) }
         );
-        return client.GetChatClient(model).AsIChatClient();
+        // Instrumented under the same source as the chat pipeline so classifier calls appear as their
+        // own GenAI spans in the Aspire trace (previously the guardrail's latency was invisible).
+        return client
+            .GetChatClient(model)
+            .AsIChatClient()
+            .AsBuilder()
+            .UseOpenTelemetry(
+                sourceName: SupportTelemetry.ChatSourceName,
+                configure: o => o.EnableSensitiveData = true
+            )
+            .Build();
     }
 
     private static string Require(IConfiguration config, string key) =>

@@ -5,7 +5,12 @@
 > a few registration lines, and **zero host edits**. Built on the **Microsoft Agent Framework
 > (MAF)** as a thin convention layer.
 
-Status: **Design (v1)** · Date: 2026-07-01
+Status: **Design (v1), partially shipped** · Date: 2026-07-01
+
+> **2026-07-03:** the chat seam described here is real — `AgentSurface` on `IModule`, the shell's
+> `AssistantLauncher`, the `AgentChat` primitive, and the Storefront Support agent all shipped (see
+> `superpowers/specs/2026-07-02-ai-chat-enhancements-design.md` for the hardening that followed). The
+> event-driven/workflow parts remain forward-looking design.
 
 ---
 

@@ -2,6 +2,11 @@
 
 **Status:** Accepted · **Deciders:** Atrium build · **Context phase:** 1–2
 
+> **Amended 2026-07-03:** the `IModule` snippet below is historical. The contract has since grown
+> compatibly via default interface members — `RequiredRole` (role-gates a whole module in the shell)
+> and `AgentSurfaces` (a module contributes AI chat surfaces) — without breaking existing modules.
+> `src/Atrium.Abstractions/IModule.cs` is the source of truth.
+
 ## Context
 
 Atrium's premise is "N apps, one host": several UI areas (Storefront, Admin, Reports) that feel like

@@ -1,6 +1,7 @@
 # AI chat enhancements — design
 
-Date: 2026-07-02 · Status: draft for review · Target demo: interview ~2026-07-07
+Date: 2026-07-02 · Status: Shipped (PR #1) — see "Shipped-state notes (2026-07-03)" at the end ·
+Target demo: interview ~2026-07-07
 
 ## Context
 
@@ -168,3 +169,23 @@ the test/dev default. `SupportAgent:GuardrailModel` and eval judge model are sep
 - Feedback→trace correlation: how to tie a thumbs event to the originating agent turn's trace/span id
   across the SSE boundary (may need to surface a correlation id to the client).
 - Meter/metrics wiring in `ServiceDefaults` (currently tracing-only).
+
+---
+
+## Shipped-state notes (2026-07-03)
+
+The design above is the historical record; the shipped system diverges in three places, all hardened
+by the post-merge audit remediation (`docs/audits/2026-07-02-full-audit.md`):
+
+- **Guardrail is stronger than designed.** It screens **all** user-role messages in the transcript
+  (the AG-UI client resends full history and threads are ephemeral, so last-message-only was
+  bypassable — audit A1), skips re-classification on tool-loop iterations, is itself OTel-instrumented,
+  and **fails closed** (refusal + warning span event) on classifier transport errors. An unset
+  `GuardrailModel` logs a loud inert-guardrail startup warning.
+- **Feedback→trace correlation was not achievable cleanly** (the "Risks" section called it). The turn
+  id in the feedback span is a client-side GUID that appears in no chat span; the preview AG-UI client
+  exposes no traceparent hook to echo. The practical join is turn id + user + time window. Recorded as
+  audit A4 (deferred, documented at the feedback span).
+- **Evals run per-scenario evaluator subsets** — greeting/off-topic scenarios score relevance only, so
+  the scorecard carries no error-state groundedness/tool-accuracy metrics. The harness composes the
+  **production** system prompt and tool descriptions (`InternalsVisibleTo`) instead of a copy.

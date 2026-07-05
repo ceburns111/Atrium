@@ -1,5 +1,9 @@
 # AI Chat Enhancements Implementation Plan
 
+> **Status: SHIPPED.** Merged to `main` as PR #1 (2026-07-02) and hardened by the 2026-07-03 audit
+> remediation pass (see `docs/audits/2026-07-02-full-audit.md`). The checkboxes below reflect
+> planning state, not delivery — do NOT execute this plan; it is a historical record.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add local-only observability, evaluation, guardrails, feedback, and caching to Atrium's MAF Support agent, framed as composable `IChatClient` middleware.

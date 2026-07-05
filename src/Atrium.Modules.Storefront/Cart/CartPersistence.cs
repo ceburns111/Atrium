@@ -7,8 +7,9 @@ namespace Atrium.Modules.Storefront.Cart;
 /// <summary>
 /// Bridges the circuit-scoped <see cref="CartService"/> to browser <c>localStorage</c> so the cart
 /// survives the full-page OIDC sign-in round-trip (a new circuit means a brand-new scoped
-/// <see cref="CartService"/>). It persists a minimal id + quantity snapshot on every cart mutation and
-/// rehydrates once per circuit, re-pricing lines from the current catalog.
+/// <see cref="CartService"/>). It persists a minimal id + quantity snapshot on every cart mutation
+/// (saves are chained FIFO so an older snapshot can never overwrite a newer one) and rehydrates once
+/// per circuit, merging persisted lines into the live cart and re-pricing from the current catalog.
 ///
 /// Interop safety (ADR-0010): JS is NEVER called during prerender/SSR. Hydration must be triggered from
 /// the first interactive render (<c>OnAfterRenderAsync(firstRender)</c>); saves are triggered by cart
@@ -23,7 +24,8 @@ public sealed class CartPersistence : IAsyncDisposable
     private readonly CatalogClient _catalog;
     private readonly IJSRuntime _js;
 
-    private IJSObjectReference? _module;
+    private Task<IJSObjectReference>? _moduleTask;
+    private Task _saveChain = Task.CompletedTask;
     private bool _hydrated;
 
     public CartPersistence(CartService cart, CatalogClient catalog, IJSRuntime js)
@@ -72,7 +74,9 @@ public sealed class CartPersistence : IAsyncDisposable
 
             if (lines.Count > 0)
             {
-                _cart.Restore(lines);
+                // Merge rather than replace: anything the user added while this hydrate was in
+                // flight survives, and the merged result is re-persisted by the Changed handler.
+                _cart.MergeRestored(lines);
             }
         }
         catch (Exception ex)
@@ -86,16 +90,23 @@ public sealed class CartPersistence : IAsyncDisposable
         }
     }
 
-    // Fire-and-forget persist on every mutation. Cart mutations originate from interactive user actions,
-    // so JS is available; failures are swallowed to keep the cart usable in-memory.
-    private void OnCartChanged() => _ = SaveAsync();
-
-    private async Task SaveAsync()
+    // Persist on every mutation. The snapshot is serialized synchronously HERE — at mutation time —
+    // and the writes are chained FIFO onto _saveChain, so overlapping saves stay ordered and a slow
+    // older snapshot can never land after (and overwrite) a newer one. Cart mutations originate from
+    // interactive user actions, so JS is available; failures are swallowed per link to keep the cart
+    // usable in-memory (which also means awaiting the previous link never throws).
+    private void OnCartChanged()
     {
+        var json = JsonSerializer.Serialize(_cart.Snapshot());
+        _saveChain = SaveAsync(_saveChain, json);
+    }
+
+    private async Task SaveAsync(Task previous, string json)
+    {
+        await previous; // never faults — every link swallows its own failures below
         try
         {
             var module = await GetModuleAsync();
-            var json = JsonSerializer.Serialize(_cart.Snapshot());
             await module.InvokeVoidAsync("save", json);
         }
         catch (Exception ex)
@@ -105,17 +116,29 @@ public sealed class CartPersistence : IAsyncDisposable
         }
     }
 
-    private async ValueTask<IJSObjectReference> GetModuleAsync() =>
-        _module ??= await _js.InvokeAsync<IJSObjectReference>("import", ModulePath);
+    // Single-flight: cache the import Task itself (not the resolved reference) so a hydrate and a
+    // save racing on first use share one import instead of each starting their own. A failed import
+    // is evicted so the next call can retry rather than being stuck on a faulted task forever.
+    private Task<IJSObjectReference> GetModuleAsync()
+    {
+        if (
+            _moduleTask is null
+            || (_moduleTask.IsCompleted && !_moduleTask.IsCompletedSuccessfully)
+        )
+        {
+            _moduleTask = _js.InvokeAsync<IJSObjectReference>("import", ModulePath).AsTask();
+        }
+        return _moduleTask;
+    }
 
     public async ValueTask DisposeAsync()
     {
         _cart.Changed -= OnCartChanged;
-        if (_module is not null)
+        if (_moduleTask is { IsCompletedSuccessfully: true } moduleTask)
         {
             try
             {
-                await _module.DisposeAsync();
+                await (await moduleTask).DisposeAsync();
             }
             catch (JSDisconnectedException)
             {

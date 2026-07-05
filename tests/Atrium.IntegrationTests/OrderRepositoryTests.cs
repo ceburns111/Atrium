@@ -2,7 +2,7 @@ using Atrium.Contracts;
 using Atrium.Services.Storefront.Orders;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging.Abstractions;
-using StorefrontDb = Atrium.Services.Storefront.Data.DatabaseInitializer;
+using StorefrontDb = Atrium.ServiceDefaults.DatabaseInitializer;
 
 namespace Atrium.IntegrationTests;
 
@@ -22,7 +22,11 @@ public sealed class OrderRepositoryTests : IAsyncLifetime
 
     public ValueTask InitializeAsync()
     {
-        StorefrontDb.Initialize(_connectionString, NullLogger.Instance);
+        StorefrontDb.Initialize(
+            _connectionString,
+            typeof(OrderRepository).Assembly,
+            NullLogger.Instance
+        );
         return ValueTask.CompletedTask;
     }
 
@@ -89,6 +93,31 @@ public sealed class OrderRepositoryTests : IAsyncLifetime
         var order = Assert.Single(await NewRepository().GetOrdersAsync(user));
         Assert.Equal(first, order.Id);
         Assert.Single(order.Lines); // the replay did not re-add the line
+    }
+
+    [Fact]
+    public async Task Create_rejects_a_replay_of_another_user_s_idempotency_key()
+    {
+        // Security boundary: user B replaying user A's checkout key must NOT get A's order back —
+        // usp_Order_Create scopes its replay lookup by user and refuses the foreign key with 50002
+        // (which the endpoint maps to 409 Conflict).
+        const string owner = "erin-key-owner";
+        const string intruder = "frank-key-replayer";
+        var key = Guid.NewGuid();
+        var lines = new[] { new OrderLineDto("Task Lamp", 79m, 1) };
+
+        var ownersOrderId = await NewRepository().CreateAsync(owner, key, lines);
+
+        var ex = await Assert.ThrowsAsync<SqlException>(() =>
+            NewRepository().CreateAsync(intruder, key, lines)
+        );
+        Assert.Equal(50002, ex.Number);
+
+        // Nothing was created for the intruder, and the owner's order is untouched.
+        Assert.Empty(await NewRepository().GetOrdersAsync(intruder));
+        var order = Assert.Single(await NewRepository().GetOrdersAsync(owner));
+        Assert.Equal(ownersOrderId, order.Id);
+        Assert.Single(order.Lines);
     }
 
     [Fact]

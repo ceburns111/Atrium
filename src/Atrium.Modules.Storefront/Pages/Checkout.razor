@@ -16,7 +16,7 @@
             Body="Your payment was approved and your order is on its way.">
         <div class="confirmation">
             <div class="confirmation__row"><span>Order</span><strong>#@_confirmation.OrderId</strong></div>
-            <div class="confirmation__row"><span>Total</span><strong>$@_confirmation.Total.ToString("N0")</strong></div>
+            <div class="confirmation__row"><span>Total</span><strong>@Money.Format(_confirmation.Total)</strong></div>
             <div class="confirmation__row"><span>Payment reference</span><strong>@_confirmation.Reference</strong></div>
         </div>
         <div class="confirmation__actions">
@@ -41,14 +41,14 @@ else
                         <tr>
                             <td>@line.Product.Name</td>
                             <td class="num">×@line.Quantity</td>
-                            <td class="num">$@((line.Product.Price * line.Quantity).ToString("N0"))</td>
+                            <td class="num">@Money.Format(line.Product.Price * line.Quantity)</td>
                         </tr>
                     }
                 </tbody>
             </table>
             <div class="cart-summary__total checkout__total">
                 <span>Total</span>
-                <strong>$@Cart.Total.ToString("N0")</strong>
+                <strong>@Money.Format(Cart.Total)</strong>
             </div>
         </section>
 
@@ -77,7 +77,7 @@ else
                     </Field>
                 </div>
                 <Button Variant="ButtonVariant.Accent" OnClick="Pay" Disabled="_processing">
-                    @(_processing ? "Processing…" : $"Pay ${Cart.Total:N0}")
+                    @(_processing ? "Processing…" : $"Pay {Money.Format(Cart.Total)}")
                 </Button>
             </div>
         </section>
@@ -156,14 +156,9 @@ else
                 Cart.Lines.Select(l => new OrderItemRequest(l.Product.Id, l.Quantity)).ToList(),
                 _orderKey
             );
+            // CreateAsync never returns null — an unexpected empty success body throws in the client
+            // and lands in the catch below, keeping the cart and the same idempotency key.
             var order = await Orders.CreateAsync(request);
-            if (order is null)
-            {
-                // Treat a missing order (unexpected empty success body) as a failure: keep the cart and the
-                // same idempotency key so a retry is safe, rather than confirming a phantom "Order #0".
-                _declineReason = "Something went wrong placing your order. Please try again.";
-                return;
-            }
 
             Cart.Clear(); // also clears the persisted cart via CartPersistence
             _orderKey = Guid.NewGuid();

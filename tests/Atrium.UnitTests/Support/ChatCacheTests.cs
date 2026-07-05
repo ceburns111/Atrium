@@ -1,5 +1,4 @@
 using Atrium.Services.Storefront.Support;
-using Atrium.UnitTests.Support; // FakeChatClient
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
@@ -13,7 +12,7 @@ public class ChatCacheTests
     [Fact]
     public async Task Identical_requests_hit_the_cache_and_call_the_model_once()
     {
-        var counting = new CountingChatClient(new FakeChatClient());
+        var counting = new CountingChatClient(new CannedChatClient());
         IDistributedCache cache = new MemoryDistributedCache(
             Options.Create(new MemoryDistributedCacheOptions())
         );
@@ -35,7 +34,7 @@ public class ChatCacheTests
     [Fact]
     public async Task Production_pipeline_caches_identical_requests_through_the_real_factory_seam()
     {
-        var counting = new CountingChatClient(new FakeChatClient());
+        var counting = new CountingChatClient(new CannedChatClient());
         IDistributedCache cache = new MemoryDistributedCache(
             Options.Create(new MemoryDistributedCacheOptions())
         );
@@ -69,7 +68,7 @@ public class ChatCacheTests
     [Fact]
     public async Task Guardrail_block_does_not_write_to_cache_or_call_the_model()
     {
-        var inner = new CountingChatClient(new FakeChatClient());
+        var inner = new CountingChatClient(new CannedChatClient());
         IDistributedCache memCache = new MemoryDistributedCache(
             Options.Create(new MemoryDistributedCacheOptions())
         );
@@ -97,6 +96,42 @@ public class ChatCacheTests
         Assert.Equal(0, spyCache.WriteCount); // (b) refusal was NOT written to cache
     }
 
+    // A11 regression: DistributedCachingChatClient writes never-expiring entries by default; the
+    // production pipeline must bound them with a TTL (TtlDistributedCache) so a stale model answer
+    // is not served forever and the cache does not grow unbounded.
+    [Fact]
+    public async Task Production_pipeline_writes_cache_entries_with_a_ttl()
+    {
+        var counting = new CountingChatClient(new CannedChatClient());
+        IDistributedCache memCache = new MemoryDistributedCache(
+            Options.Create(new MemoryDistributedCacheOptions())
+        );
+        var spyCache = new SpyDistributedCache(memCache);
+        IServiceProvider services = new ServiceCollection().BuildServiceProvider();
+
+        IChatClient client = SupportAgentBuilderExtensions.BuildSupportPipeline(
+            counting,
+            spyCache,
+            new CannedChatClient("ALLOW"),
+            services
+        );
+
+        var messages = new List<ChatMessage> { new(ChatRole.User, "hello for the ttl test") };
+        await client.GetResponseAsync(
+            messages,
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(1, spyCache.WriteCount);
+        Assert.NotNull(spyCache.LastWriteOptions);
+        Assert.True(
+            spyCache.LastWriteOptions!.AbsoluteExpirationRelativeToNow is not null
+                || spyCache.LastWriteOptions.AbsoluteExpiration is not null
+                || spyCache.LastWriteOptions.SlidingExpiration is not null,
+            "chat cache entry was written without any expiration"
+        );
+    }
+
     private sealed class CountingChatClient(IChatClient inner) : DelegatingChatClient(inner)
     {
         public int Calls { get; private set; }
@@ -119,6 +154,8 @@ public class ChatCacheTests
     {
         public int WriteCount { get; private set; }
 
+        public DistributedCacheEntryOptions? LastWriteOptions { get; private set; }
+
         public byte[]? Get(string key) => inner.Get(key);
 
         public Task<byte[]?> GetAsync(string key, CancellationToken token = default) =>
@@ -137,6 +174,7 @@ public class ChatCacheTests
         public void Set(string key, byte[] value, DistributedCacheEntryOptions options)
         {
             WriteCount++;
+            LastWriteOptions = options;
             inner.Set(key, value, options);
         }
 
@@ -148,6 +186,7 @@ public class ChatCacheTests
         )
         {
             WriteCount++;
+            LastWriteOptions = options;
             return inner.SetAsync(key, value, options, token);
         }
     }

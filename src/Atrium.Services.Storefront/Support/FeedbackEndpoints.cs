@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Atrium.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -6,10 +7,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Atrium.Services.Storefront.Support;
 
-/// <summary>User feedback on an assistant turn. Telemetry-only: a span + a structured log, no persistence.
-/// A thumbs-down turn is a candidate item for the eval dataset (the data flywheel).</summary>
-public sealed record FeedbackRequest(string TurnId, int Value, string? Question, string? Answer);
-
+/// <summary>User feedback on an assistant turn (the shared <see cref="FeedbackDto"/> wire contract).
+/// Telemetry-only: a span + a structured log, no persistence. A thumbs-down turn is a candidate item
+/// for the eval dataset (the data flywheel).</summary>
 public static class SupportFeedback
 {
     private static readonly ActivitySource Source = new(
@@ -17,8 +17,13 @@ public static class SupportFeedback
         "1.0.0"
     );
 
-    public static void Record(FeedbackRequest request, string user, ILogger? logger = null)
+    public static void Record(FeedbackDto request, string user, ILogger? logger = null)
     {
+        // Known limitation: this span is a root activity keyed only by the client-generated turn id —
+        // it cannot be joined to the originating chat trace from recorded data. Correlating would need
+        // the browser to echo the chat run's traceparent back with the feedback POST, and the AG-UI
+        // client/AgentChat component expose no seam for that today. Filter on feedback.turn_id +
+        // feedback.user + time window to line feedback up with chat spans in the Aspire dashboard.
         using var activity = Source.StartActivity("support.feedback");
         activity?.SetTag("feedback.turn_id", Truncate(request.TurnId));
         activity?.SetTag("feedback.value", request.Value); // +1 up, -1 down
@@ -41,7 +46,7 @@ public static class SupportFeedback
         storefront
             .MapPost(
                 "/agent/feedback",
-                (FeedbackRequest request, HttpContext http, ILoggerFactory lf) =>
+                (FeedbackDto request, HttpContext http, ILoggerFactory lf) =>
                 {
                     if (request.Value is not (1 or -1))
                     {

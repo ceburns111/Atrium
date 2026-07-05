@@ -1,9 +1,8 @@
+// FeedbackDto comes from Atrium.Contracts (global using in the csproj) — the one shared wire contract
+// this client and the Storefront feedback endpoint both compile against (ADR-0006).
 using System.Net.Http.Json;
 
 namespace Atrium.Design;
-
-/// <summary>Payload sent to the gateway feedback endpoint for a single assistant turn.</summary>
-public sealed record FeedbackDto(string TurnId, int Value, string? Question, string? Answer);
 
 /// <summary>Posts thumbs feedback to the gateway; the component calls this on each thumb click.</summary>
 public interface IFeedbackClient

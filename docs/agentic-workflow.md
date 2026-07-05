@@ -51,7 +51,7 @@ test.
 - **One atomic, single-purpose commit per item**, so any item can be reverted in isolation, plus a
   **SAFE-REVERT-POINT** marking the end of the low-risk phase (`git reset --hard` there drops the whole
   risky phase and keeps the safe work).
-- The run's state lives in **git-tracked files** (`docs/runs/STATUS.md` / `QUEUE.md` / `LOG.md`), not in
+- The run's state lives in **git-tracked files** (`docs/archive/runs/STATUS.md` / `QUEUE.md` / `LOG.md`), not in
   chat. That's what makes a run **resumable across context clears / machines / days**: a cold session reads
   `STATUS.md` and picks up deterministically. Subjective/asset work (dark mode, images) is committed but
   flagged `[~]` — *never* declared "done" unattended.
@@ -60,12 +60,12 @@ test.
 The deterministic gate can't see what a human sees. So a run ends with a **Playwright-MCP smoke** against
 the running stack — the agent drives the real app (anonymous browse → sign-in → checkout → payment; role
 gating; dark mode) and captures screenshots as evidence. See
-[`docs/runs/verification/`](runs/verification/). This is the layer that catches the class of bug tests
-structurally miss.
+[`docs/archive/runs/verification/`](archive/runs/verification/). This is the layer that catches the
+class of bug tests structurally miss.
 
 ## Evidence it works (real moments from the runs)
 
-Not hypotheticals — these happened, and are in `docs/runs/LOG.md`:
+Not hypotheticals — these happened, and are in `docs/archive/runs/LOG.md`:
 
 - **The gate caught a vulnerability a subagent waved off.** An implementer added a test dependency that
   transitively pulled a **vulnerable `Microsoft.OpenApi` 2.0.0** (NU1903), taking the build from 0 → 2
