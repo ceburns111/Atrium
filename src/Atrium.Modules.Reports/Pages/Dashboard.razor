@@ -76,6 +76,7 @@ else
             ChartType="ChartType.Bar"
             ChartSeries="@_chartSeries"
             XAxisLabels="@_chartLabels"
+            ChartOptions="_chartOptions"
             Width="100%"
             Height="350px" />
     }
@@ -84,6 +85,13 @@ else
 @code {
     private SalesReportDto? _report;
     private bool _failed;
+
+    // Brand chart palette: sanctioned hex exception for charts — color-named values can't express
+    // the data-vis contrast needed here, so explicit hex mirrors the AtriumTheme status ramp.
+    private static readonly ChartOptions _chartOptions = new()
+    {
+        ChartPalette = ["#117b68", "#2dbd9b", "#16785a", "#8a5a0f", "#a23b3b"],
+    };
 
     // Chart data is populated from _report.ByCategory in Load(); decimal Revenue values are cast to
     // double here at the presentation layer — the contract model stays decimal throughout.

@@ -36,6 +36,10 @@ public static class AtriumTheme
             Primary = "#117b68",
             PrimaryContrastText = "#ffffff", // --on-accent light
 
+            // Neutral slate (secondary text: dates, stat labels, browse button)
+            Secondary = "#52525b",
+            SecondaryContrastText = "#ffffff",
+
             // Neutral ramp
             Background = "#fbfbfa", // --paper
             Surface = "#ffffff", // --surface
@@ -66,6 +70,10 @@ public static class AtriumTheme
             // Brand accent — luminous teal on dark
             Primary = "#2dbd9b",
             PrimaryContrastText = "#08211b", // --on-accent dark
+
+            // Neutral slate (secondary text: dates, stat labels, browse button)
+            Secondary = "#a1a1aa",
+            SecondaryContrastText = "#131316",
 
             // Neutral ramp (inverted zinc)
             Background = "#131316", // --paper dark
