@@ -5,17 +5,15 @@
 
 <PageTitle>Orders</PageTitle>
 
-<MudStack Class="mb-6">
-    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
-        <div>
-            <MudText Typo="Typo.overline" Color="Color.Primary">Storefront</MudText>
-            <MudText Typo="Typo.h4">Orders</MudText>
-            <MudText Typo="Typo.body1">
-                Your order history, served by the Storefront app service from its own database.
-            </MudText>
-        </div>
-        <MudButton Href="/storefront" Variant="Variant.Outlined" Color="Color.Secondary">Browse</MudButton>
-    </MudStack>
+<MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-6">
+    <div>
+        <MudText Typo="Typo.overline" Color="Color.Primary">Storefront</MudText>
+        <MudText Typo="Typo.h4">Orders</MudText>
+        <MudText Typo="Typo.body1">
+            Your order history, served by the Storefront app service from its own database.
+        </MudText>
+    </div>
+    <MudButton Href="/storefront" Variant="Variant.Outlined" Color="Color.Secondary">Browse</MudButton>
 </MudStack>
 
 @if (_failed)

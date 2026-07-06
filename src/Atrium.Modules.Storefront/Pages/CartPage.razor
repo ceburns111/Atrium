@@ -49,7 +49,7 @@ else
                                          Value="@line.Quantity"
                                          ValueChanged="@(v => Cart.SetQuantity(line.Product.Id, v))"
                                          Min="1"
-                                         Style="width:90px"
+                                         Style="width:6rem"
                                          Margin="Margin.Dense" />
                     </td>
                     <td style="text-align:right">@Money.Format(line.Product.Price * line.Quantity)</td>
@@ -58,7 +58,7 @@ else
                                        Color="Color.Default"
                                        Size="Size.Small"
                                        OnClick="@(() => Cart.Remove(line.Product.Id))"
-                                       UserAttributes="@(new Dictionary<string, object?> { { "title", "Remove" } })" />
+                                       UserAttributes="_removeAttrs" />
                     </td>
                 </tr>
             }
@@ -97,6 +97,8 @@ else
 }
 
 @code {
+    private static readonly Dictionary<string, object?> _removeAttrs = new() { ["title"] = "Remove" };
+
     protected override void OnInitialized() => Cart.Changed += Refresh;
 
     // Rehydrate the persisted cart on the first INTERACTIVE render only — never during prerender, when
