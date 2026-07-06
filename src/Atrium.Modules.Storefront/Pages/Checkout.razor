@@ -8,83 +8,163 @@
 
 <PageTitle>Checkout</PageTitle>
 
-<PageHeader Eyebrow="Storefront" Title="Checkout" Description="Review your order and pay to place it." />
+<MudStack Class="mb-6">
+    <div>
+        <MudText Typo="Typo.overline" Color="Color.Primary">Storefront</MudText>
+        <MudText Typo="Typo.h4">Checkout</MudText>
+        <MudText Typo="Typo.body1">Review your order and pay to place it.</MudText>
+    </div>
+</MudStack>
 
 @if (_confirmation is not null)
 {
-    <Notice Title="Order confirmed — thank you!"
-            Body="Your payment was approved and your order is on its way.">
-        <div class="confirmation">
-            <div class="confirmation__row"><span>Order</span><strong>#@_confirmation.OrderId</strong></div>
-            <div class="confirmation__row"><span>Total</span><strong>@Money.Format(_confirmation.Total)</strong></div>
-            <div class="confirmation__row"><span>Payment reference</span><strong>@_confirmation.Reference</strong></div>
-        </div>
-        <div class="confirmation__actions">
-            <a class="btn btn--accent" href="/storefront/orders">View your orders</a>
-            <a class="btn btn--ghost" href="/storefront">Keep shopping</a>
-        </div>
-    </Notice>
+    <MudAlert Severity="Severity.Success">
+        <MudText Typo="Typo.h6" GutterBottom="true">Order confirmed — thank you!</MudText>
+        <MudText Typo="Typo.body2" Class="mb-3">
+            Your payment was approved and your order is on its way.
+        </MudText>
+        <MudStack Spacing="1" Class="mb-4">
+            <MudStack Row Justify="Justify.SpaceBetween">
+                <MudText>Order</MudText>
+                <MudText><strong>#@_confirmation.OrderId</strong></MudText>
+            </MudStack>
+            <MudStack Row Justify="Justify.SpaceBetween">
+                <MudText>Total</MudText>
+                <MudText><strong>@Money.Format(_confirmation.Total)</strong></MudText>
+            </MudStack>
+            <MudStack Row Justify="Justify.SpaceBetween">
+                <MudText>Payment reference</MudText>
+                <MudText><strong>@_confirmation.Reference</strong></MudText>
+            </MudStack>
+        </MudStack>
+        <MudStack Row Spacing="2">
+            <MudButton Href="/storefront/orders"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary">
+                View your orders
+            </MudButton>
+            <MudButton Href="/storefront"
+                       Variant="Variant.Text"
+                       Color="Color.Default">
+                Keep shopping
+            </MudButton>
+        </MudStack>
+    </MudAlert>
 }
 else if (Cart.Lines.Count == 0)
 {
-    <p class="empty">Your cart is empty. <a href="/storefront">Browse products</a>.</p>
+    <MudAlert Severity="Severity.Info">
+        Your cart is empty. <MudLink Href="/storefront">Browse products</MudLink>.
+    </MudAlert>
 }
 else
 {
-    <div class="checkout">
-        <section class="card checkout__panel">
-            <h2 class="checkout__heading">Order summary</h2>
-            <table class="atrium-table">
-                <tbody>
-                    @foreach (var line in Cart.Lines)
-                    {
-                        <tr>
-                            <td>@line.Product.Name</td>
-                            <td class="num">×@line.Quantity</td>
-                            <td class="num">@Money.Format(line.Product.Price * line.Quantity)</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <div class="cart-summary__total checkout__total">
-                <span>Total</span>
-                <strong>@Money.Format(Cart.Total)</strong>
-            </div>
-        </section>
+    <MudGrid>
+        <MudItem xs="12" md="5">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-3">Order summary</MudText>
+                <MudSimpleTable Dense="true">
+                    <tbody>
+                        @foreach (var line in Cart.Lines)
+                        {
+                            <tr>
+                                <td>@line.Product.Name</td>
+                                <td style="text-align:right">×@line.Quantity</td>
+                                <td style="text-align:right">@Money.Format(line.Product.Price * line.Quantity)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+                <MudDivider Class="my-3" />
+                <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.subtitle1">Total</MudText>
+                    <MudText Typo="Typo.h6">@Money.Format(Cart.Total)</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
 
-        <section class="card checkout__panel">
-            <h2 class="checkout__heading">Payment</h2>
-            <p class="checkout__note">Simulated payment — no real card is charged. Use any test card (e.g. 4242 4242 4242 4242); a number ending in 0002 is declined.</p>
+        <MudItem xs="12" md="7">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-1">Payment</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    Simulated payment — no real card is charged. Use any test card (e.g. 4242 4242 4242
+                    4242); a number ending in 0002 is declined.
+                </MudText>
 
-            @if (_declineReason is not null)
-            {
-                <Notice Title="Payment declined" Body="@_declineReason" />
-            }
+                @if (_declineReason is not null)
+                {
+                    <MudAlert Severity="Severity.Error" Class="mb-4">@_declineReason</MudAlert>
+                }
 
-            <div class="pay-form">
-                <Field Label="Cardholder name" For="cardholder" Error="@_cardholderError">
-                    <input id="cardholder" class="input" autocomplete="off" @bind="_cardholderName" @bind:event="oninput" />
-                </Field>
-                <Field Label="Card number" For="cardnumber" Error="@_cardError">
-                    <input id="cardnumber" class="input" inputmode="numeric" autocomplete="off" placeholder="4242 4242 4242 4242" @bind="_cardNumber" @bind:event="oninput" />
-                </Field>
-                <div class="pay-form__row">
-                    <Field Label="Expiry (MM/YY)" For="expiry" Error="@_expiryError">
-                        <input id="expiry" class="input" inputmode="numeric" autocomplete="off" placeholder="MM/YY" @bind="_expiry" @bind:event="oninput" />
-                    </Field>
-                    <Field Label="CVC" For="cvc" Error="@_cvcError">
-                        <input id="cvc" class="input" inputmode="numeric" autocomplete="off" placeholder="123" @bind="_cvc" @bind:event="oninput" />
-                    </Field>
-                </div>
-                <Button Variant="ButtonVariant.Accent" OnClick="Pay" Disabled="_processing">
-                    @(_processing ? "Processing…" : $"Pay {Money.Format(Cart.Total)}")
-                </Button>
-            </div>
-        </section>
-    </div>
+                <MudForm>
+                    <MudTextField T="string"
+                                  Label="Cardholder name"
+                                  @bind-Value="_cardholderName"
+                                  Immediate="true"
+                                  Error="@(_cardholderError is not null)"
+                                  ErrorText="@_cardholderError"
+                                  UserAttributes="@_noAutoComplete"
+                                  Class="mb-3" />
+
+                    <MudTextField T="string"
+                                  Label="Card number"
+                                  @bind-Value="_cardNumber"
+                                  Immediate="true"
+                                  Placeholder="4242 4242 4242 4242"
+                                  Error="@(_cardError is not null)"
+                                  ErrorText="@_cardError"
+                                  UserAttributes="@_numericAttrs"
+                                  Class="mb-3" />
+
+                    <MudGrid Spacing="2">
+                        <MudItem xs="6">
+                            <MudTextField T="string"
+                                          Label="Expiry (MM/YY)"
+                                          @bind-Value="_expiry"
+                                          Immediate="true"
+                                          Placeholder="MM/YY"
+                                          Error="@(_expiryError is not null)"
+                                          ErrorText="@_expiryError"
+                                          UserAttributes="@_numericAttrs" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudTextField T="string"
+                                          Label="CVC"
+                                          @bind-Value="_cvc"
+                                          Immediate="true"
+                                          Placeholder="123"
+                                          Error="@(_cvcError is not null)"
+                                          ErrorText="@_cvcError"
+                                          UserAttributes="@_numericAttrs" />
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               FullWidth="true"
+                               Class="mt-4"
+                               OnClick="Pay"
+                               Disabled="@_processing">
+                        @(_processing ? "Processing…" : $"Pay {Money.Format(Cart.Total)}")
+                    </MudButton>
+                </MudForm>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 }
 
 @code {
+    private static readonly Dictionary<string, object?> _numericAttrs = new()
+    {
+        { "inputmode", "numeric" },
+        { "autocomplete", "off" },
+    };
+
+    private static readonly Dictionary<string, object?> _noAutoComplete = new()
+    {
+        { "autocomplete", "off" },
+    };
+
     // Card fields live ONLY in component state for the duration of the transaction and are cleared after
     // authorization. The PAN, CVC, and expiry are never persisted, logged, or sent anywhere but the mock
     // PaymentService — the order itself carries only product ids + quantities.
