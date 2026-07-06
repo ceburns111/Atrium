@@ -1,47 +1,48 @@
 @inject Atrium.Portal.Modularity.ModuleCatalog Catalog
 
-<div class="brand">
-    @* Custom "skylight" mark — a light-well viewed top-down — not a borrowed icon set. *@
-    <svg viewBox="0 0 28 28" class="brand__mark" fill="none" aria-hidden="true">
-        <rect x="3" y="3" width="22" height="22" rx="6" stroke="currentColor" stroke-width="2" />
-        <rect x="10" y="10" width="8" height="8" rx="2" fill="currentColor" />
-    </svg>
-    <span class="brand__name">Atrium</span>
-</div>
+<div class="d-flex flex-column" style="height: 100%">
+    <div class="d-flex align-center gap-2 px-4 py-4">
+        @* Custom "skylight" mark — a light-well viewed top-down — not a borrowed icon set. *@
+        <svg viewBox="0 0 28 28" width="28" height="28" fill="none" aria-hidden="true">
+            <rect x="3" y="3" width="22" height="22" rx="6" stroke="currentColor" stroke-width="2" />
+            <rect x="10" y="10" width="8" height="8" rx="2" fill="currentColor" />
+        </svg>
+        <MudText Typo="Typo.h6">Atrium</MudText>
+    </div>
 
-<nav class="nav">
-    <NavLink class="nav__link" href="" Match="NavLinkMatch.All">Home</NavLink>
+    <MudNavMenu>
+        <MudNavLink Href="" Match="NavLinkMatch.All">Home</MudNavLink>
 
-    @if (Catalog.Modules.Count > 0)
-    {
-        <div class="nav__label">Apps</div>
-        @* Navigation is contributed by discovered modules, not hard-coded. *@
-        @foreach (var module in Catalog.Modules)
+        @if (Catalog.Modules.Count > 0)
         {
-            @foreach (var item in module.NavItems)
+            <MudText Typo="Typo.overline" Class="px-4 pt-2 mud-text-secondary">Modules</MudText>
+            @* Navigation is contributed by discovered modules, not hard-coded. *@
+            @foreach (var module in Catalog.Modules)
             {
-                @* A link inherits its module's role when it declares none of its own — otherwise a
-                   role-gated module's links would render for everyone while the route stays forbidden. *@
-                var role = item.RequiredRole ?? module.RequiredRole;
-                @if (role is null)
+                @foreach (var item in module.NavItems)
                 {
-                    <NavLink class="nav__link" href="@item.Path">@item.Title</NavLink>
-                }
-                else
-                {
-                    <AuthorizeView Roles="@role">
-                        <Authorized>
-                            <NavLink class="nav__link" href="@item.Path">@item.Title</NavLink>
-                        </Authorized>
-                    </AuthorizeView>
+                    @* A link inherits its module's role when it declares none of its own — otherwise a
+                       role-gated module's links would render for everyone while the route stays forbidden. *@
+                    var role = item.RequiredRole ?? module.RequiredRole;
+                    @if (role is null)
+                    {
+                        <MudNavLink Href="@item.Path">@item.Title</MudNavLink>
+                    }
+                    else
+                    {
+                        <AuthorizeView Roles="@role">
+                            <Authorized>
+                                <MudNavLink Href="@item.Path">@item.Title</MudNavLink>
+                            </Authorized>
+                        </AuthorizeView>
+                    }
                 }
             }
         }
-    }
+    </MudNavMenu>
 
-    <div class="nav__spacer"></div>
     @* When some modules are role-gated away, show what this user can see vs what's loaded. *@
-    <div class="nav__foot">
+    <MudText Typo="Typo.caption" Class="mt-auto px-4 py-3 mud-text-secondary">
         @if (_visibleCount == Catalog.Modules.Count)
         {
             @($"{Catalog.Modules.Count} module{(Catalog.Modules.Count == 1 ? "" : "s")} loaded")
@@ -50,8 +51,8 @@
         {
             @($"{_visibleCount} of {Catalog.Modules.Count} modules visible")
         }
-    </div>
-</nav>
+    </MudText>
+</div>
 
 @code {
     [CascadingParameter]

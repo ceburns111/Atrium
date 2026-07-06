@@ -5,29 +5,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    @* Apply the saved (or system) theme before first paint so there's no flash of the wrong theme.
-       Runs ahead of Blazor; the ThemeToggle handles runtime changes and persistence thereafter. *@
-    <script>
-        (function () {
-            try {
-                var t = localStorage.getItem("atrium.theme");
-                if (!t) {
-                    t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-                }
-                document.documentElement.dataset.theme = t;
-            } catch (e) {
-                /* localStorage blocked — fall back to the prefers-color-scheme media query in CSS. */
-            }
-        })();
-    </script>
+    @* Dark mode is driven at runtime by the shell's MudThemeProvider (seeded from the OS preference on
+       first render); there is no pre-render theme script. A brief light-first paint before hydration is
+       accepted for this demo (see the MudBlazor refactor spec). *@
     <ResourcePreloader />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
-    <link rel="stylesheet" href="_content/Atrium.Design/css/tokens.css" />
-    <link rel="stylesheet" href="_content/Atrium.Design/css/atrium.css" />
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" />
+    <link rel="stylesheet" href="_content/MudBlazor/MudBlazor.min.css" />
     <link rel="stylesheet" href="@Assets["Atrium.Portal.styles.css"]" />
+    @* Global MudBlazor class overrides — loaded last so cascade order wins. See wwwroot/app.css. *@
+    <link rel="stylesheet" href="app.css" />
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
     <HeadOutlet @rendermode="InteractiveServer" />
@@ -37,6 +26,7 @@
     <Routes @rendermode="InteractiveServer" />
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 </body>
 
 </html>

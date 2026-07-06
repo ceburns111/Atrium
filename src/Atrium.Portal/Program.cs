@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,9 +17,7 @@ builder.AddAtriumTelemetry();
 
 // Add services to the container.
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
-
-// Design-system services available to every module.
-builder.Services.AddScoped<ToastService>();
+builder.Services.AddMudServices();
 
 // Every module HttpClient gets service discovery (resolve "https+http://gateway") and the signed-in
 // user's bearer token, applied by default so modules don't wire it themselves.

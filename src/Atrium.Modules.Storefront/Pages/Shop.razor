@@ -3,65 +3,102 @@
 @inject CatalogClient Catalog
 @inject CartService Cart
 @inject CartPersistence Persistence
-@inject ToastService Toasts
+@inject ISnackbar Snackbar
 
 <PageTitle>Storefront</PageTitle>
 
-<PageHeader Eyebrow="Storefront"
-            Title="Browse"
-            Description="A small catalog of desk goods. Add items to your cart and check out.">
-    <Actions>
-        <a class="btn btn--ghost" href="/storefront/orders">Orders</a>
-        <a class="btn btn--secondary" href="/storefront/cart">Cart (@Cart.Count)</a>
-    </Actions>
-</PageHeader>
+<MudStack Class="mb-6">
+    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+        <div>
+            <MudText Typo="Typo.overline" Color="Color.Primary">Storefront</MudText>
+            <MudText Typo="Typo.h4">Browse</MudText>
+            <MudText Typo="Typo.body1">
+                A small catalog of desk goods.
+            </MudText>
+        </div>
+        <MudStack Row Spacing="1">
+            <MudButton Href="/storefront/orders" Variant="Variant.Text" Color="Color.Default">
+                Orders
+            </MudButton>
+            <MudButton Href="/storefront/cart" Variant="Variant.Outlined" Color="Color.Secondary">
+                Cart (@Cart.Count)
+            </MudButton>
+        </MudStack>
+    </MudStack>
 
-<div class="filters">
-    <button class="chip @(_category is null ? "chip--on" : null)" @onclick="() => Filter(null)">All</button>
-    @foreach (var category in _categories)
-    {
-        <button class="chip @(_category == category.Name ? "chip--on" : null)" @onclick="() => Filter(category.Name)">
-            @category.Name
-        </button>
-    }
-</div>
+    <MudChipSet T="string"
+                SelectionMode="SelectionMode.SingleSelection"
+                SelectedValue="@(_category ?? string.Empty)"
+                SelectedValueChanged="@(async v => await Filter(string.IsNullOrEmpty(v) ? null : v))">
+        <MudChip T="string" Value="@string.Empty" Color="Color.Primary">All</MudChip>
+        @foreach (var category in _categories)
+        {
+            <MudChip T="string" Value="@category.Name" Color="Color.Primary">@category.Name</MudChip>
+        }
+    </MudChipSet>
+</MudStack>
 
 @if (_failed)
 {
-    <Notice Title="Couldn't load the catalog"
-            Body="Something interrupted the request. Please try again.">
-        <Button Variant="ButtonVariant.Secondary" OnClick="Load">Try again</Button>
-    </Notice>
+    <MudStack Class="mb-4" Spacing="2">
+        <MudAlert Severity="Severity.Error">
+            <MudText Typo="Typo.subtitle1">Couldn't load the catalog</MudText>
+            <MudText Typo="Typo.body2">Something interrupted the request. Please try again.</MudText>
+        </MudAlert>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@Load">
+            Try again
+        </MudButton>
+    </MudStack>
 }
 else if (_products is null)
 {
-    <div class="product-grid">
+    <MudGrid>
         @for (var i = 0; i < 8; i++)
         {
-            <div class="product product--skeleton skeleton"></div>
+            <MudItem xs="12" sm="6" md="4" lg="3">
+                <MudCard Outlined="true">
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" />
+                    <MudCardContent>
+                        <MudSkeleton Width="70%" />
+                        <MudSkeleton Width="40%" />
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
         }
-    </div>
+    </MudGrid>
 }
 else if (_products.Count == 0)
 {
-    <p class="empty">No products in this category.</p>
+    <MudAlert Severity="Severity.Info">No products in this category.</MudAlert>
 }
 else
 {
-    <div class="product-grid">
+    <MudGrid>
         @foreach (var product in _products)
         {
-            <div class="product">
-                <ProductThumb Name="@product.Name" />
-                <div class="product__name">@product.Name</div>
-                <div class="product__blurb">@product.Blurb</div>
-                <div class="product__foot">
-                    <span class="product__price">@Money.Format(product.Price)</span>
-                    <Button Small Variant="ButtonVariant.Secondary" OnClick="() => Add(product)">Add</Button>
-                </div>
-            </div>
+            <MudItem xs="12" sm="6" md="4" lg="3">
+                @* Outlined + full-height so every card is a distinct, equal-height tile — the grid
+                   reads as a tidy row instead of squished, blended panels. *@
+                <MudCard Outlined="true" Class="d-flex flex-column" Style="height:100%">
+                    <ProductThumb Name="@product.Name" />
+                    <MudCardContent Class="flex-grow-1">
+                        <MudText Typo="Typo.subtitle1">@product.Name</MudText>
+                        <MudText Typo="Typo.body2">@product.Blurb</MudText>
+                        <MudText Typo="Typo.h6" Class="mt-2">@Money.Format(product.Price)</MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudSpacer />
+                        <MudButton Size="Size.Small"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="@(() => Add(product))">
+                            Add
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
         }
-    </div>
+    </MudGrid>
 }
 
 @code {
@@ -130,7 +167,7 @@ else
     private void Add(ProductDto product)
     {
         Cart.Add(product);
-        Toasts.Show($"Added {product.Name}", ToastVariant.Success);
+        Snackbar.Add($"Added {product.Name}", Severity.Success);
     }
 
     private void Refresh() => InvokeAsync(StateHasChanged);

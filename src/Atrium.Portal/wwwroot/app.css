@@ -1,0 +1,33 @@
+/* Global MudBlazor overrides for the Atrium shell.
+
+   These target MudBlazor's own component classes, which have no theming prop. A scoped
+   MainLayout.razor.css can't reach them: ::deep compiles to `[scope] .mud-*`, and the scope
+   attribute only lands on plain HTML elements in the component's markup — MainLayout is all
+   MudBlazor components, so there's no host element to carry it. A plain global sheet, loaded
+   after MudBlazor.min.css, is the correct override point. Same single-class specificity as
+   MudBlazor's rules, so cascade order (this file wins) does the work. */
+
+/* Slow + smooth the drawer collapse/expand so the nav doesn't snap away abruptly on navigation.
+   MudBlazor's default is ~225ms; 400ms on Material's standard easing lets the nav slide and the
+   content reflow settle together. */
+.mud-drawer,
+.mud-main-content {
+    transition-duration: 400ms !important;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Roomier modal padding. MudBlazor's defaults sit content tight to the edges (title 16/24,
+   content 0/24, actions 8). Widen to 32px gutters with more top/bottom breathing room. The
+   `.mud-dialog` ancestor is required to match MudBlazor's own selector specificity
+   (`.mud-dialog .mud-dialog-content`); a bare class loses and !important settles the cascade. */
+.mud-dialog .mud-dialog-title {
+    padding: 24px 32px 8px !important;
+}
+
+.mud-dialog .mud-dialog-content {
+    padding: 0 32px !important;
+}
+
+.mud-dialog .mud-dialog-actions {
+    padding: 8px 32px 24px !important;
+}

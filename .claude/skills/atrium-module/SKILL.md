@@ -49,8 +49,8 @@ host edits** beyond one project reference.
 ## Design — defer to atrium-ui
 
 **All visual/design concerns belong to the `atrium-ui` skill — invoke it for any Razor/component/CSS
-work.** Do not hand-roll CSS, hard-code colors/spacing, or restate design tokens here; pull primitives
-and tokens from `Atrium.Design` as that skill directs. This skill covers module *plumbing*; atrium-ui
+work.** Do not hand-roll CSS, hard-code colors/spacing, or restate styling here; use MudBlazor
+components and `AtriumTheme` as that skill directs. This skill covers module *plumbing*; atrium-ui
 covers how it *looks*.
 
 ## After the work

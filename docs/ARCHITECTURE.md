@@ -71,7 +71,7 @@ which validates it. The Storefront→Catalog price-relay call goes **direct** to
 |---|---|
 | `Atrium.Portal` | Blazor Server host: module discovery, app shell, OIDC login, token capture. |
 | `Atrium.Abstractions` | The `IModule` + `NavItem` contract. The *only* thing the host and modules share by type. |
-| `Atrium.Design` | Design-system RCL: `tokens.css` + `atrium.css`, primitives (Button/Badge/Dialog/Field/Menu/Notice/PageHeader/ToastHost), `AccessTokenHolder`, `Money`, the shared typed-client send pipeline (`HttpClientExtensions`). |
+| `Atrium.Design` | Design-system RCL: MudBlazor + `AtriumTheme` (`MudTheme`) for UI; `ProductThumb` for domain-specific visuals; `AccessTokenHolder`, `Money`, the shared typed-client send pipeline (`HttpClientExtensions`). ([ADR-0014](adr/0014-adopt-mudblazor.md)) |
 | `Atrium.Contracts` | DTOs crossing the wire (Product/Category/Order/Report/Feedback). |
 | `Atrium.ServiceDefaults` | Shared deployment infrastructure: `AddAtriumTelemetry`, `AddAtriumJwtAuth`, `MapAtriumApiDocs`, the two-lane `DatabaseInitializer`. Never domain code (ADR-0012). |
 | `Atrium.Modules.Storefront` | Storefront UI module — Shop, Cart, Orders. Amber accent. |

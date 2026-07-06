@@ -1,6 +1,7 @@
 @inherits ErrorBoundary
 @inject NavigationManager Nav
 @inject ILogger<SessionErrorBoundary> Logger
+@inject Atrium.Design.AccessTokenHolder Tokens
 
 @* A shell-level boundary around the module body: an expired token (no refresh in this demo) surfaces
    as a SessionExpiredException, which we turn into a friendly "sign in again" prompt instead of the
@@ -12,17 +13,27 @@
 }
 else if (CurrentException is SessionExpiredException)
 {
-    <Notice Title="Your session has expired"
-            Body="You've been signed out after a period of inactivity. Sign in again to pick up where you left off.">
-        <a class="btn btn--primary" href="@LoginUrl">Sign in again</a>
-    </Notice>
+    <MudAlert Severity="Severity.Warning" Class="ma-4">
+        <MudText Typo="Typo.subtitle1">Your session has expired</MudText>
+        <MudText Typo="Typo.body2">
+            You've been signed out after a period of inactivity. Sign in again to pick up where you left off.
+        </MudText>
+        <MudButton Href="@LoginUrl" Variant="Variant.Filled" Color="Color.Primary" Class="mt-2">
+            Sign in again
+        </MudButton>
+    </MudAlert>
 }
 else
 {
-    <Notice Title="Something went wrong"
-            Body="An unexpected error interrupted this page. Reloading usually clears it.">
-        <a class="btn btn--secondary" href="@Nav.Uri">Reload</a>
-    </Notice>
+    <MudAlert Severity="Severity.Error" Class="ma-4">
+        <MudText Typo="Typo.subtitle1">Something went wrong</MudText>
+        <MudText Typo="Typo.body2">
+            An unexpected error interrupted this page. Reloading usually clears it.
+        </MudText>
+        <MudButton Href="@Nav.Uri" Variant="Variant.Outlined" Color="Color.Default" Class="mt-2">
+            Reload
+        </MudButton>
+    </MudAlert>
 }
 
 @code {
@@ -37,6 +48,10 @@ else
         // the circuit into the browser console.
         if (exception is SessionExpiredException)
         {
+            // Both the proactive (expired-token short-circuit) and reactive (401) paths funnel here,
+            // so this is the one spot to mark the session ended — flipping the topbar to "Sign in" in
+            // step with the banner below, rather than leaving a stale signed-in menu above it.
+            Tokens.EndSession();
             Logger.LogInformation(
                 "Session expired; prompting re-login from {Path}.",
                 new Uri(Nav.Uri).PathAndQuery

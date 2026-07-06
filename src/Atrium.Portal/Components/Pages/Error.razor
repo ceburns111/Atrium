@@ -1,5 +1,5 @@
 @* The UseExceptionHandler("/Error") re-execute target — statically rendered after an unhandled
-   server-side exception. Same Notice treatment as NotFound/Forbidden, plus the request id so a
+   server-side exception. Same notice treatment as NotFound/Forbidden, plus the request id so a
    user report can be matched to the server logs/trace. *@
 @page "/Error"
 @layout MainLayout
@@ -7,13 +7,19 @@
 
 <PageTitle>Something went wrong</PageTitle>
 
-<Notice Title="Something went wrong" Body="An unexpected error occurred while processing your request.">
-    @if (ShowRequestId)
-    {
-        <p class="notice__body">Request ID: <code>@RequestId</code></p>
-    }
-    <a class="btn btn--secondary" href="/">Return to home</a>
-</Notice>
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h5">Something went wrong</MudText>
+        <MudText Typo="Typo.body1">An unexpected error occurred while processing your request.</MudText>
+        @if (ShowRequestId)
+        {
+            <MudText Typo="Typo.body2">Request ID: <code>@RequestId</code></MudText>
+        }
+        <div>
+            <MudButton Variant="Variant.Outlined" Href="/">Return to home</MudButton>
+        </div>
+    </MudStack>
+</MudContainer>
 
 @code {
     [CascadingParameter]

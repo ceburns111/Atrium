@@ -7,73 +7,98 @@
 
 <PageTitle>Cart</PageTitle>
 
-<PageHeader Eyebrow="Storefront" Title="Cart" Description="Review your items before checking out." />
+<MudStack Class="mb-6">
+    <div>
+        <MudText Typo="Typo.overline" Color="Color.Primary">Storefront</MudText>
+        <MudText Typo="Typo.h4">Cart</MudText>
+        <MudText Typo="Typo.body1">Review your items before checking out.</MudText>
+    </div>
+</MudStack>
 
 @if (Cart.Lines.Count == 0)
 {
-    <p class="empty">Your cart is empty. <a href="/storefront">Browse products</a>.</p>
+    <MudAlert Severity="Severity.Info">
+        Your cart is empty. <MudLink Href="/storefront">Browse products</MudLink>.
+    </MudAlert>
 }
 else
 {
-    <div class="table-scroll">
-        <table class="atrium-table cart-table">
-            <thead>
+    <MudSimpleTable Hover="true" Class="mb-4">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th style="text-align:right">Price</th>
+                <th>Quantity</th>
+                <th style="text-align:right">Subtotal</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var line in Cart.Lines)
+            {
                 <tr>
-                    <th>Item</th>
-                    <th class="num">Price</th>
-                    <th>Quantity</th>
-                    <th class="num">Subtotal</th>
-                    <th></th>
+                    <td>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <ProductThumb Name="@line.Product.Name" Class="product-thumb--sm" />
+                            <MudText>@line.Product.Name</MudText>
+                        </MudStack>
+                    </td>
+                    <td style="text-align:right">@Money.Format(line.Product.Price)</td>
+                    <td>
+                        <MudNumericField T="int"
+                                         Value="@line.Quantity"
+                                         ValueChanged="@(v => Cart.SetQuantity(line.Product.Id, v))"
+                                         Min="1"
+                                         Style="width:6rem"
+                                         Margin="Margin.Dense" />
+                    </td>
+                    <td style="text-align:right">@Money.Format(line.Product.Price * line.Quantity)</td>
+                    <td>
+                        <MudIconButton Icon="@Icons.Material.Outlined.Delete"
+                                       Color="Color.Default"
+                                       Size="Size.Small"
+                                       OnClick="@(() => Cart.Remove(line.Product.Id))"
+                                       UserAttributes="_removeAttrs" />
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var line in Cart.Lines)
-                {
-                    <tr>
-                        <td>
-                            <div class="cart-item">
-                                <ProductThumb Name="@line.Product.Name" Class="product-thumb--sm" />
-                                <span>@line.Product.Name</span>
-                            </div>
-                        </td>
-                        <td class="num">@Money.Format(line.Product.Price)</td>
-                        <td>
-                            <div class="stepper">
-                                <button class="stepper__btn" @onclick="() => Cart.SetQuantity(line.Product.Id, line.Quantity - 1)" aria-label="Decrease quantity">&minus;</button>
-                                <span class="stepper__n">@line.Quantity</span>
-                                <button class="stepper__btn" @onclick="() => Cart.SetQuantity(line.Product.Id, line.Quantity + 1)" aria-label="Increase quantity">+</button>
-                            </div>
-                        </td>
-                        <td class="num">@Money.Format(line.Product.Price * line.Quantity)</td>
-                        <td class="num">
-                            <Button Variant="ButtonVariant.Ghost" Small="true" OnClick="() => Cart.Remove(line.Product.Id)">Remove</Button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+            }
+        </tbody>
+    </MudSimpleTable>
 
-    <div class="cart-summary">
-        <div class="cart-summary__total">
-            <span>Total</span>
-            <strong>@Money.Format(Cart.Total)</strong>
-        </div>
-        <AuthorizeView>
-            <Authorized>
-                <Button Variant="ButtonVariant.Accent" OnClick="@(() => Nav.NavigateTo("/storefront/checkout"))">Proceed to checkout</Button>
-            </Authorized>
-            <NotAuthorized>
-                <Notice Title="Sign in to check out"
-                        Body="Sign in or create an account to place your order — your cart will be waiting.">
-                    <a class="btn btn--accent" href="/account/login?returnUrl=%2Fstorefront%2Fcart">Sign in</a>
-                </Notice>
-            </NotAuthorized>
-        </AuthorizeView>
-    </div>
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.subtitle1">Total</MudText>
+            <MudText Typo="Typo.h6">@Money.Format(Cart.Total)</MudText>
+        </MudStack>
+    </MudPaper>
+
+    <AuthorizeView>
+        <Authorized>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="@(() => Nav.NavigateTo("/storefront/checkout"))">
+                Checkout
+            </MudButton>
+        </Authorized>
+        <NotAuthorized>
+            <MudAlert Severity="Severity.Info">
+                <MudText Typo="Typo.subtitle1" GutterBottom="true">Sign in to check out</MudText>
+                <MudText Typo="Typo.body2" Class="mb-3">
+                    Sign in or create an account to place your order — your cart will be waiting.
+                </MudText>
+                <MudButton Href="/account/login?returnUrl=%2Fstorefront%2Fcart"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary">
+                    Sign in
+                </MudButton>
+            </MudAlert>
+        </NotAuthorized>
+    </AuthorizeView>
 }
 
 @code {
+    private static readonly Dictionary<string, object?> _removeAttrs = new() { ["title"] = "Remove" };
+
     protected override void OnInitialized() => Cart.Changed += Refresh;
 
     // Rehydrate the persisted cart on the first INTERACTIVE render only — never during prerender, when

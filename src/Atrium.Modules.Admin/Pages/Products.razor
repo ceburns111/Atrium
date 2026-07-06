@@ -1,117 +1,129 @@
 @page "/admin"
 @attribute [Authorize(Roles = "admin")]
 @inject AdminCatalogClient Catalog
-@inject ToastService Toasts
+@inject ISnackbar Snackbar
 
 <PageTitle>Admin</PageTitle>
 
-<PageHeader Eyebrow="Admin"
-            Title="Products"
-            Description="Create and edit catalog products. Saving requires the admin role — sign in as admin to make changes.">
-    <Actions>
-        <Button Variant="ButtonVariant.Secondary" OnClick="StartCreate">New product</Button>
-    </Actions>
-</PageHeader>
+<MudStack Class="mb-6">
+    <MudText Typo="Typo.overline" Color="Color.Primary">Admin</MudText>
+    <MudText Typo="Typo.h4">Products</MudText>
+    <MudText Typo="Typo.body1">
+        Create and edit catalog products. 
+    </MudText>
+</MudStack>
 
 @if (_failed)
 {
-    <Notice Title="Couldn't load products"
-            Body="Something interrupted the request. Please try again.">
-        <Button Variant="ButtonVariant.Secondary" OnClick="Load">Try again</Button>
-    </Notice>
-}
-else if (_products is null)
-{
-    <div class="table-scroll">
-        <table class="atrium-table admin-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th class="num">Price</th>
-                    <th>Blurb</th>
-                    <th aria-label="Actions"></th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (var i = 0; i < 5; i++)
-                {
-                    <tr>
-                        <td><span class="skeleton skeleton-line"></span></td>
-                        <td><span class="skeleton skeleton-line"></span></td>
-                        <td class="num"><span class="skeleton skeleton-line"></span></td>
-                        <td><span class="skeleton skeleton-line"></span></td>
-                        <td></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
-else if (_products.Count == 0)
-{
-    <p class="empty">No products yet.</p>
+    <MudStack Class="mb-4" Spacing="2">
+        <MudAlert Severity="Severity.Error">
+            <MudText Typo="Typo.subtitle1">Couldn't load products</MudText>
+            <MudText Typo="Typo.body2">Something interrupted the request. Please try again.</MudText>
+        </MudAlert>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@Load">
+            Try again
+        </MudButton>
+    </MudStack>
 }
 else
 {
-    <div class="table-scroll">
-        <table class="atrium-table admin-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th class="num">Price</th>
-                    <th>Blurb</th>
-                    <th aria-label="Actions"></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var product in _products)
-                {
-                    <tr>
-                        <td>@product.Name</td>
-                        <td><Badge>@product.Category</Badge></td>
-                        <td class="num">@Money.Format(product.Price)</td>
-                        <td class="admin-table__blurb">@product.Blurb</td>
-                        <td class="admin-table__actions">
-                            <Button Small Variant="ButtonVariant.Secondary" OnClick="() => StartEdit(product)">Edit</Button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+    @* No Bordered: horizontal row dividers + hover read cleaner and match the other tables.
+       The action column right-aligns via text-right (not d-flex) so the cell stays a table-cell
+       and its bottom divider draws edge-to-edge. *@
+    <MudDataGrid T="ProductDto"
+                 Items="@(_products ?? [])"
+                 Loading="@(_products is null)"
+                 Hover="true"
+                 Elevation="0">
+        <ToolBarContent>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="StartCreate">
+                New Product
+            </MudButton>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Name" Title="Name" />
+            <PropertyColumn Property="x => x.Category" Title="Category">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">
+                        @context.Item.Category
+                    </MudChip>
+                </CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Price"
+                            Title="Price"
+                            HeaderClass="text-right"
+                            CellClass="text-right">
+                <CellTemplate>@Money.Format(context.Item.Price)</CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Blurb" Title="Description" />
+            <TemplateColumn Title="" Sortable="false" CellClass="text-right">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Size="Size.Small"
+                                   Color="Color.Default"
+                                   aria-label="Edit"
+                                   OnClick="@(() => StartEdit(context.Item))" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body2">No products yet.</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
 }
 
 @* One dialog + one form serves both create and edit — _editingId (null = create) picks the mode. *@
-<Dialog Open="_dialogOpen" OpenChanged="OnDialogOpenChanged" Title="@DialogTitle">
-    <ChildContent>
-        <Field Label="Name" For="product-name">
-            <input id="product-name" class="input" required @bind="_form.Name" @bind:event="oninput"
-                   placeholder="Walnut Monitor Shelf" />
-        </Field>
-        <Field Label="Category" For="product-category">
-            <select id="product-category" class="select" @bind="_form.Category">
+<MudDialog @bind-Visible="_dialogOpen" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@DialogTitle</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm>
+            <MudTextField T="string"
+                          Label="Name"
+                          @bind-Value="_form.Name"
+                          Immediate="true"
+                          Required="true"
+                          Placeholder="Walnut Monitor Shelf"
+                          Class="mb-3" />
+            <MudSelect T="string" Label="Category" @bind-Value="_form.Category" Class="mb-3">
                 @foreach (var category in _categories)
                 {
-                    <option value="@category">@category</option>
+                    <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
                 }
-            </select>
-        </Field>
-        <Field Label="Price" For="product-price">
-            <input id="product-price" class="input" type="number" min="0.01" step="0.01" required
-                   @bind="_form.Price" @bind:event="oninput" />
-        </Field>
-        <Field Label="Blurb" For="product-blurb">
-            <input id="product-blurb" class="input" required @bind="_form.Blurb" @bind:event="oninput"
-                   placeholder="One-line description." />
-        </Field>
-    </ChildContent>
-    <Footer>
-        <Button OnClick="Save" Disabled="_saving || !FormValid">@SaveLabel</Button>
-        <Button Variant="ButtonVariant.Ghost" OnClick="Cancel" Disabled="_saving">Cancel</Button>
-    </Footer>
-</Dialog>
+            </MudSelect>
+            <MudNumericField T="decimal"
+                             Label="Price"
+                             @bind-Value="_form.Price"
+                             Immediate="true"
+                             Min="0.01M"
+                             Step="0.01M"
+                             Format="F2"
+                             Class="mb-3" />
+            <MudTextField T="string"
+                          Label="Description"
+                          @bind-Value="_form.Blurb"
+                          Immediate="true"
+                          Required="true"
+                          Placeholder="One-line description." />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_saving" Variant="Variant.Text" Color="Color.Default">
+            Cancel
+        </MudButton>
+        <MudButton OnClick="Save"
+                   Disabled="_saving || !FormValid"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary">
+            @SaveLabel
+        </MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
     private IReadOnlyList<ProductDto>? _products;
@@ -121,6 +133,15 @@ else
     private bool _saving;
     private bool _failed;
     private readonly ProductForm _form = new();
+
+    // Inline MudDialog: @bind-Visible drives _dialogOpen, so Esc / backdrop / close-button all route
+    // back through the flag exactly like the old Dialog's OpenChanged did.
+    private static readonly DialogOptions _dialogOptions = new()
+    {
+        CloseButton = true,
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+    };
 
     private string DialogTitle => _editingId is null ? "New product" : "Edit product";
     private string SaveLabel => _editingId is null ? "Add product" : "Save";
@@ -174,9 +195,6 @@ else
 
     private void Cancel() => _dialogOpen = false;
 
-    // Fired by Esc / the X close button (relayed by Dialog) as well as our own Cancel round-trip.
-    private void OnDialogOpenChanged(bool open) => _dialogOpen = open;
-
     private async Task Save()
     {
         // Belt-and-suspenders with the disabled Save button: ignore a re-entrant call while a save is
@@ -199,13 +217,13 @@ else
 
             if (error is not null)
             {
-                Toasts.Show(error, ToastVariant.Danger);
+                Snackbar.Add(error, Severity.Error);
                 return; // keep the dialog open so the user can fix and retry
             }
 
-            Toasts.Show(
+            Snackbar.Add(
                 $"{(_editingId is null ? "Created" : "Saved")} {product!.Name}",
-                ToastVariant.Success
+                Severity.Success
             );
             _dialogOpen = false;
             await Load();
@@ -216,9 +234,9 @@ else
             // Checkout.Pay's shape: the dialog stays open with the typed edits intact so the user
             // can just retry. A 401 still bubbles as SessionExpiredException for the shell's
             // re-login prompt.
-            Toasts.Show(
+            Snackbar.Add(
                 "Something went wrong saving the product. Please try again.",
-                ToastVariant.Danger
+                Severity.Error
             );
         }
         finally

@@ -4,70 +4,102 @@
 
 <PageTitle>Reports</PageTitle>
 
-<PageHeader Eyebrow="Reports"
-            Title="Sales"
-            Description="Live analytics over Storefront orders. Category totals are composed from the Catalog core, so they stay in step with the shop." />
+<MudStack Class="mb-6">
+    <MudText Typo="Typo.overline" Color="Color.Primary">Reports</MudText>
+    <MudText Typo="Typo.h4">Sales</MudText>
+    <MudText Typo="Typo.body1">
+        Live analytics over Storefront orders. 
+    </MudText>
+</MudStack>
 
 @if (_failed)
 {
-    <Notice Title="Couldn't load the report"
-            Body="Something interrupted the request. Please try again.">
-        <Button Variant="ButtonVariant.Secondary" OnClick="Load">Try again</Button>
-    </Notice>
+    <MudStack Class="mb-4" Spacing="2">
+        <MudAlert Severity="Severity.Error">
+            <MudText Typo="Typo.subtitle1">Couldn't load the report</MudText>
+            <MudText Typo="Typo.body2">Something interrupted the request. Please try again.</MudText>
+        </MudAlert>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@Load">
+            Try again
+        </MudButton>
+    </MudStack>
 }
 else if (_report is null)
 {
-    <div class="stat-grid">
+    <MudGrid Spacing="3">
         @for (var i = 0; i < 3; i++)
         {
-            <div class="stat stat--skeleton skeleton"></div>
+            <MudItem xs="12" sm="4">
+                <MudPaper Elevation="1" Class="pa-4">
+                    <MudSkeleton SkeletonType="SkeletonType.Text" Width="50%" Class="mb-2" />
+                    <MudSkeleton SkeletonType="SkeletonType.Text" Width="70%" />
+                </MudPaper>
+            </MudItem>
         }
-    </div>
+    </MudGrid>
 }
 else
 {
-    <div class="stat-grid">
-        <div class="stat">
-            <div class="stat__label">Revenue</div>
-            <div class="stat__value">@Money.Format(_report.TotalRevenue)</div>
-        </div>
-        <div class="stat">
-            <div class="stat__label">Orders</div>
-            <div class="stat__value">@_report.TotalOrders.ToString("N0")</div>
-        </div>
-        <div class="stat">
-            <div class="stat__label">Units sold</div>
-            <div class="stat__value">@_report.TotalUnits.ToString("N0")</div>
-        </div>
-    </div>
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Revenue</MudText>
+                <MudText Typo="Typo.h5">@Money.Format(_report.TotalRevenue)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Orders</MudText>
+                <MudText Typo="Typo.h5">@_report.TotalOrders.ToString("N0")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Units sold</MudText>
+                <MudText Typo="Typo.h5">@_report.TotalUnits.ToString("N0")</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 
-    <div class="section-label">Revenue by category</div>
+    <MudText Typo="Typo.h6" Class="mb-3">Total Revenue by Product Category</MudText>
 
     @if (_report.ByCategory.Count == 0)
     {
-        <p class="empty">No orders yet — place one in the Storefront and it shows up here.</p>
+        <MudAlert Severity="Severity.Info">
+            No orders yet — place one in the Storefront and it shows up here.
+        </MudAlert>
     }
     else
     {
-        <div class="bars">
-            @foreach (var category in _report.ByCategory)
-            {
-                <div class="bar">
-                    <div class="bar__label">@category.Category</div>
-                    <div class="bar__track">
-                        <div class="bar__fill" style="width: @Percent(category.Revenue)%"></div>
-                    </div>
-                    <div class="bar__value">@Money.Format(category.Revenue) · @category.Units u</div>
-                </div>
-            }
-        </div>
+        @* Chart lives in a full-width card so it fills the content column and aligns under the heading,
+           instead of floating centered in empty space beside a left-aligned title. *@
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudChart
+                ChartType="ChartType.Bar"
+                ChartSeries="@_chartSeries"
+                XAxisLabels="@_chartLabels"
+                ChartOptions="_chartOptions"
+                Width="100%"
+                Height="350px" />
+        </MudPaper>
     }
 }
 
 @code {
     private SalesReportDto? _report;
-    private decimal _maxRevenue;
     private bool _failed;
+
+    // Brand chart palette: sanctioned hex exception for charts — color-named values can't express
+    // the data-vis contrast needed here, so explicit hex mirrors the AtriumTheme status ramp.
+    private static readonly ChartOptions _chartOptions = new()
+    {
+        ChartPalette = ["#117b68", "#2dbd9b", "#16785a", "#8a5a0f", "#a23b3b"],
+    };
+
+    // Chart data is populated from _report.ByCategory in Load(); decimal Revenue values are cast to
+    // double here at the presentation layer — the contract model stays decimal throughout.
+    private List<ChartSeries> _chartSeries = [];
+    private string[] _chartLabels = [];
 
     protected override Task OnInitializedAsync() => Load();
 
@@ -80,15 +112,19 @@ else
         try
         {
             _report = await Reports.GetSalesAsync();
-            _maxRevenue = _report.ByCategory.Count == 0 ? 0 : _report.ByCategory.Max(c => c.Revenue);
+            _chartSeries =
+            [
+                new ChartSeries
+                {
+                    Name = "Revenue",
+                    Data = [.. _report.ByCategory.Select(c => (double)c.Revenue)],
+                },
+            ];
+            _chartLabels = [.. _report.ByCategory.Select(c => c.Category)];
         }
         catch (Exception ex) when (ex is not SessionExpiredException)
         {
             _failed = true;
         }
     }
-
-    // Bar width relative to the biggest category, so the largest bar always fills the track.
-    private int Percent(decimal revenue) =>
-        _maxRevenue == 0 ? 0 : (int)Math.Round(revenue / _maxRevenue * 100);
 }

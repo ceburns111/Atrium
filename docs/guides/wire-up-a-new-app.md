@@ -268,11 +268,12 @@ always sees an empty token — see [ADR-0004](../adr/0004-token-propagation-and-
 ### 3.4 Pages and UI reuse
 
 Put routable components under `Pages/` (e.g. `Pages/Widgets.razor` with `@page "/widget"`). **Reuse the
-design system** — pull primitives from `Atrium.Design` (`Button`, `Badge`, `PageHeader`,
-`Field`, `Notice`, `ToastHost`, `Dialog`) and the tokens in `src/Atrium.Design/wwwroot/css/tokens.css`; do not hand-roll
-CSS or hard-code colors. Reference pages: `src/Atrium.Modules.Storefront/Pages/Shop.razor`,
-`CartPage.razor`, `OrdersPage.razor`. (The **atrium-ui** skill enforces this — invoke it for any UI
-work.)
+design system** — use **MudBlazor** components (`MudButton`, `MudChip`/`MudBadge`, `MudText`/`MudBreadcrumbs`,
+`MudTextField`/`MudSelect`, `MudAlert`, `MudDialog`, `MudSnackbarProvider`) and the shared **`AtriumTheme`**
+(`src/Atrium.Design/AtriumTheme.cs`) for colors and typography; do not hand-roll CSS or hard-code hex values.
+`ProductThumb` (deterministic placeholder image) remains in `Atrium.Design` — use it for product art.
+Reference pages: `src/Atrium.Modules.Storefront/Pages/Shop.razor`, `CartPage.razor`, `OrdersPage.razor`.
+(The **atrium-ui** skill enforces this — invoke it for any UI work.)
 
 ### 3.5 Route registration is automatic
 

@@ -1,35 +1,61 @@
 @namespace Atrium.Portal.Components.Layout
+@implements IDisposable
+@inject Atrium.Design.AccessTokenHolder Tokens
 
 @* Topbar account control: an avatar (the user's initial) that opens a dropdown with the signed-in
    name and Sign out. Replaces the old inline username span + Sign out link so the right-hand cluster
-   is just icons + one avatar. *@
+   is just icons + one avatar.
+
+   The cookie session outlives the access token (no refresh in this demo), so authentication alone
+   isn't enough: once the token has expired the shell shows the "session expired" banner, and the
+   topbar must agree rather than keep offering the signed-in menu. We therefore gate the menu on the
+   token being live too, and fall back to the same "Sign in" prompt as the anonymous case. *@
 <AuthorizeView>
     <Authorized>
-        <Menu Label="Account menu" TriggerClass="menu__trigger--user">
-            <Trigger>
-                <span class="avatar">@Initial(context.User.Identity?.Name)</span>
-                <svg class="menu__caret" viewBox="0 0 24 24" width="14" height="14" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                     stroke-linejoin="round" aria-hidden="true">
-                    <polyline points="6 9 12 15 18 9" />
-                </svg>
-            </Trigger>
-            <ChildContent>
-                <div class="menu__header">
-                    <span class="menu__name">@context.User.Identity?.Name</span>
-                    <span class="menu__meta">Signed in</span>
-                </div>
-                <a class="menu__item" role="menuitem" href="/account/logout">Sign out</a>
-            </ChildContent>
-        </Menu>
+        @if (Tokens.SessionEnded)
+        {
+            @SignIn
+        }
+        else
+        {
+            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                <ActivatorContent>
+                    <MudAvatar Color="Color.Primary" Size="Size.Medium">
+                        @Initial(context.User.Identity?.Name)
+                    </MudAvatar>
+                </ActivatorContent>
+                <ChildContent>
+                    <div class="px-4 py-2">
+                        <MudText Typo="Typo.body1">@context.User.Identity?.Name</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Signed in</MudText>
+                    </div>
+                    <MudDivider />
+                    <MudMenuItem Href="/account/logout">Sign out</MudMenuItem>
+                </ChildContent>
+            </MudMenu>
+        }
     </Authorized>
     <NotAuthorized>
-        <a class="btn btn--secondary btn--sm" href="/account/login">Sign in</a>
+        @SignIn
     </NotAuthorized>
 </AuthorizeView>
 
 @code {
+    // Shared by the anonymous and expired-token cases so both offer the same prompt.
+    private readonly RenderFragment SignIn = @<MudButton Href="/account/login"
+        Variant="Variant.Outlined"
+        Color="Color.Inherit"
+        Size="Size.Small">Sign in</MudButton>;
+
+    // Re-render when the session ends mid-page (no navigation to trigger a shell re-render), so the
+    // topbar drops to the "Sign in" prompt in lock-step with the session-expired banner.
+    protected override void OnInitialized() => Tokens.Changed += OnSessionChanged;
+
+    private void OnSessionChanged() => InvokeAsync(StateHasChanged);
+
     // First letter of the signed-in name, upper-cased; "?" as a defensive fallback.
     private static string Initial(string? name) =>
         string.IsNullOrWhiteSpace(name) ? "?" : char.ToUpperInvariant(name.TrimStart()[0]).ToString();
+
+    public void Dispose() => Tokens.Changed -= OnSessionChanged;
 }

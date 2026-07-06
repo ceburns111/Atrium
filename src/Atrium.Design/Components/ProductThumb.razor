@@ -37,14 +37,14 @@
     [Parameter]
     public string? Class { get; set; }
 
-    // On-brand tints only: reuse existing color tokens (no new hard-coded hex), tinted via color-mix in CSS,
+    // On-brand tints only: reuse MudBlazor palette vars (no new hard-coded hex), tinted via color-mix in CSS,
     // echoing the Home monogram's `--mono` approach.
     private static readonly string[] Palette =
     [
-        "var(--accent)",
-        "var(--success)",
-        "var(--warning)",
-        "var(--danger)",
+        "var(--mud-palette-primary)",
+        "var(--mud-palette-success)",
+        "var(--mud-palette-warning)",
+        "var(--mud-palette-error)",
     ];
 
     private int _hash;

@@ -3,19 +3,24 @@
 
 <PageTitle>Atrium</PageTitle>
 
-<PageHeader Eyebrow="Workspace"
-            Title="Atrium"
-            Description="A modular host. Each app below is a self-contained module the host discovered at startup — add a new one and it appears here, no host changes." />
+<MudStack Class="mb-6">
+    <MudText Typo="Typo.overline" Color="Color.Primary">Workspace</MudText>
+    <MudText Typo="Typo.h4">Atrium</MudText>
+    <MudText Typo="Typo.body1">
+        A modular host. Each app below is a self-contained module the host discovered at startup —
+        add a new one and it appears here, no host changes.
+    </MudText>
+</MudStack>
 
-<div class="section-label">Apps</div>
+<MudText Typo="Typo.overline" Class="mb-3 d-block">Apps</MudText>
 
 @if (Catalog.Modules.Count == 0)
 {
-    <p class="empty">No modules discovered yet.</p>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary">No modules discovered yet.</MudText>
 }
 else
 {
-    <div class="module-grid">
+    <MudGrid>
         @foreach (var module in Catalog.Modules)
         {
             @if (module.RequiredRole is null)
@@ -31,25 +36,36 @@ else
                 </AuthorizeView>
             }
         }
-    </div>
+    </MudGrid>
 }
 
 @* One card per module; role-gated modules are wrapped above so only authorized users see them. *@
 @{
     RenderFragment ModuleCard(Atrium.Abstractions.IModule module) =>
-    @<a class="module-card" href="@module.BasePath">
-        <div class="module-card__mono" style="@MonoStyle(module)">@module.Name[..1]</div>
-        <div class="module-card__name">@module.Name</div>
-        <div class="module-card__desc">@module.Description</div>
-        <div class="module-card__foot">
-            <span class="module-card__path">@module.BasePath</span>
-            <span class="module-card__go">Open &rarr;</span>
-        </div>
-    </a>;
+    @<MudItem xs="12" sm="6" md="4">
+        <MudCard Elevation="0" Outlined="true" Style="height:100%">
+            <MudCardContent>
+                <MudAvatar Rounded="true" Class="mb-2" Style="@AvatarStyle(module)">
+                    @module.Name[..1]
+                </MudAvatar>
+                <MudText Typo="Typo.h6">@module.Name</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">@module.Description</MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <MudText Typo="Typo.caption" Class="mud-text-disabled flex-grow-1">@module.BasePath</MudText>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Href="@module.BasePath">
+                    Open →
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>;
 }
 
 @code {
-    // Tint the monogram with the module's own accent; falls back to the host accent.
-    private static string? MonoStyle(Atrium.Abstractions.IModule module) =>
-        module.Accent is null ? null : $"--mono:{module.Accent}";
+    // Tint the avatar with the module's own accent; falls back to the host primary.
+    private static string AvatarStyle(Atrium.Abstractions.IModule module)
+    {
+        var accent = module.Accent ?? "var(--mud-palette-primary)";
+        return $"background:color-mix(in srgb, {accent} 14%, transparent); color:{accent}";
+    }
 }

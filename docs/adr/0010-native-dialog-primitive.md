@@ -1,6 +1,6 @@
 # ADR-0010 — Build the modal Dialog on the native `<dialog>` element, not a hand-rolled overlay
 
-**Status:** Accepted · **Deciders:** Atrium build · **Context phase:** 7 (post-polish)
+**Status:** Superseded by [ADR-0014](0014-adopt-mudblazor.md) · **Deciders:** Atrium build · **Context phase:** 7 (post-polish)
 
 ## Context
 

@@ -3,35 +3,45 @@
 @inject NavigationManager Nav
 @inject Atrium.Design.AccessTokenHolder Tokens
 
-<div class="app-shell @(_navOpen ? "nav-open" : null)">
-    <aside class="app-sidebar">
-        <NavMenu />
-    </aside>
+<MudThemeProvider @ref="_themeProvider" @bind-IsDarkMode="_isDarkMode" Theme="Atrium.Design.AtriumTheme.Instance" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
-    <header class="app-topbar">
-        <button class="btn btn--ghost btn--sm menu-btn" @onclick="ToggleNav" aria-label="Toggle navigation">Menu</button>
-        <nav class="crumbs" aria-label="Breadcrumb">
-            <a class="crumbs__root" href="">Atrium</a>
-            <span class="crumbs__sep">/</span>
-            <span class="crumbs__here">@Section</span>
-        </nav>
-        <div class="topbar__spacer"></div>
-        <ThemeToggle />
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="ToggleNav"
+                       aria-label="Toggle navigation" />
+        <MudText Typo="Typo.h6">Atrium</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary ml-2">/ @Section</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit"
+                       OnClick="ToggleDarkMode"
+                       aria-label="Toggle dark mode" />
         <UserMenu />
-    </header>
+    </MudAppBar>
 
-    <main class="app-main">
-        <div class="app-content">
+    <MudDrawer @bind-Open="_navOpen"
+               ClipMode="DrawerClipMode.Always"
+               Variant="DrawerVariant.Responsive"
+               Elevation="1">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent>
+        @* One shared content frame: a centered max-width column with responsive gutters + vertical
+           rhythm, so every module page is padded consistently instead of bleeding to the window edge. *@
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
             <SessionErrorBoundary @ref="_errorBoundary">
                 @Body
             </SessionErrorBoundary>
-        </div>
-    </main>
-
-    <div class="nav-backdrop" @onclick="CloseNav"></div>
-</div>
-
-<ToastHost />
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
@@ -40,7 +50,9 @@
 </div>
 
 @code {
-    private bool _navOpen;
+    private bool _navOpen = true;
+    private bool _isDarkMode;
+    private MudThemeProvider? _themeProvider;
     private SessionErrorBoundary? _errorBoundary;
 
     [CascadingParameter]
@@ -57,9 +69,20 @@
         }
     }
 
+    // Seed dark mode from the OS preference on first interactive render; the pre-Blazor script in
+    // App.razor already applies the theme before paint, so this only aligns the reactive flag.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _themeProvider is not null)
+        {
+            _isDarkMode = await _themeProvider.GetSystemDarkModeAsync();
+            StateHasChanged();
+        }
+    }
+
     private void ToggleNav() => _navOpen = !_navOpen;
 
-    private void CloseNav() => _navOpen = false;
+    private void ToggleDarkMode() => _isDarkMode = !_isDarkMode;
 
     // Close the mobile drawer on navigation and refresh the breadcrumb.
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
