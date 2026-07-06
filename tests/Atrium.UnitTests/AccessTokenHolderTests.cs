@@ -71,6 +71,54 @@ public class AccessTokenHolderTests
     }
 
     [Fact]
+    public void A_new_holder_reports_no_ended_session()
+    {
+        Assert.False(new AccessTokenHolder().SessionEnded);
+    }
+
+    [Fact]
+    public void EndSession_marks_the_session_ended_and_raises_Changed_once()
+    {
+        var holder = new AccessTokenHolder();
+        var raised = 0;
+        holder.Changed += () => raised++;
+
+        holder.EndSession();
+        holder.EndSession(); // idempotent — a second detection must not re-notify subscribers
+
+        Assert.True(holder.SessionEnded);
+        Assert.Equal(1, raised);
+    }
+
+    [Fact]
+    public void Re_setting_the_same_expired_token_keeps_the_session_ended()
+    {
+        // The shell re-copies the (still dead) token into the holder on every re-render. That must not
+        // revive the session, or the topbar would flip back to a signed-in menu below the expiry banner.
+        var expired = Jwt(DateTimeOffset.UtcNow.AddSeconds(-1));
+        var holder = new AccessTokenHolder { AccessToken = expired };
+        holder.EndSession();
+
+        holder.AccessToken = expired;
+
+        Assert.True(holder.SessionEnded);
+    }
+
+    [Fact]
+    public void A_fresh_live_token_revives_an_ended_session()
+    {
+        var holder = new AccessTokenHolder
+        {
+            AccessToken = Jwt(DateTimeOffset.UtcNow.AddSeconds(-1)),
+        };
+        holder.EndSession();
+
+        holder.AccessToken = Jwt(DateTimeOffset.UtcNow.AddMinutes(5));
+
+        Assert.False(holder.SessionEnded);
+    }
+
+    [Fact]
     public async Task An_anonymous_endpoint_read_with_an_expired_token_throws_before_the_server_answers()
     {
         // Directly models the reported bug: the Admin view reads catalog/products (AllowAnonymous),

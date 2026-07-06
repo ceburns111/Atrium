@@ -12,6 +12,8 @@ public sealed class AccessTokenHolder
 {
     private string? _accessToken;
 
+    private bool _sessionEnded;
+
     /// <summary>The signed-in user's raw access token (a JWT), or null when anonymous.</summary>
     public string? AccessToken
     {
@@ -20,7 +22,45 @@ public sealed class AccessTokenHolder
         {
             _accessToken = value;
             ExpiresAt = ReadExpiry(value);
+            // A fresh, live token revives the session. Re-setting the SAME already-dead token — which
+            // the shell does on every re-render via OnParametersSetAsync — must NOT clear a session we
+            // have already marked ended, or the topbar would flip back to "signed in".
+            if (!IsExpired)
+            {
+                _sessionEnded = false;
+            }
         }
+    }
+
+    /// <summary>
+    /// Raised when a dead session is first detected, so shell UI (the topbar account control) can
+    /// re-render and stop presenting a signed-in menu the instant the session ends — staying consistent
+    /// with the "session expired" banner even when expiry surfaces without a navigation.
+    /// </summary>
+    public event Action? Changed;
+
+    /// <summary>
+    /// True once a dead session has been detected — an already-expired token short-circuited a request,
+    /// or a downstream 401 came back. Sticky until a fresh live token replaces it. This is the single
+    /// signal the shell reads to present a consistent signed-out state everywhere (see
+    /// <see cref="EndSession"/>); <see cref="IsExpired"/> remains the time-derived fail-fast used by the
+    /// request pipeline itself.
+    /// </summary>
+    public bool SessionEnded => _sessionEnded;
+
+    /// <summary>
+    /// Marks the session ended and notifies subscribers. Idempotent — the shell's error boundary calls
+    /// this the moment it turns a <see cref="SessionExpiredException"/> into the re-login prompt, so the
+    /// topbar and the banner flip together.
+    /// </summary>
+    public void EndSession()
+    {
+        if (_sessionEnded)
+        {
+            return;
+        }
+        _sessionEnded = true;
+        Changed?.Invoke();
     }
 
     /// <summary>
