@@ -5,7 +5,7 @@ namespace Atrium.Services.Storefront.Support;
 
 /// <summary>
 /// The Storefront order-support agent: a Microsoft Agent Framework <see cref="ChatClientAgent"/> over
-/// the configured <see cref="IChatClient"/> (Fake / FoundryLocal / AzureFoundry — see
+/// the configured <see cref="IChatClient"/> (Fake / Ollama / FoundryLocal / AzureFoundry — see
 /// <see cref="SupportAgentBuilderExtensions"/>), with the two <see cref="SupportTools"/>
 /// functions registered so the model can look up orders and products.
 /// </summary>
@@ -27,7 +27,9 @@ public sealed class SupportAgent
     /// </summary>
     public const string AgentName = "Support";
 
-    private const string Instructions =
+    // Internal (not private) so the eval harness (InternalsVisibleTo Atrium.Evals) scores the REAL
+    // deployed system prompt — any edit here is automatically what the evals certify.
+    internal const string Instructions =
         "You are Atrium's order-support assistant for signed-in customers. Help with questions "
         + "about their orders and the product catalog. Use the GetOrderStatus tool to look up an "
         + "order by id, and the FindProduct tool to search the catalog by name. Only state facts the "

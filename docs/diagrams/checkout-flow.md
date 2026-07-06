@@ -21,7 +21,8 @@ What makes this accurate rather than aspirational:
   declined; anything else is approved with an `AUTH-…` reference.
 - **On approval**, `OrdersClient.CreateAsync` does `POST /storefront/orders` (JWT-gated); the service
   **re-prices every line from Catalog** (`OrderPricing`) and never trusts client prices. A per-attempt
-  idempotency key makes retries safe.
+  idempotency key makes retries safe: on a same-user replay the service re-reads and returns the already-committed
+  order; a cross-user key collision returns **409 Conflict** rather than leaking another user's order.
 
 ```mermaid
 flowchart TD

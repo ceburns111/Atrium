@@ -34,14 +34,6 @@
   ],
   "clients": [
     {
-      "clientId": "atrium-catalog",
-      "name": "Atrium Catalog (resource server)",
-      "description": "The catalog API as an OAuth resource. Validates tokens whose aud contains this id; never logs in itself (bearerOnly).",
-      "enabled": true,
-      "bearerOnly": true,
-      "publicClient": false
-    },
-    {
       "clientId": "atrium-portal",
       "name": "Atrium Portal (confidential)",
       "description": "The Blazor Server host. Runs the OIDC auth-code flow, holds tokens server-side, hands the browser only an http-only cookie.",

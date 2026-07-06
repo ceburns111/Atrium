@@ -11,10 +11,13 @@
    agent endpoint (e.g. "storefront/agent"); it streams the assistant reply token-by-token via the
    AGUIChatClient and shows tool activity as small cards. Text + tool cards only — no generative UI. *@
 <section class="agent-chat" aria-label="@Heading">
-    <header class="agent-chat__header">
-        <span class="agent-chat__eyebrow">Agent</span>
-        <h2 class="agent-chat__title">@Heading</h2>
-    </header>
+    @if (ShowHeader)
+    {
+        <header class="agent-chat__header">
+            <span class="agent-chat__eyebrow">Agent</span>
+            <h2 class="agent-chat__title">@Heading</h2>
+        </header>
+    }
 
     <div class="agent-chat__log" role="log" aria-live="polite" @ref="_logRef">
         @if (_turns.Count == 0)
@@ -105,6 +108,10 @@
     [Parameter] public string[]? StarterPrompts { get; set; }
     [Parameter] public string? Title { get; set; }
 
+    // The heading is useful when the chat sits inline on a page, but redundant inside a Dialog whose
+    // Title already names the surface — hosts embedding it there pass false to avoid a stacked pair.
+    [Parameter] public bool ShowHeader { get; set; } = true;
+
     private readonly List<Turn> _turns = [];
     private string _draft = "";
     private bool _busy;
@@ -139,8 +146,9 @@
         _turns.Add(reply);
         await ScrollToEndAsync();
 
-        // Built once and reused for the component's lifetime. Endpoint is EditorRequired and effectively
-        // static per surface, so a later Endpoint change would not rebuild the client (fine in practice).
+        // Built once and reused for the component's lifetime. A later Endpoint change would NOT rebuild
+        // the client (or clear the transcript), so hosts that swap surfaces must @key the component on
+        // Endpoint to force a fresh instance — the shell's AssistantLauncher does exactly that.
         _chat ??= Factory.Create(Endpoint);
         _cts = new CancellationTokenSource();
         try
@@ -163,10 +171,15 @@
                             reply.Text += text2.Text;
                             break;
                         case FunctionCallContent call:
-                            reply.Tools.Add(new Turn.ToolTrace(call.Name));
+                            reply.Tools.Add(new Turn.ToolTrace(call.CallId, call.Name));
                             break;
-                        case FunctionResultContent:
-                            var pending = reply.Tools.LastOrDefault(t => !t.Done);
+                        case FunctionResultContent result:
+                            // Match by CallId so parallel tool calls flip the right card; fall back to
+                            // the oldest pending card if a provider omits/mangles the id.
+                            var pending =
+                                reply.Tools.FirstOrDefault(t =>
+                                    !t.Done && t.CallId == result.CallId
+                                ) ?? reply.Tools.FirstOrDefault(t => !t.Done);
                             if (pending is not null)
                             {
                                 pending.Done = true;
@@ -176,6 +189,18 @@
                 }
                 StateHasChanged();
                 await ScrollToEndAsync();
+            }
+
+            // The AG-UI client swallows server-side RUN_ERROR events: the stream just completes with
+            // no content. Surface that as a failure instead of leaving an empty assistant bubble.
+            if (string.IsNullOrWhiteSpace(reply.Text))
+            {
+                Logger.LogWarning(
+                    "Support agent stream from {Endpoint} completed with no content (server-side run error?).",
+                    Endpoint
+                );
+                _error = "The agent didn't answer. Try again in a moment.";
+                _turns.Remove(reply);
             }
         }
         catch (SessionExpiredException)
@@ -233,6 +258,14 @@
 
     private async Task SendFeedback(Turn turn, int value)
     {
+        // Re-clicking the already-recorded value is a no-op — don't re-POST the same vote.
+        if (turn.Feedback == value)
+        {
+            return;
+        }
+
+        // Optimistic: flip the button immediately, roll back if the POST doesn't land.
+        var previous = turn.Feedback;
         turn.Feedback = value;
         var question = _turns
             .TakeWhile(t => !ReferenceEquals(t, turn))
@@ -247,11 +280,13 @@
         }
         catch (SessionExpiredException)
         {
+            turn.Feedback = previous;
             _sessionExpired = true;
         }
         catch (Exception ex)
         {
             // Feedback is fire-and-forget telemetry; swallow to protect the circuit.
+            turn.Feedback = previous;
             Logger.LogError(ex, "Support feedback POST failed.");
         }
     }
@@ -280,8 +315,9 @@
         public List<ToolTrace> Tools { get; } = [];
         public int? Feedback { get; set; }
 
-        public sealed class ToolTrace(string name)
+        public sealed class ToolTrace(string callId, string name)
         {
+            public string CallId { get; } = callId;
             public string Name { get; } = name;
             public bool Done { get; set; }
         }

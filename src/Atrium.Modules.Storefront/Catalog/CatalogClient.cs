@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using Atrium.Contracts;
 using Atrium.Design;
 using Microsoft.Extensions.Logging;
@@ -25,22 +24,21 @@ public sealed class CatalogClient(
         var url = category is null
             ? "catalog/products"
             : $"catalog/products?category={Uri.EscapeDataString(category)}";
-        return GetAsync<IReadOnlyList<ProductDto>>(url, ct);
+        return http.SendForJsonAsync<IReadOnlyList<ProductDto>>(
+            HttpMethod.Get,
+            url,
+            tokens,
+            logger,
+            ct: ct
+        );
     }
 
     public Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(CancellationToken ct = default) =>
-        GetAsync<IReadOnlyList<CategoryDto>>("catalog/categories", ct);
-
-    private async Task<T> GetAsync<T>(string url, CancellationToken ct)
-        where T : class
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Authorize(tokens);
-        using var response = await http.SendAsync(request, ct);
-        response.LogIfUnsuccessful(logger, request);
-        response.ThrowIfSessionExpired();
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<T>(ct)
-            ?? throw new InvalidOperationException();
-    }
+        http.SendForJsonAsync<IReadOnlyList<CategoryDto>>(
+            HttpMethod.Get,
+            "catalog/categories",
+            tokens,
+            logger,
+            ct: ct
+        );
 }

@@ -79,13 +79,25 @@ public sealed class CartService
         _lines.Select(l => new CartSnapshotItem(l.Product.Id, l.Quantity)).ToList();
 
     /// <summary>
-    /// Replaces the cart's contents wholesale (used when rehydrating from persisted storage) and
-    /// notifies subscribers once. Lines are rebuilt by the caller from current catalog products.
+    /// Merges restored (persisted) lines into the cart rather than replacing it, and notifies
+    /// subscribers once. Lines are rebuilt by the caller from current catalog products. Merging —
+    /// summing quantities where a product appears on both sides — means items the user added while
+    /// hydration was still in flight are kept on top of the restored cart instead of being wiped.
     /// </summary>
-    public void Restore(IEnumerable<CartLine> lines)
+    public void MergeRestored(IEnumerable<CartLine> lines)
     {
-        _lines.Clear();
-        _lines.AddRange(lines);
+        foreach (var restored in lines)
+        {
+            var line = _lines.FirstOrDefault(l => l.Product.Id == restored.Product.Id);
+            if (line is null)
+            {
+                _lines.Add(restored);
+            }
+            else
+            {
+                line.Quantity += restored.Quantity;
+            }
+        }
         Changed?.Invoke();
     }
 }

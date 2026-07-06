@@ -9,8 +9,8 @@ The **core** backend service for the product catalog. It owns `catalogdb` and ex
 ## Key types
 - `Catalog/CatalogEndpoints` — `MapCatalogEndpoints` on the `/catalog` route group (`.WithTags("Catalog").RequireAuthorization()`).
 - `Catalog/CatalogRepository` — Dapper calls into `usp_Product_*` / `usp_Category_GetList` sprocs.
-- `Catalog/CatalogMapper` (Mapperly), `Catalog/ProductRow`.
-- `Data/DatabaseInitializer` — DbUp migrations + programmability at startup; `Program.cs` — DI/auth/DB wiring.
+- `Catalog/CatalogMapper` (Mapperly), `Catalog/ProductRow`, `Catalog/CategoryRow`.
+- `Program.cs` — DI/auth/DB wiring (uses `AddAtriumJwtAuth`, `AddAtriumTelemetry`, `DatabaseInitializer.Initialize` from `Atrium.ServiceDefaults`).
 
 ## Run / test
 Not run standalone; it comes up (with its DB) via `cd src/Atrium.AppHost && aspire run`. Integration tests: `tests/Atrium.IntegrationTests/CatalogRepositoryTests.cs` (against a real SQL Server via `SqlServerFixture`).

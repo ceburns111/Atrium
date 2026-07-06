@@ -95,12 +95,18 @@ Traced in `docs/diagrams/checkout-flow.md`. The service side:
    the request only supplies `ProductId` and `Quantity`. The client's price is never read.
 3. **Transactional write.** `OrderRepository.CreateAsync` (`Orders/OrderRepository.cs`) opens the
    connection, begins a transaction, and calls `usp_Order_Create` with `{UserName, Total,
-   IdempotencyKey}`. The sproc: if that key already exists, it returns the original `OrderId` with
-   `IsNew = 0` and `RETURN`s; otherwise it inserts the header and returns the new id with `IsNew = 1`.
+   IdempotencyKey}`. The sproc's replay check is **user-scoped**: if this key was already committed
+   *by this user*, it returns the original `OrderId` with `IsNew = 0`; otherwise it inserts inside a
+   TRY/CATCH — a concurrent double-submit that loses the race on the unique index is re-read and
+   replayed (`IsNew = 0`), while a key belonging to a *different* user raises error 50002, which the
+   endpoint maps to **409 Conflict** (never another user's order id).
 4. **Conditional line insert.** Only if `IsNew` does the repo loop `usp_OrderItem_Add` per line — so a
    replay never re-adds items. Then `transaction.CommitAsync`. The unique filtered index
    `UX_Orders_IdempotencyKey` (`Migrations/0002_OrderIdempotencyKey.sql`) is the integrity backstop
    against a concurrent double-submit.
+5. **Faithful response.** The endpoint returns the order **read back** via `GetByIdAsync` (the
+   user-scoped sproc), so on a replay the client sees the stored total/lines/timestamp — never a
+   re-priced reconstruction.
 
 Read path (`GetOrdersAsync` / `GetByIdAsync`): the read sprocs return **flat header×line rows**; the
 repo regroups them with LINQ `GroupBy` into one `OrderDto` per header with its `Lines`.
@@ -213,11 +219,13 @@ token. No cross-DB join, no second connection string into someone else's DB — 
 schemas and break data ownership (ADR-0005).
 
 **Q: How do you make order creation safe under retries?**
-A client-generated idempotency key per checkout attempt. `usp_Order_Create` checks for that key: if it
-exists it returns the original id with `IsNew = 0`; otherwise it inserts and returns `IsNew = 1`. The
-repo only adds line items when `IsNew`, all inside one transaction, and a filtered unique index on the
-key is the concurrency backstop. An empty key is rejected at the endpoint so `Guid.Empty` can't
-collide across unrelated orders.
+A client-generated idempotency key per checkout attempt. `usp_Order_Create` checks for that key
+**scoped to the user**: if this user already committed it, the original id comes back with
+`IsNew = 0`; a concurrent double-submit is settled by TRY/CATCH on the unique index (loser re-reads
+and replays); another user's key is refused with error 50002 → 409. The repo only adds line items when
+`IsNew`, all inside one transaction, and the endpoint returns the order **read back from the DB**, so
+a replay response is the stored truth, not a re-price. An empty key is rejected at the endpoint so
+`Guid.Empty` can't collide across unrelated orders.
 
 **Q: Where's the authorization boundary for reading an order?**
 In the sproc's WHERE clause: `usp_Order_GetById` filters on both `@OrderId` **and** `@UserName`, so a
@@ -295,16 +303,14 @@ customer can't reach the analytics API even by calling it directly.
   transaction or it'd run outside it.
 - **`GO` batching in migrations.** `0002_OrderIdempotencyKey.sql` uses `GO` to separate the
   `ALTER TABLE ADD` from the `CREATE INDEX` that references the new column — DbUp splits on `GO`.
-- **The idempotency replay returns a *recomputed* order shape, not the persisted one.** On a replay
-  (`IsNew = 0`), `CreateOrder` still returns `new OrderDto(orderId, DateTime.UtcNow, total, lines)`
-  built from the *current* re-pricing, with a fresh `DateTime.UtcNow` — not the original
-  `PlacedAtUtc`/total from the DB. Same order id, but the returned timestamp/prices reflect the replay
-  call. Fine for the demo (retries reuse the same cart), but know it — I wouldn't claim the response is
-  a faithful read-back of the stored order.
-- **`GetByIdAsync` isn't wired to an endpoint yet.** The repository method and its user-scoping sproc
-  exist and are integration-tested, but `OrdersEndpoints` only maps `POST /` and `GET /` (list) — there
-  is no `GET /orders/{id}` route. The security boundary is real and proven in tests; it just isn't
-  surfaced over HTTP. Don't claim a single-order endpoint exists.
+- **The create response IS a faithful read-back** (fixed 2026-07-03 — it used to be a re-priced
+  reconstruction with a fresh `DateTime.UtcNow`). `CreateOrder` re-reads the committed order through
+  `GetByIdAsync` before returning, so replays return the stored total/lines/`PlacedAtUtc`. The
+  cross-user and concurrent replay paths are integration-tested.
+- **`GetByIdAsync` has no public route.** `OrdersEndpoints` maps only `POST /` and `GET /` (list) —
+  there is no `GET /orders/{id}`. The method IS exercised over HTTP indirectly: the create endpoint's
+  read-back and the Support agent's `GetOrderStatus` tool both go through it (and through its
+  user-scoping WHERE clause). Don't claim a single-order REST endpoint exists.
 - **The breaking-change-fails-both-sides rule.** Because `Atrium.Contracts` is a project reference,
   changing a DTO record recompiles producer and consumer together — a rename or a new required
   positional field breaks *both* builds at once. That's a feature (no silent drift) but means DTO edits

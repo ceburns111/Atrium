@@ -2,7 +2,7 @@ using Atrium.Contracts;
 using Atrium.Services.Catalog.Catalog;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging.Abstractions;
-using CatalogDb = Atrium.Services.Catalog.Data.DatabaseInitializer;
+using CatalogDb = Atrium.ServiceDefaults.DatabaseInitializer;
 
 namespace Atrium.IntegrationTests;
 
@@ -23,7 +23,11 @@ public sealed class CatalogRepositoryTests : IAsyncLifetime
     // Runs once per test; DbUp is idempotent (migrations journaled, sprocs CREATE OR ALTER).
     public ValueTask InitializeAsync()
     {
-        CatalogDb.Initialize(_connectionString, NullLogger.Instance);
+        CatalogDb.Initialize(
+            _connectionString,
+            typeof(CatalogRepository).Assembly,
+            NullLogger.Instance
+        );
         return ValueTask.CompletedTask;
     }
 

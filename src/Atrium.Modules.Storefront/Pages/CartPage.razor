@@ -36,7 +36,7 @@ else
                                 <span>@line.Product.Name</span>
                             </div>
                         </td>
-                        <td class="num">$@line.Product.Price.ToString("N0")</td>
+                        <td class="num">@Money.Format(line.Product.Price)</td>
                         <td>
                             <div class="stepper">
                                 <button class="stepper__btn" @onclick="() => Cart.SetQuantity(line.Product.Id, line.Quantity - 1)" aria-label="Decrease quantity">&minus;</button>
@@ -44,7 +44,7 @@ else
                                 <button class="stepper__btn" @onclick="() => Cart.SetQuantity(line.Product.Id, line.Quantity + 1)" aria-label="Increase quantity">+</button>
                             </div>
                         </td>
-                        <td class="num">$@((line.Product.Price * line.Quantity).ToString("N0"))</td>
+                        <td class="num">@Money.Format(line.Product.Price * line.Quantity)</td>
                         <td class="num">
                             <Button Variant="ButtonVariant.Ghost" Small="true" OnClick="() => Cart.Remove(line.Product.Id)">Remove</Button>
                         </td>
@@ -57,7 +57,7 @@ else
     <div class="cart-summary">
         <div class="cart-summary__total">
             <span>Total</span>
-            <strong>$@Cart.Total.ToString("N0")</strong>
+            <strong>@Money.Format(Cart.Total)</strong>
         </div>
         <AuthorizeView>
             <Authorized>

@@ -1,0 +1,56 @@
+# Clarification (on intervew/ items 01-06)
+
+## 01-ArchitechtureT
+- Need to learn more about how End to End tracing is configured
+    - What would the altnernative look like (per service, module?)
+    - "End-to-end distributed tracing for free. Because ServiceDefaults exports OTLP and Aspire injects the endpoint,one trace spans Portal → Gateway → Catalog/Storefront → SQL in the dashboard."
+- Need to know exacts of JWT setup 
+    - "Q: Walk me through an authenticated read, hop by hop. A: Browser→Portal is a cookie session. MainLayout lifts the access token from a claim into a scoped AccessTokenHolder; the typed client attaches it as a Bearer and calls https+http://gateway. YARP matches /catalog/{**catch-all}, resolves the catalog cluster via discovery, and forwards the request with the Authorization header. Catalog validates the JWT (Keycloak issuer, atrium audience) and authorizes — anonymous for GET /catalog/products, admin policy for writes. Nothing in the chain re-mints or terminates the token except the final service."
+- How and why would I close the gateway<->service segment with mTLS or a service mesh, and why might I choose either
+    - "The honest cost is that the gateway↔service segment is trusted; in production I'd close that with mTLS or a service mesh, not by moving auth to the edge. (ADR-0003.)"
+- Per the following comment, what is the altnernative and what would that net us vs direct service to service hops
+    - "Q: Why does the relay call go direct instead of back through the gateway? A: The gateway is my north-south ingress. East-west composition is service-to-service by discovery address. Bouncing an internal call back out through the public ingress adds a hop, doubles latency, and tangles internal topology with the external route table for no gain."
+- Need further explanation
+    - "Q: Why can a service relay the bearer but a Blazor page can't just call GetTokenAsync? A: HttpContext. A normal API request has one, so Storefront reads the incoming Authorization header and forwards it. A Blazor Server circuit has no HttpContext — it only exists for the initial request that opens the SignalR connection — so the token can't be pulled from there at render time. That asymmetry is why the Portal parks the token as a claim and lifts it into a scoped holder (ADR-0004), while the service uses the clean relay (ADR-0005)."
+- Need to understand the service discovery mechanisms better
+    - "Q: What does Aspire actually give you, and what happens in production without it? A: Local orchestration and, crucially, service discovery — the WithReference/WaitFor graph in apphost.cs injects logical addresses so nothing hard-codes ports, and it provisions a database per service and the OTLP endpoint."
+    - "https+http:// is a service-discovery scheme, not a URL. If someone reads it as a typo, explain it's Aspire's "prefer https else http for this logical service name," resolved at runtime — that's why there are no ports in config."
+    - "Production service discovery + per-team gateway route self-registration. Swap Aspire's dev discovery for K8s DNS or Consul behind the same https+http://… abstraction (config, not code), and let each service declare its own gateway route instead of a hand-edited central appsettings.json — the "the module owns its own surface" idea applied to ingress. (BEYOND-THE-DEMO 4, 5.)"
+        - How does Aspires default service discovery work, how does our service discovery work, and how does that differ from a prod setup?
+- Why dont I bundle them on purpose re:  
+    - "ServiceDefaults is telemetry-only here. Don't claim it does discovery/health — those are hand-wired per host. (Stock Aspire's template bundles them; mine doesn't, on purpose.)"
+- Is the solution to the following something like Duende on the gateway to handle the cookie/token exchange dance? 
+    & are the following related
+    - No token refresh; ~5-minute token life. After expiry Catalog returns 401; clients map that to a typed SessionExpiredException and the shell shows a "session expired" panel instead of crashing the circuit (ADR-0008). Expiry itself is unfixed — prod path is Duende.AccessTokenManagement.
+    - "The access token rides in the auth cookie as a custom claim — a conscious demo smell. A Blazor circuit has no HttpContext, so I stash the token in the ClaimsPrincipal (OnTokenValidated) to carry it into theÍ circuit. Consequence: a credential travels in the cookie (size bloat, no refresh, identity/credential conflation). Named replacement is option B: a server-side session-keyed token store, cookie down to a session id. (ADR-0004, HANDOFF.)"
+- Why this/why did logout circuit need it in second place, whats the alternative?
+    - SaveTokens = true is not redundant. It's what lets the OIDC handler send id_token_hint on RP-initiated logout so Keycloak 18+ skips the "confirm logout" interstitial. The access token is stored twice (properties + claim) because logout and the circuit each need it in a different place.
+- Whats the non workaround version...
+    - "Stale cookie across restarts. Cookies are per-host, not per-port; an old Portal cookie carrying a dead token can 500 the module pages after an Aspire restart. Workaround: /account/logout then log back in. (HANDOFF.)"
+- Not really sure what this one means/implies...? that we need to clear the DB to apply a new config if were trying to??
+    - "Realm changes need a volume reset. WithRealmImport only creates missing resources, so changing the realm means wiping the Keycloak data volume to re-import."
+- What is our token access management code look like and how does that meaningfully change if we do the following:
+    - "Real token management. Swap the token-in-cookie for a server-side store (option B), then adopt Duende.AccessTokenManagement for refresh. Trade-off: a dependency and a token store to operate, in exchange for long-lived sessions and getting the credential out of the cookie."
+- Explain the second half of this statement...
+    - "Polyrepo + contracts as versioned NuGet when team cadences diverge: publish Atrium.Contracts under SemVer so a producer ships without lockstep consumer rebuilds. T"
+- Need to understand how the JS partial hydration works within the the Storefront/Cart/CartPersistance 
+- Explain all instances of JS interop and how they work. 
+- How does this work?
+    - Boundaries enforced by references, not by discipline. A module can only reference Abstractions, Design, Contracts.    Cross-module coupling has nowhere to hide — it wouldn't compile.
+    - Each module owns a BasePath route prefix (/storefront, /admin…) so routes don't collide. 
+        - How do we ensure a new module cant add a duplicate base path?
+- What are BEM wrappers
+    - "Primitives that are thin BEM wrappers so a btn--accent is identical everywhere."
+- How does this one work?
+    - "Default interface members let the contract grow without breaking modules — AgentSurfaces was added for the chatbot slice and every existing module kept compiling untouched."
+- MUST REIMPLEMENT MUDBLAZOR!!
+- REVIEW DB STUFF, INDEXES ETC -- BE ABLE TO EXPLAIN COVERING INDEXES, ETC
+- WHAT DOES THIS MEAN?
+    - "Q: What has to happen for a module's @page to resolve on a hard refresh? Its assembly must be registered in two places: <Router AdditionalAssemblies> in Routes.razor (the interactive client-side router) and MapRazorComponents().AddAdditionalAssemblies() in Program.cs (server-side endpoint routing for SSR/deep-links). Both read from the same ModuleCatalog.Assemblies. Miss the second and links work in-app but 404 on refresh."
+- Need Clarifications
+    - "AgentSurfaces allocates a fresh record every call. It's a computed property, so record value-equality would always differ (the StarterPrompts array compares by reference). The launcher compares by Endpoint (stable identity) instead of the record, otherwise every navigation forces a needless re-render. Worth knowing before you "simplify" that comparison."
+- How would this work end to end specifically the timeout/retry/circuit-breaker stuff
+    - "Fault isolation before full extraction. Per-module error boundaries + resilience handlers (timeout/retry/circuit-breaker) on the typed clients, so one flaky downstream degrades one app rather than the shell — buys most of the isolation benefit of microservices without the deployment cost, and it's the natural precursor to extracting a hot module to its own deployable."
+- How could/would this work?
+    - "Module-level authorization as data, not just role strings. Today RequiredRole is a single string. I'd evolve toward policy names or a capability/permission set the module declares, evaluated against ASP.NET Core authorization policies, so gating isn't limited to flat roles."
+- How do cancellation tokens work within the services, and generally in any API

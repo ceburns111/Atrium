@@ -69,11 +69,17 @@
     // Close the mobile drawer on navigation and refresh the breadcrumb.
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        _navOpen = false;
-        // Clear any error card so the newly-navigated page gets a fresh attempt (recommended for a
-        // layout-scoped boundary, which otherwise stays in its error state across navigations).
-        _errorBoundary?.Recover();
-        InvokeAsync(StateHasChanged);
+        // LocationChanged fires off the dispatcher, so everything that touches component state —
+        // including Recover(), which mutates the boundary and re-renders it — goes through one
+        // InvokeAsync rather than mutating from this thread and dispatching only the StateHasChanged.
+        InvokeAsync(() =>
+        {
+            _navOpen = false;
+            // Clear any error card so the newly-navigated page gets a fresh attempt (recommended for a
+            // layout-scoped boundary, which otherwise stays in its error state across navigations).
+            _errorBoundary?.Recover();
+            StateHasChanged();
+        });
     }
 
     // The current top-level section, derived from the route, e.g. "/storefront/cart" -> "Storefront".

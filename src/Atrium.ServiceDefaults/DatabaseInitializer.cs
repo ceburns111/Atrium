@@ -4,31 +4,37 @@ using DbUp.Engine;
 using DbUp.Helpers;
 using Microsoft.Extensions.Logging;
 
-namespace Atrium.Services.Catalog.Data;
+namespace Atrium.ServiceDefaults;
 
 /// <summary>
-/// Applies the database on startup with DbUp, in two disciplined lanes:
+/// Applies a service's database on startup with DbUp, in two disciplined lanes:
 /// <list type="bullet">
 /// <item><b>Migrations</b> — run-once, journaled (schema + seed). Each runs at most once, ever.</item>
 /// <item><b>Programmability</b> — run-always, not journaled (stored procedures via CREATE OR ALTER),
 /// so procs are redeployed to their latest definition on every start.</item>
 /// </list>
 /// This is the "sprocs, but disciplined" split: schema changes are versioned and irreversible; the
-/// programmable surface is declarative and always current.
+/// programmable surface is declarative and always current. Shared here so the data-owning services
+/// (Catalog, Storefront) get byte-identical behavior instead of copy-drifting their own runners; each
+/// passes the assembly that embeds its <c>Data/Scripts</c> SQL files.
 /// </summary>
 public static class DatabaseInitializer
 {
-    public static void Initialize(string connectionString, ILogger logger)
+    public static void Initialize(string connectionString, Assembly scriptsAssembly, ILogger logger)
     {
         EnsureDatabase.For.SqlDatabase(connectionString);
-
-        var assembly = Assembly.GetExecutingAssembly();
 
         Run(
             "migrations",
             DeployChanges
+                // OPEN QUESTION (from Ted): CAN WE MODULARIZE SO WE CAN EASILY SWAP IN PG?
+                // WHAT ELSE WILL WILL WE NEED TO REFACTOR IF WE DO? MAKE SURE TO CONSIDER ACROSS
+                // EVERYTHING IN ATRIUM
                 .To.SqlDatabase(connectionString)
-                .WithScriptsEmbeddedInAssembly(assembly, name => name.Contains(".Migrations."))
+                .WithScriptsEmbeddedInAssembly(
+                    scriptsAssembly,
+                    name => name.Contains(".Migrations.")
+                )
                 .WithTransactionPerScript()
                 .LogToConsole()
                 .Build(),
@@ -39,7 +45,10 @@ public static class DatabaseInitializer
             "programmability",
             DeployChanges
                 .To.SqlDatabase(connectionString)
-                .WithScriptsEmbeddedInAssembly(assembly, name => name.Contains(".Programmability."))
+                .WithScriptsEmbeddedInAssembly(
+                    scriptsAssembly,
+                    name => name.Contains(".Programmability.")
+                )
                 .JournalTo(new NullJournal())
                 .WithTransactionPerScript()
                 .LogToConsole()

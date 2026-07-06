@@ -5,13 +5,18 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <!-- ASP.NET Core types (WebApplication, IApplicationBuilder) so the shared telemetry wiring and the
-       Serilog request-logging middleware can live here once instead of in every host. -->
+  <!-- ASP.NET Core types (WebApplication, IApplicationBuilder, AuthenticationBuilder) so the shared
+       telemetry, JWT-auth, API-docs, and request-logging wiring can live here once instead of in
+       every host. -->
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Shared Keycloak JWT-bearer wiring (AddAtriumJwtAuth); version matches the service hosts. -->
+    <PackageReference Include="Aspire.Keycloak.Authentication" Version="13.4.6-preview.1.26319.6" />
+    <!-- Shared two-lane DbUp runner (DatabaseInitializer); version matches the service hosts. -->
+    <PackageReference Include="dbup-sqlserver" Version="7.2.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.16.0" />

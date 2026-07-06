@@ -28,8 +28,8 @@ public interface ICatalogRepository
 
 /// <summary>
 /// Dapper-backed repository. Every read goes through a stored procedure (no inline SQL here); the
-/// <see cref="SqlConnection"/> is the Aspire-injected "catalogdb". Product rows are mapped to DTOs by
-/// the source-generated <see cref="CatalogMapper"/>.
+/// <see cref="SqlConnection"/> is the Aspire-injected "catalogdb". Internal row types are mapped to
+/// DTOs by the source-generated <see cref="CatalogMapper"/>.
 /// </summary>
 public sealed class CatalogRepository(SqlConnection db, ILogger<CatalogRepository> logger)
     : ICatalogRepository
@@ -52,14 +52,14 @@ public sealed class CatalogRepository(SqlConnection db, ILogger<CatalogRepositor
 
     public async Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(CancellationToken ct = default)
     {
-        var categories = await db.QueryAsync<CategoryDto>(
+        var rows = await db.QueryAsync<CategoryRow>(
             new CommandDefinition(
                 "dbo.usp_Category_GetList",
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct
             )
         );
-        return categories.AsList();
+        return CatalogMapper.ToDtos(rows.AsList());
     }
 
     public async Task<ProductDto?> CreateProductAsync(

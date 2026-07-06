@@ -12,7 +12,7 @@ These are the non-obvious mechanics an interviewer who reads the code will find.
   would read it empty. Instead the typed clients attach the token explicitly from the circuit-scoped holder.
   (The AI slice's `BearerTokenHandler` *is* a `DelegatingHandler`, but it's composed **inside** the circuit
   scope by `AgentChatClientFactory`, precisely because the AG-UI client owns its own `HttpClient` and there's
-  no other seam — different constraint, deliberate exception.) → ADR-0004.
+  no other seam — different constraint, deliberate exception, now formally recorded.) → ADR-0004, ADR-0011.
 - **The access token rides in the auth cookie as a custom claim.** A Blazor Server *circuit* has no
   `HttpContext` (that exists only for the initial SignalR-opening request), so a component can't call
   `GetTokenAsync`. Workaround: `OnTokenValidated` parks the raw access token as a claim on the
@@ -68,8 +68,10 @@ These are the non-obvious mechanics an interviewer who reads the code will find.
    `ModuleCatalog` singleton → drives nav, home cards, and the router. Adding one = project ref + `IModule`.
 9. **How do you keep UI consistent across modules?** A design-system RCL: tokens (`tokens.css`) + shared
    primitives; modules consume tokens, never ad-hoc CSS. → ADR-0010 for the native `<dialog>`.
-10. **How is order creation safe under retries?** An idempotency key + `IsNew` flag from the create sproc,
-    inside a transaction — a replay returns the original order id and skips re-adding lines.
+10. **How is order creation safe under retries?** A **user-scoped** idempotency key + `IsNew` flag from the
+    create sproc, inside a transaction — a replay returns the original order id and skips re-adding lines;
+    the response is the order **read back from the DB**. A concurrent double-submit is settled by TRY/CATCH
+    on the unique index; replaying another user's key is a 409, never their order.
 11. **Where's the authz boundary for reading an order?** The sproc `WHERE Id=@OrderId AND UserName=@UserName`
     — a non-owned order returns null. Not in app code, not in the prompt.
 12. **How do you test the data layer?** Testcontainers SQL integration tests against the real sprocs;

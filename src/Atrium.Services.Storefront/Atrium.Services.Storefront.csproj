@@ -5,10 +5,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Keycloak.Authentication" Version="13.4.6-preview.1.26319.6" />
     <PackageReference Include="Aspire.Microsoft.Data.SqlClient" Version="13.4.6" />
     <PackageReference Include="Dapper" Version="2.1.79" />
-    <PackageReference Include="dbup-sqlserver" Version="7.2.0" />
     <PackageReference Include="Microsoft.Agents.AI" Version="1.12.0" />
     <PackageReference
       Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore"
@@ -16,9 +14,10 @@
     />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
     <!-- Config-driven IChatClient for the support agent: the MEAI OpenAI integration exposes
-         .AsIChatClient() on the OpenAI SDK client, which the real FoundryLocal/AzureFoundry providers
-         build. OpenAI 2.10.0 is pinned to match MEAI.OpenAI 10.6.0's transitive dependency exactly
-         (both stable; keeps the build at 0 warnings). -->
+         .AsIChatClient() on the OpenAI SDK client. Ollama is the flagship provider (its OpenAI-compatible
+         /v1 surface is what the AppHost wires up); FoundryLocal/AzureFoundry share the same client shape
+         and differ only in endpoint/key/model. OpenAI 2.10.0 is pinned to match MEAI.OpenAI 10.6.0's
+         transitive dependency exactly (both stable; keeps the build at 0 warnings). -->
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.6.0" />
     <PackageReference Include="OpenAI" Version="2.10.0" />
     <!-- Pin the patched Microsoft.OpenApi: AspNetCore.OpenApi 10.0.9 pulls 2.0.0 transitively, which
@@ -35,6 +34,9 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Atrium.UnitTests" />
+    <!-- The eval harness composes the REAL agent brain (system prompt + pipeline seams) so scores
+         certify what is deployed, not a hand-copied approximation. -->
+    <InternalsVisibleTo Include="Atrium.Evals" />
   </ItemGroup>
 
   <PropertyGroup>

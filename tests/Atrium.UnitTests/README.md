@@ -4,13 +4,14 @@
 Fast, in-process unit tests for pure logic — no database, no network. Covers domain rules and client-side behavior that can be exercised in isolation.
 
 ## Role in the topology
-**Tests (unit).** References the projects under test directly and runs their logic without spinning up the app or its dependencies.
+**Tests (unit).** References the projects under test directly and runs their logic without spinning up the app or its dependencies. Currently 97 tests across all modules and services.
 
 ## Key types
 - `OrderPricingTests` — Storefront `OrderPricing` math.
 - `SalesReportBuilderTests` — Storefront `SalesReportBuilder` category bucketing.
 - `CartServiceTests` — Storefront module `CartService` state.
 - `SessionExpiredTests` — the 401 → `SessionExpiredException` mapping.
+- **`Support/`** — AI support agent tests: `SupportAgentTests`, `GuardrailChatClientTests`, `BearerTokenHandlerTests`, `FeedbackEndpointTests`, `StepUpMfaHandlerTests`, `SupportToolsTests`, `SupportProviderTests`, `ChatCacheTests`.
 
 ## Run / test
 ```

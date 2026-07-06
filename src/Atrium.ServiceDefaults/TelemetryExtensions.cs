@@ -32,20 +32,23 @@ public static class TelemetryExtensions
         where TBuilder : IHostApplicationBuilder
     {
         // Serilog as THE logging provider (replaces the host's default ILoggerFactory). App code keeps
-        // using ILogger<T>; ReadFrom.Configuration lets appsettings/env tune levels and sinks.
-        // Because Serilog replaces the MEL factory, the hosts' appsettings "Logging:LogLevel" overrides
-        // (MEL-format) no longer apply — so we restore the same defaults in Serilog's own format here:
-        // Microsoft.AspNetCore stays at Warning, otherwise the framework's "Request starting/finished"
-        // Information pair prints alongside the UseSerilogRequestLogging() summary (double request noise).
+        // using ILogger<T>. Because Serilog replaces the MEL factory, appsettings "Logging:LogLevel"
+        // sections (MEL-format) no longer apply — so the defaults are stated here in Serilog's own
+        // format: Information overall, with Microsoft.AspNetCore at Warning so the framework's
+        // "Request starting/finished" Information pair doesn't print alongside the
+        // UseSerilogRequestLogging() summary (double request noise). ReadFrom.Configuration runs LAST
+        // so a "Serilog" section in a host's appsettings/env can override these defaults — later
+        // MinimumLevel/Override calls win, so defaults-then-config is the order that makes config
+        // authoritative.
         builder.Services.AddSerilog(
             (services, loggerConfiguration) =>
                 loggerConfiguration
-                    .ReadFrom.Configuration(builder.Configuration)
-                    .ReadFrom.Services(services)
                     .MinimumLevel.Information()
                     .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
                     .Enrich.FromLogContext()
                     .WriteTo.Console()
+                    .ReadFrom.Configuration(builder.Configuration)
+                    .ReadFrom.Services(services)
         );
 
         var otel = builder

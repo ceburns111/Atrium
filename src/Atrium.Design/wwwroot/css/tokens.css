@@ -80,7 +80,11 @@
    near-white ink, and muted greys that still clear WCAG AA for body text. The accent and status hues
    are lightened so they read as luminous on dark rather than sinking into the background, and their
    "soft" tints become dark tinted fills (dark bg + bright text) so badges/nav keep their contrast.
-   Shadows deepen to near-black since faint light-mode shadows are invisible on a dark surface. */
+   Shadows deepen to near-black since faint light-mode shadows are invisible on a dark surface.
+
+   NOTE: this palette is duplicated verbatim in the prefers-color-scheme block below (CSS has no
+   selector-level "or" that covers both without a preprocessor) — any change here MUST be mirrored
+   there, value for value. */
 :root[data-theme="dark"] {
     --paper: #131316;
     --surface: #1b1b1f;
@@ -111,7 +115,9 @@
 
 /* System-preference fallback: honour the OS dark setting only when the user hasn't made an explicit
    choice (no data-theme). The host page's inline script normally sets data-theme before first paint,
-   so this block is the no-JS / pre-hydration safety net; an explicit data-theme="light" always wins. */
+   so this block is the no-JS / pre-hydration safety net; an explicit data-theme="light" always wins.
+
+   NOTE: duplicate of the :root[data-theme="dark"] palette above — keep the two blocks in sync. */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme]) {
         --paper: #131316;

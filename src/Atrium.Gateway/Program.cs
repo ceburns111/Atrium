@@ -15,10 +15,16 @@ builder
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
     .AddServiceDiscoveryDestinationResolver();
 
+// Liveness for parity with every other host: the AppHost's Portal WaitFor(gateway) needs a health
+// endpoint to observe. Mapped outside the proxy routes (which only match /catalog/** and /storefront/**).
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 // One structured log event per proxied request; early so it wraps the reverse-proxy pipeline.
 app.UseAtriumRequestLogging();
+
+app.MapHealthChecks("/health");
 
 app.MapReverseProxy();
 

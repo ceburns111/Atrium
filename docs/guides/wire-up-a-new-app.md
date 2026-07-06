@@ -44,16 +44,19 @@ DbUp for data ([ADR-0002](../adr/0002-dapper-sprocs-dbup.md)).
 
 ### 1.1 Create the project and reference contracts
 
-Model the `.csproj` on `src/Atrium.Services.Storefront/Atrium.Services.Storefront.csproj`. It needs:
-`net10.0`, a reference to `Atrium.Contracts`, the package set (`Aspire.Keycloak.Authentication`,
-`Aspire.Microsoft.Data.SqlClient`, `Dapper`, `dbup-sqlserver`, `Microsoft.Extensions.ServiceDiscovery`,
-`Riok.Mapperly`), and — critically — the embedded-SQL glob so DbUp scripts ship inside the assembly:
+Model the `.csproj` on `src/Atrium.Services.Storefront/Atrium.Services.Storefront.csproj`. It needs
+`net10.0`, project references to `Atrium.Contracts` and `Atrium.ServiceDefaults`, the package set
+(`Aspire.Microsoft.Data.SqlClient`, `Dapper`, `Microsoft.AspNetCore.OpenApi`,
+`Microsoft.Extensions.ServiceDiscovery`, `Riok.Mapperly`), and — critically — the embedded-SQL glob so
+DbUp scripts ship inside the assembly:
 
 ```xml
 <ItemGroup>
   <EmbeddedResource Include="Data\Scripts\**\*.sql" />
 </ItemGroup>
 ```
+
+`Aspire.Keycloak.Authentication` and `dbup-sqlserver` come **transitively through `Atrium.ServiceDefaults`** — don't add them directly.
 
 Add the project to the solution: `src/Atrium.Services.Widget/Atrium.Services.Widget.csproj` in
 `Atrium.slnx` (under the `/src/` folder).
@@ -68,7 +71,7 @@ class), and row type; namespaces mirror folders:
 Atrium.Services.Widget/
   Program.cs
   Widget/    WidgetEndpoints.cs, WidgetRepository.cs (+ IWidgetRepository), WidgetMapper.cs, WidgetRow.cs
-  Data/      DatabaseInitializer.cs, Scripts/Migrations/*.sql, Scripts/Programmability/*.sql
+  Data/      Scripts/Migrations/*.sql, Scripts/Programmability/*.sql
 ```
 
 The interface lives **in the same file, directly above** its implementing class — see
@@ -99,9 +102,8 @@ public static class WidgetEndpoints
 }
 ```
 
-- `.WithTags("Widgets")` stays **per feature** (OpenAPI grouping) even though auth lifts to the parent.
-  (Note: `.WithTags` only sets endpoint metadata — no OpenAPI/Swagger document endpoint is registered in
-  the services today; the tags are ready for when one is.)
+- `.WithTags("Widgets")` stays **per feature** — it controls OpenAPI grouping in the `/openapi/v1.json`
+  document both services expose in Development (see §1.5).
 - A **core** single-feature service is the degenerate case: its one group *is* the service root, mapped
   in the endpoints file itself — see `CatalogEndpoints.cs`, where `app.MapGroup("/catalog")...
   .RequireAuthorization()` is both the service prefix and the feature.
@@ -119,10 +121,11 @@ executes them; Mapperly maps rows → DTOs at compile time.
    redeploy on every start, so a proc change needs **no new migration**. Reference:
    `src/Atrium.Services.Catalog/Data/Scripts/Programmability/usp_Product_GetList.sql` (read) and
    `usp_Product_Create.sql` (a write that `SELECT`s the affected row back and `THROW`s on bad input).
-3. **`DatabaseInitializer`** — copy `src/Atrium.Services.Catalog/Data/DatabaseInitializer.cs` verbatim
-   (it is intentionally duplicated per service, not shared — see [ADR-0007](../adr/0007-feature-folders-and-repository-testing.md)).
-   It runs the two lanes filtered by folder name (`.Migrations.` / `.Programmability.`) from embedded
-   resources. Keep `LogToConsole()` — DbUp 7.x uses it (not `LogToAutodetectedLog()`).
+3. **`DatabaseInitializer`** — shared in `Atrium.ServiceDefaults` (see [ADR-0012](../adr/0012-shared-deployment-infrastructure.md));
+   **do not copy** it into your service. Call it from `Program.cs`:
+   `DatabaseInitializer.Initialize(connectionString, typeof(Program).Assembly, app.Logger)`.
+   Pass `typeof(Program).Assembly` so it finds your embedded SQL scripts. Your `Data/` folder holds
+   only the `Scripts/` tree.
 4. **Row type** (`WidgetRow.cs`) is the internal shape returned by the sproc; **Mapperly**
    (`WidgetMapper.cs`, `[Mapper]` + `partial`) maps it to the public DTO. Use
    `[MapProperty(...)]` for any renamed column — see `CatalogMapper.cs` renaming `CategoryName` →
@@ -133,15 +136,21 @@ executes them; Mapperly maps rows → DTOs at compile time.
 
 ### 1.5 `Program.cs` — DI, auth, DB init, routing
 
-Model on `src/Atrium.Services.Storefront/Program.cs`. In order:
+Model on `src/Atrium.Services.Storefront/Program.cs` (app vertical) or `src/Atrium.Services.Catalog/Program.cs`
+(core service). In order:
 
 ```csharp
+using Atrium.ServiceDefaults;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddAtriumTelemetry(instrumentSqlClient: true);  // Serilog + OTel → Aspire dashboard
 
 builder.AddSqlServerClient("widgetdb");                 // Aspire-injected scoped SqlConnection
 builder.Services.AddScoped<IWidgetRepository, WidgetRepository>();
 builder.Services.AddHttpContextAccessor();              // ONLY if this vertical relays a bearer to a core
 builder.Services.AddHealthChecks();
+builder.Services.AddOpenApi();                          // document at /openapi/v1.json
 
 builder.Services.AddServiceDiscovery();                 // resolve https+http://<name>
 builder.Services.ConfigureHttpClientDefaults(http => http.AddServiceDiscovery());
@@ -149,35 +158,42 @@ builder.Services.ConfigureHttpClientDefaults(http => http.AddServiceDiscovery())
 // ONLY if this vertical composes a core service (app-vertical shape):
 builder.Services.AddHttpClient<WidgetCatalogClient>(c => c.BaseAddress = new Uri("https+http://catalog"));
 
-builder.Services.AddAuthentication()
-    .AddKeycloakJwtBearer("keycloak", realm: "atrium", options =>
-    {
-        options.Audience = "atrium";
-        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-        options.TokenValidationParameters.NameClaimType = "preferred_username";
-        // If you gate any endpoint on a role, ALSO set (see the 403-for-everyone gotcha below):
-        // options.MapInboundClaims = false;
-        // options.TokenValidationParameters.RoleClaimType = "role";
-    });
-builder.Services.AddAuthorization();                    // or AddAuthorizationBuilder().AddPolicy("admin", ...)
+// JWT validation (shared "atrium" realm + audience), load-bearing claim mapping, and the "admin" policy:
+builder.AddAtriumJwtAuth();
+// If this host adds service-specific policies, chain them: builder.AddAtriumJwtAuth().AddPolicy(...)
 
 var app = builder.Build();
 
 var connectionString = app.Configuration.GetConnectionString("widgetdb")
     ?? throw new InvalidOperationException("Connection string 'widgetdb' was not configured.");
-DatabaseInitializer.Initialize(connectionString);       // provision DB before serving traffic
+DatabaseInitializer.Initialize(connectionString, typeof(Program).Assembly, app.Logger);
 
+app.UseAtriumRequestLogging();   // one structured log line per request; call before handlers
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapHealthChecks("/health");
 
-var widget = app.MapGroup("/widget").RequireAuthorization();  // service-root group, ADR-0009
+// API docs: both the JSON document and the Redoc viewer, exposed in Development only and anonymous
+// (mapped outside the bearer group so a curl check can reach them without a token):
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi().AllowAnonymous();               // /openapi/v1.json
+    app.MapAtriumApiDocs("Atrium Widget API");        // /docs Redoc viewer
+}
+
+var widget = app.MapGroup("/widget").RequireAuthorization();   // service-root group, ADR-0009
 widget.MapWidgetEndpoints();
 
 app.Run();
 ```
 
 Key points, all matching the real services:
+- `AddAtriumTelemetry` / `AddAtriumJwtAuth` / `DatabaseInitializer.Initialize` / `MapAtriumApiDocs` all
+  live in `Atrium.ServiceDefaults` ([ADR-0012](../adr/0012-shared-deployment-infrastructure.md)).
+- `AddAtriumJwtAuth()` wires Keycloak JWT bearer for the shared `atrium` realm/audience, sets the
+  load-bearing claim-mapping options (`MapInboundClaims = false`, `RoleClaimType = "role"`) and
+  registers the `admin` policy — no manual `AddAuthentication` or `AddAuthorization` needed.
 - `AddSqlServerClient("widgetdb")` binds to the connection string named by the Aspire database resource
   (step 5).
 - The **service-root `MapGroup("/widget")`** with `RequireAuthorization()` is stated once; features map
@@ -226,37 +242,37 @@ module project but names nothing in it.
 ### 3.3 The typed HTTP client — token attach + graceful expiry
 
 Model on `src/Atrium.Modules.Storefront/Catalog/CatalogClient.cs` (or `Orders/OrdersClient.cs`). The
-client takes `HttpClient` + `AccessTokenHolder` (from `Atrium.Design`), attaches the signed-in user's
-token, and — importantly — calls `ThrowIfSessionExpired()` **before** `EnsureSuccessStatusCode()`:
+client takes `HttpClient`, `AccessTokenHolder` (from `Atrium.Design`), and `ILogger<T>`, then calls
+the shared `http.SendForJsonAsync<T>` extension (`src/Atrium.Design/HttpClientExtensions.cs`), which
+attaches the token, logs non-2xx responses, and — critically — calls `ThrowIfSessionExpired()` **before**
+`EnsureSuccessStatusCode()`:
 
 ```csharp
-public sealed class WidgetClient(HttpClient http, AccessTokenHolder tokens)
+public sealed class WidgetClient(HttpClient http, AccessTokenHolder tokens, ILogger<WidgetClient> logger)
 {
-    private async Task<T> GetAsync<T>(string url, CancellationToken ct) where T : class
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        if (!string.IsNullOrEmpty(tokens.AccessToken))
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
+    public Task<IReadOnlyList<WidgetDto>> GetWidgetsAsync(CancellationToken ct = default) =>
+        http.SendForJsonAsync<IReadOnlyList<WidgetDto>>(HttpMethod.Get, "widget/widgets", tokens, logger, ct: ct);
 
-        using var response = await http.SendAsync(request, ct);
-        response.ThrowIfSessionExpired();     // 401 → typed SessionExpiredException (ADR-0004/0008)
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<T>(ct) ?? throw new InvalidOperationException();
-    }
+    public Task<WidgetDto> CreateAsync(CreateWidgetRequest request, CancellationToken ct = default) =>
+        http.SendForJsonAsync<WidgetDto>(HttpMethod.Post, "widget/widgets", tokens, logger, request, ct);
 }
 ```
 
-Why `AccessTokenHolder` and not a `DelegatingHandler`: a Blazor circuit has no `HttpContext`, and a
-handler runs in a different DI scope — see [ADR-0004](../adr/0004-token-propagation-and-option-b.md).
-The `SessionExpiredException` / `ThrowIfSessionExpired()` extension live in `Atrium.Design`; the shell's
+Why `AccessTokenHolder` and not a factory-registered `DelegatingHandler`: `IHttpClientFactory` builds
+handler chains in a **separate DI scope**, so a factory-registered handler reading the scoped holder
+always sees an empty token — see [ADR-0004](../adr/0004-token-propagation-and-option-b.md).
+(Exception: the AG-UI chat client can't call `request.Authorize` inline — its `HttpClient` is internal.
+`BearerTokenHandler` is composed in circuit scope instead, bypassing the factory scope problem —
+[ADR-0011](../adr/0011-circuit-scoped-bearer-handler.md).)
+`SessionExpiredException` / `ThrowIfSessionExpired()` live in `Atrium.Design`; the shell's
 `SessionErrorBoundary` turns them into a "sign in again" panel
 ([ADR-0008](../adr/0008-graceful-session-expiry-handling.md)).
 
 ### 3.4 Pages and UI reuse
 
 Put routable components under `Pages/` (e.g. `Pages/Widgets.razor` with `@page "/widget"`). **Reuse the
-design system** — pull primitives from `Atrium.Design` (`Button`, `Card`, `Badge`, `PageHeader`,
-`Field`, `ToastHost`) and the tokens in `src/Atrium.Design/wwwroot/css/tokens.css`; do not hand-roll
+design system** — pull primitives from `Atrium.Design` (`Button`, `Badge`, `PageHeader`,
+`Field`, `Notice`, `ToastHost`, `Dialog`) and the tokens in `src/Atrium.Design/wwwroot/css/tokens.css`; do not hand-roll
 CSS or hard-code colors. Reference pages: `src/Atrium.Modules.Storefront/Pages/Shop.razor`,
 `CartPage.razor`, `OrdersPage.razor`. (The **atrium-ui** skill enforces this — invoke it for any UI
 work.)
@@ -335,18 +351,16 @@ the Portal (step 3.6), no Portal block change is needed here.
 Identity is Keycloak ([ADR-0003](../adr/0003-yarp-keycloak-auth.md)), imported from
 `src/Atrium.AppHost/realms/realm-export.json` on startup (fixed port 8080). What a new vertical must do:
 
-- **Validate the shared `atrium` audience.** Every service sets `options.Audience = "atrium"` in
-  `AddKeycloakJwtBearer` (step 1.5). The realm's `atrium-audience` mapper stamps that audience on every
-  access token, which is what lets one token be accepted by every service — and what makes the
+- **Validate the shared `atrium` audience.** `AddAtriumJwtAuth()` (step 1.5) sets `Audience = "atrium"`
+  and the load-bearing claim-mapping options (`MapInboundClaims = false`, `RoleClaimType = "role"`)
+  that prevent the "403-for-everyone" trap (see [ADR-0003](../adr/0003-yarp-keycloak-auth.md)). Because
+  these settings live in `Atrium.ServiceDefaults` they can't drift per host. The realm's `atrium-audience`
+  mapper stamps that audience on every access token, making one token acceptable by every service and the
   cross-service **bearer relay** work ([ADR-0005](../adr/0005-slice-calls-core.md)).
-- **If you gate on a role, avoid the 403-for-everyone trap.** The realm's `realm-roles` mapper emits a
-  **flat `role`** claim. To match `RequireRole(...)` you MUST set both
-  `options.MapInboundClaims = false` **and** `RoleClaimType = "role"` — see `Program.cs` in
-  `Atrium.Services.Catalog` and the gotcha in [ADR-0003](../adr/0003-yarp-keycloak-auth.md). Reads that
-  only need an authenticated caller don't need this. Roles/users (`admin`, `user`, `customer`) live in
-  `realm-export.json`; add a new role there if your vertical needs one. **Note:** `WithRealmImport` only
-  *creates* missing resources, so editing the realm requires wiping the Keycloak data volume to
-  re-import.
+- **Roles:** `AddAtriumJwtAuth()` also registers the `admin` policy (requires the `admin` realm role).
+  Roles/users (`admin`, `user`, `customer`) live in `realm-export.json`; add a new role there if your
+  vertical needs one. **Note:** `WithRealmImport` only *creates* missing resources, so editing the realm
+  requires wiping the Keycloak data volume to re-import.
 - **Token propagation** ([ADR-0004](../adr/0004-token-propagation-and-option-b.md)): the Portal captures
   the access token in `OnTokenValidated` as a claim (`src/Atrium.Portal/Program.cs`); `MainLayout`
   copies it into the scoped `AccessTokenHolder` (`src/Atrium.Portal/Components/Layout/MainLayout.razor`);
@@ -359,7 +373,7 @@ Identity is Keycloak ([ADR-0003](../adr/0003-yarp-keycloak-auth.md)), imported f
 
 ## 7. The test gate (`tests/`)
 
-Two suites (both must stay green — see `docs/HANDOFF.md`):
+Three suites (all must stay green):
 
 - **Unit tests** (`tests/Atrium.UnitTests`, no Docker) — extract branching **business logic into pure
   functions** and test them directly, no repository ([ADR-0007](../adr/0007-feature-folders-and-repository-testing.md)).
@@ -367,14 +381,16 @@ Two suites (both must stay green — see `docs/HANDOFF.md`):
   `CartServiceTests.cs`, `SessionExpiredTests.cs`. Do the same for your vertical's pure logic.
 - **Integration tests** (`tests/Atrium.IntegrationTests`, needs Docker) — test the **real repository
   against a real SQL Server** via Testcontainers, not a mock. The shared `SqlServerFixture.cs` spins up
-  one container and hands out a per-test database; your test class provisions its own DB with the
-  service's `DatabaseInitializer`, then exercises the concrete repository (real sprocs, Dapper,
+  one container and hands out a per-test database; your test class provisions its own DB with
+  `DatabaseInitializer.Initialize`, then exercises the concrete repository (real sprocs, Dapper,
   Mapperly). References: `CatalogRepositoryTests.cs`, `OrderRepositoryTests.cs`. Add a
   `WidgetRepositoryTests` in the `[Collection(SqlServerCollection.Name)]` collection.
+- **Evals** (`tests/Atrium.Evals`, needs Ollama at `http://localhost:11434`) — LLM quality scores for
+  the Support agent. These tests self-skip when Ollama is unreachable, so CI stays green without a GPU.
 
 The integration project (`tests/Atrium.IntegrationTests/Atrium.IntegrationTests.csproj`) references the
 service projects under test — add a `<ProjectReference>` to `Atrium.Services.Widget` there so its
-embedded sprocs and `DatabaseInitializer` are available to the tests.
+embedded sprocs are available to the tests.
 
 ---
 
@@ -386,10 +402,11 @@ From the repo root (`/Users/ted/code/Atrium`):
    ```bash
    dotnet csharpier format . && dotnet build Atrium.slnx -v q
    ```
-2. **Test** (Docker must be running for the integration lane):
+2. **Test** (Docker required for integration; Ollama at `http://localhost:11434` for evals):
    ```bash
-   dotnet test tests/Atrium.UnitTests/Atrium.UnitTests.csproj          # fast, no Docker
-   dotnet test tests/Atrium.IntegrationTests/Atrium.IntegrationTests.csproj   # Testcontainers, ~seconds
+   dotnet test tests/Atrium.UnitTests/Atrium.UnitTests.csproj          # fast, no external deps
+   dotnet test tests/Atrium.IntegrationTests/Atrium.IntegrationTests.csproj   # Testcontainers SQL Server
+   dotnet test tests/Atrium.Evals/Atrium.Evals.csproj                  # LLM evals; skip if Ollama down
    dotnet test Atrium.slnx                                             # everything
    ```
 3. **Run the stack** (Docker required):

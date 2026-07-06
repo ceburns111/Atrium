@@ -1,6 +1,5 @@
 using Atrium.ServiceDefaults;
 using Atrium.Services.Catalog.Catalog;
-using Atrium.Services.Catalog.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,29 +21,10 @@ builder.Services.AddOpenApi();
 builder.Services.AddServiceDiscovery();
 builder.Services.ConfigureHttpClientDefaults(http => http.AddServiceDiscovery());
 
-// Validate Keycloak-issued JWTs; require the shared "atrium" audience (stamped by the realm's mapper).
-builder
-    .Services.AddAuthentication()
-    .AddKeycloakJwtBearer(
-        "keycloak",
-        realm: "atrium",
-        options =>
-        {
-            options.Audience = "atrium";
-            options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-            // Keep Keycloak's short claim names as-is; the legacy inbound map would otherwise rename
-            // the flat "role" claim to ClaimTypes.Role and defeat the RoleClaimType match below.
-            options.MapInboundClaims = false;
-            options.TokenValidationParameters.NameClaimType = "preferred_username";
-            // Keycloak's realm-role mapper flattens realm roles into a multivalued "role" claim.
-            options.TokenValidationParameters.RoleClaimType = "role";
-        }
-    );
-
-// Product writes are gated on the admin realm role; reads only need an authenticated caller.
-builder
-    .Services.AddAuthorizationBuilder()
-    .AddPolicy("admin", policy => policy.RequireRole("admin"));
+// Keycloak JWT validation (shared "atrium" realm/audience + claim mapping) and the "admin" policy —
+// see AddAtriumJwtAuth. Product writes are gated on the admin realm role; reads only need an
+// authenticated caller.
+builder.AddAtriumJwtAuth();
 
 var app = builder.Build();
 
@@ -52,7 +32,7 @@ var app = builder.Build();
 var connectionString =
     app.Configuration.GetConnectionString("catalogdb")
     ?? throw new InvalidOperationException("Connection string 'catalogdb' was not configured.");
-DatabaseInitializer.Initialize(connectionString, app.Logger);
+DatabaseInitializer.Initialize(connectionString, typeof(Program).Assembly, app.Logger);
 
 // One structured log event per request (method, path, status, elapsed); early so it wraps handlers.
 app.UseAtriumRequestLogging();
@@ -63,36 +43,12 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 
 // API docs, Development-only and anonymous: both routes are mapped at the app root (outside the
-// bearer-only "/catalog" group) and AllowAnonymous, so the morning live-check can reach them without
-// a token. /openapi/v1.json is the raw document; /docs renders it with Redoc (standalone, from CDN).
+// bearer-only "/catalog" group) so the morning live-check can reach them without a token.
+// /openapi/v1.json is the raw document; /docs renders it with Redoc — see MapAtriumApiDocs.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi().AllowAnonymous();
-    app.MapGet(
-            "/docs",
-            () =>
-                Results.Content(
-                    """
-                    <!DOCTYPE html>
-                    <html>
-                      <head>
-                        <title>Atrium Catalog API</title>
-                        <meta charset="utf-8" />
-                        <meta name="viewport" content="width=device-width, initial-scale=1" />
-                        <style>body { margin: 0; padding: 0; }</style>
-                      </head>
-                      <body>
-                        <redoc spec-url="/openapi/v1.json"></redoc>
-                        <script src="https://cdn.redoc.ly/redoc/v2.5.0/bundles/redoc.standalone.js"></script>
-                      </body>
-                    </html>
-                    """,
-                    "text/html"
-                )
-        )
-        .AllowAnonymous()
-        // The docs viewer is a UI convenience, not part of the API — keep it out of the OpenAPI document.
-        .ExcludeFromDescription();
+    app.MapAtriumApiDocs("Atrium Catalog API");
 }
 
 app.MapCatalogEndpoints();

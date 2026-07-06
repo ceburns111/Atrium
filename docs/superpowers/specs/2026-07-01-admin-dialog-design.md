@@ -1,7 +1,7 @@
 # Design — Dialog primitive + modal-ise Admin create/edit
 
-**Date:** 2026-07-01 · **Status:** Approved, ready to implement · **Supersedes:** the task-#8 CSS patch
-for the Admin edit-row action overflow.
+**Date:** 2026-07-01 · **Status:** Shipped (the `Dialog` primitive and modal Admin create/edit are in
+`main`; see ADR-0010) · **Supersedes:** the task-#8 CSS patch for the Admin edit-row action overflow.
 
 ## Problem
 

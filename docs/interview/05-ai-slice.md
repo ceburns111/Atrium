@@ -12,13 +12,18 @@
 Framework (MAF)**, exposed over **AG-UI** (an SSE streaming protocol) at `/storefront/agent` behind the
 same YARP gateway and the same Keycloak bearer as every other endpoint. The agent has two tools —
 `GetOrderStatus` (scoped to the signed-in user's own orders) and `FindProduct` (catalog search). The model
-is **config-driven**: a `Fake` in-process client is the Development default so the app boots and tests run
-with no model or network; flipping `SupportAgent:Provider` to `FoundryLocal` or `AzureFoundry` points it at
-any OpenAI-compatible endpoint — no code change. The UI is a reusable `<AgentChat>` Blazor primitive in the
-design system that streams tokens and shows tool-call cards, and a shell **assistant launcher** that a
-module lights up by declaring an `AgentSurface`. The agent endpoint is gated by a config-driven **step-up
-MFA** policy. So: same ingress, same auth, same test discipline as the rest of the platform — the AI is
-just another slice."
+is **config-driven**: a `Fake` in-process client keeps tests offline; the real provider is **local
+Ollama** (`qwen2.5:7b-instruct` for chat + tools), with `FoundryLocal`/`AzureFoundry` as
+config-swap alternatives — no code change. The registered `IChatClient` is a **middleware pipeline**:
+OTel GenAI spans (outermost, exported to the Aspire dashboard) → a **guardrail** that screens every
+user message through a small local classifier (`llama3.2:3b`, fails closed) → a response **cache**.
+Quality is proven by an **eval harness** (`tests/Atrium.Evals`, `Microsoft.Extensions.AI.Evaluation`
+with a larger Ollama judge scoring relevance/groundedness/tool-call accuracy against the production
+prompt), and users can rate answers with **thumbs feedback** recorded as telemetry. The UI is a
+reusable `<AgentChat>` Blazor primitive in the design system that streams tokens and shows tool-call
+cards, and a shell **assistant launcher** that a module lights up by declaring an `AgentSurface`. The
+agent endpoint is gated by a config-driven **step-up MFA** policy. So: same ingress, same auth, same
+test discipline as the rest of the platform — the AI is just another slice."
 
 ## How it actually works
 
@@ -135,28 +140,23 @@ startup **warning** fires if the opt-in gate is left inert outside Development.
 - **The Fake reply is a feature, not a bug** — "Support is running in local (Fake) mode" means no model is
   configured; it also *proves* the bearer reached the endpoint.
 
-## Running a real model locally (keep this handy)
+## Running the real model locally (keep this handy)
 
-The Development default is `Fake`, so out of the box you get the canned reply. To get real answers with no
-code change:
+Under `aspire run` the AppHost already wires the real provider via env vars (`apphost.cs`):
+`SupportAgent__Provider=Ollama`, `Endpoint=http://localhost:11434/v1`, `Model=qwen2.5:7b-instruct`,
+`GuardrailModel=llama3.2:3b`. All you need is host-local Ollama with the models pulled:
 
-1. Run a **tool-calling** model locally via Ollama (OpenAI-compatible endpoint):
-   ```bash
-   ollama pull qwen3:14b-q4_K_M   # tool-calling capable — required for GetOrderStatus/FindProduct
-   ollama serve                    # exposes http://localhost:11434/v1
-   ```
-2. Add to `src/Atrium.Services.Storefront/appsettings.Development.json`, then restart `aspire run`:
-   ```json
-   "SupportAgent": {
-     "Provider": "FoundryLocal",
-     "Endpoint": "http://localhost:11434/v1",
-     "ApiKey": "ollama",
-     "Model": "qwen3:14b-q4_K_M"
-   }
-   ```
-   `ApiKey` must be non-empty (the config validator requires it; Ollama ignores the value). Real Foundry
-   Local or Azure AI Foundry just change these four values. A non-tool-calling model will chat but never
-   fire the tools.
+```bash
+ollama pull qwen2.5:7b-instruct   # chat + tools (tool-calling capable — required for the tools)
+ollama pull llama3.2:3b           # guardrail classifier
+ollama pull qwen2.5:14b-instruct  # eval judge (only needed to run tests/Atrium.Evals)
+ollama serve                      # exposes http://localhost:11434/v1
+```
+
+If Ollama is down or a model missing, chat turns **fail closed** (the guardrail refuses with a warning
+in the trace) — not silence. The `Fake` provider remains the offline/test default outside Aspire;
+`FoundryLocal`/`AzureFoundry` are the same four config values pointed elsewhere. A non-tool-calling
+model will chat but never fire the tools.
 
 ## If they push deeper / how I'd evolve it
 
@@ -170,5 +170,8 @@ code change:
   to even *build* an unauthorized query — authorization pushed up in front of data access so the model's
   requested filters are validated against the caller's grants before any SQL is generated. Frame this as
   where I'd take it, not as something already in the repo.
-- **Guardrails/eval:** add prompt-injection defenses on tool inputs and an offline eval harness over the
-  Fake client to catch hallucination regressions.
+- **Guardrails/eval — now shipped, so frame it as done:** input screening runs a small classifier over
+  **every** user message in the transcript (last-message-only was bypassable via replayed history) and
+  fails closed on classifier errors; the eval harness (`tests/Atrium.Evals`) judges the **production**
+  prompt with an independent Ollama model. What's still future: an **output**-side check on model
+  responses/tool results, and richer eval datasets seeded from thumbs-down feedback.

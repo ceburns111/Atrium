@@ -1,6 +1,6 @@
 # Topbar consolidation — design
 
-Date: 2026-07-02
+Date: 2026-07-02 · Status: Shipped (`UserMenu` + consolidated topbar are in `main`)
 
 ## Problem
 

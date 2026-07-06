@@ -10,6 +10,7 @@ The DTO-only wire contracts that cross the HTTP boundary between the backend ser
 - Products: `ProductDto`, `CreateProductRequest`, `UpdateProductRequest`, `CategoryDto`.
 - Orders: `CreateOrderRequest`, `OrderItemRequest`, `OrderDto`, `OrderLineDto`.
 - Reports: `SalesReportDto`, `CategorySalesDto`.
+- Chat: `FeedbackDto` — thumbs feedback payload shared by `FeedbackClient` (Design) and the Storefront feedback endpoint.
 
 All are `sealed record` types.
 

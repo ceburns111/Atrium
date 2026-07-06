@@ -50,7 +50,9 @@ another slice — same gateway, same bearer, scoped to the signed-in user."
 - Why modular monolith over microservices *and* over a plain monolith (ADR-0001).
 - The token journey: OIDC cookie → access-token-as-claim → scoped `AccessTokenHolder` → bearer to gateway →
   service validates → app vertical relays bearer to core (ADR-0004, ADR-0005).
-- Why **no `DelegatingHandler`** for the bearer (the `IHttpClientFactory` separate-scope gotcha, ADR-0004).
+- Why **no factory-registered `DelegatingHandler`** for the bearer (the `IHttpClientFactory`
+  separate-scope gotcha, ADR-0004) — and the one sanctioned circuit-scoped exception in the AI slice
+  (ADR-0011).
 - Why **Dapper + sprocs, not EF** (ADR-0002), and the DbUp two-lane init (Migrations run-once /
   Programmability run-always).
 - Module discovery by reflection and the **assemblies-in-two-places** routing gotcha (ADR-0001).

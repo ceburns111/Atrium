@@ -137,6 +137,9 @@ app.MapGet(
         );
     }
 );
+
+// Deliberately a GET, not the POST+antiforgery convention for sign-out: a demo-scale trade-off
+// (a cross-site GET or link prefetch could sign the user out — annoying, never dangerous).
 app.MapGet(
     "/account/logout",
     () =>

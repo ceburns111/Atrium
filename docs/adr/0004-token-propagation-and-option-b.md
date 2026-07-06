@@ -2,6 +2,12 @@
 
 **Status:** Accepted, with known debt · **Deciders:** Atrium build · **Context phase:** 4b
 
+> **Amended 2026-07-03:** the categorical "no `DelegatingHandler`" phrasing below is too strong. The
+> real constraint is that a handler *built by `IHttpClientFactory`* cannot see circuit-scoped state.
+> The AI chat surface ships `BearerTokenHandler` — a `DelegatingHandler` composed manually *inside*
+> the circuit scope, which is legitimate. [ADR-0011](0011-circuit-scoped-bearer-handler.md) records
+> the precise rule and the one sanctioned exception.
+
 ## Context
 
 The Portal's typed clients (`CatalogClient`, `OrdersClient`, `ReportsClient`) need to attach the user's

@@ -18,7 +18,7 @@ Consistency comes from a shared design system (`Atrium.Design`), not from each m
 (palette mood, typographic feel, what makes it not look templated), defer to the **frontend-design**
 skill — this skill assumes the direction is set and keeps every screen faithful to it.
 
-Plan & rationale: `docs/ATRIUM-PLAN.md` (UI / design strategy section).
+Plan & rationale: `docs/archive/ATRIUM-PLAN.md` (UI / design strategy section; archived).
 
 ## Reuse before you write
 

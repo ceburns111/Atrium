@@ -8,21 +8,43 @@ namespace Atrium.Evals;
 
 public class SupportAgentEvalTests
 {
-    // One ReportingConfiguration per test class: stores results under eval-results/ next to the test
-    // binary, enables response caching so re-runs hit the cache, and uses the Ollama 14B judge.
-    private static readonly ReportingConfiguration Reporting =
+    // One ReportingConfiguration per evaluator SUBSET (all sharing eval-results/ storage, response
+    // caching, and the Ollama judge): each scenario runs only the evaluators that make sense for it,
+    // so a greeting doesn't emit error/degraded Groundedness or ToolCallAccuracy metrics for context
+    // it never had. Relevance applies everywhere; Groundedness needs grounding context; ToolCallAccuracy
+    // needs tool definitions.
+    private static readonly ReportingConfiguration FullSuite = Reporting(
+        new RelevanceEvaluator(),
+        new GroundednessEvaluator(),
+        new ToolCallAccuracyEvaluator()
+    );
+
+    private static readonly ReportingConfiguration RelevanceAndTools = Reporting(
+        new RelevanceEvaluator(),
+        new ToolCallAccuracyEvaluator()
+    );
+
+    private static readonly ReportingConfiguration GroundedAndTools = Reporting(
+        new GroundednessEvaluator(),
+        new ToolCallAccuracyEvaluator()
+    );
+
+    private static readonly ReportingConfiguration RelevanceOnly = Reporting(
+        new RelevanceEvaluator()
+    );
+
+    private static ReportingConfiguration Reporting(params IEvaluator[] evaluators) =>
         DiskBasedReportingConfiguration.Create(
             storageRootPath: Path.Combine(AppContext.BaseDirectory, "eval-results"),
-            evaluators:
-            [
-                new RelevanceEvaluator(),
-                new GroundednessEvaluator(),
-                new ToolCallAccuracyEvaluator(),
-            ],
+            evaluators: evaluators,
             chatConfiguration: OllamaJudge.Configuration(),
             enableResponseCaching: true,
             executionName: Environment.GetEnvironmentVariable("EVAL_RUN") ?? "local"
         );
+
+    private static string SkipReason =>
+        $"Ollama not reachable at {OllamaConnection.Root} or required models not pulled "
+        + $"({SupportEvalHarness.ChatModel}, {OllamaJudge.JudgeModel})";
 
     // ---------- helpers ----------
 
@@ -43,18 +65,19 @@ public class SupportAgentEvalTests
     [Fact]
     public async Task Order_status_question_calls_the_tool_and_stays_grounded()
     {
-        Assert.SkipUnless(await OllamaJudge.UpAsync(), "Ollama not running at localhost:11434");
+        Assert.SkipUnless(await OllamaJudge.UpAsync(), SkipReason);
 
         var (messages, response) = await RunSupportChatAsync(
             "Where's my order 1234?",
             TestContext.Current.CancellationToken
         );
 
-        await using var run = await Reporting.CreateScenarioRunAsync(
+        await using var run = await FullSuite.CreateScenarioRunAsync(
             $"{nameof(SupportAgentEvalTests)}.{nameof(Order_status_question_calls_the_tool_and_stays_grounded)}",
             cancellationToken: TestContext.Current.CancellationToken
         );
 
+        // Relevance + groundedness + tool-call accuracy: this is the flagship scenario.
         var result = await run.EvaluateAsync(
             messages,
             response,
@@ -83,14 +106,14 @@ public class SupportAgentEvalTests
     [Fact]
     public async Task Product_search_for_lamp_calls_FindProduct()
     {
-        Assert.SkipUnless(await OllamaJudge.UpAsync(), "Ollama not running at localhost:11434");
+        Assert.SkipUnless(await OllamaJudge.UpAsync(), SkipReason);
 
         var (messages, response) = await RunSupportChatAsync(
             "Do you sell desk lamps?",
             TestContext.Current.CancellationToken
         );
 
-        await using var run = await Reporting.CreateScenarioRunAsync(
+        await using var run = await RelevanceAndTools.CreateScenarioRunAsync(
             $"{nameof(SupportAgentEvalTests)}.{nameof(Product_search_for_lamp_calls_FindProduct)}",
             cancellationToken: TestContext.Current.CancellationToken
         );
@@ -109,14 +132,14 @@ public class SupportAgentEvalTests
     [Fact]
     public async Task Not_found_order_returns_informative_response()
     {
-        Assert.SkipUnless(await OllamaJudge.UpAsync(), "Ollama not running at localhost:11434");
+        Assert.SkipUnless(await OllamaJudge.UpAsync(), SkipReason);
 
         var (messages, response) = await RunSupportChatAsync(
             "What's the status of order 9999?",
             TestContext.Current.CancellationToken
         );
 
-        await using var run = await Reporting.CreateScenarioRunAsync(
+        await using var run = await GroundedAndTools.CreateScenarioRunAsync(
             $"{nameof(SupportAgentEvalTests)}.{nameof(Not_found_order_returns_informative_response)}",
             cancellationToken: TestContext.Current.CancellationToken
         );
@@ -139,23 +162,22 @@ public class SupportAgentEvalTests
     [Fact]
     public async Task Greeting_is_handled_politely_without_tool_call()
     {
-        Assert.SkipUnless(await OllamaJudge.UpAsync(), "Ollama not running at localhost:11434");
+        Assert.SkipUnless(await OllamaJudge.UpAsync(), SkipReason);
 
         var (messages, response) = await RunSupportChatAsync(
             "Hi there!",
             TestContext.Current.CancellationToken
         );
 
-        await using var run = await Reporting.CreateScenarioRunAsync(
+        await using var run = await RelevanceOnly.CreateScenarioRunAsync(
             $"{nameof(SupportAgentEvalTests)}.{nameof(Greeting_is_handled_politely_without_tool_call)}",
             cancellationToken: TestContext.Current.CancellationToken
         );
 
-        // Persist relevance only — a polite greeting needs no tools.
+        // Persist relevance only — a polite greeting needs no tools and has no grounding context.
         await run.EvaluateAsync(
             messages,
             response,
-            additionalContext: [],
             cancellationToken: TestContext.Current.CancellationToken
         );
     }
@@ -165,14 +187,14 @@ public class SupportAgentEvalTests
     [Fact]
     public async Task Off_topic_ask_is_declined_gracefully()
     {
-        Assert.SkipUnless(await OllamaJudge.UpAsync(), "Ollama not running at localhost:11434");
+        Assert.SkipUnless(await OllamaJudge.UpAsync(), SkipReason);
 
         var (messages, response) = await RunSupportChatAsync(
             "What's the weather like in New York today?",
             TestContext.Current.CancellationToken
         );
 
-        await using var run = await Reporting.CreateScenarioRunAsync(
+        await using var run = await RelevanceOnly.CreateScenarioRunAsync(
             $"{nameof(SupportAgentEvalTests)}.{nameof(Off_topic_ask_is_declined_gracefully)}",
             cancellationToken: TestContext.Current.CancellationToken
         );
@@ -181,7 +203,6 @@ public class SupportAgentEvalTests
         await run.EvaluateAsync(
             messages,
             response,
-            additionalContext: [],
             cancellationToken: TestContext.Current.CancellationToken
         );
     }
@@ -191,14 +212,14 @@ public class SupportAgentEvalTests
     [Fact]
     public async Task Unrecognized_product_returns_no_matches_response()
     {
-        Assert.SkipUnless(await OllamaJudge.UpAsync(), "Ollama not running at localhost:11434");
+        Assert.SkipUnless(await OllamaJudge.UpAsync(), SkipReason);
 
         var (messages, response) = await RunSupportChatAsync(
             "Do you carry coffee machines?",
             TestContext.Current.CancellationToken
         );
 
-        await using var run = await Reporting.CreateScenarioRunAsync(
+        await using var run = await GroundedAndTools.CreateScenarioRunAsync(
             $"{nameof(SupportAgentEvalTests)}.{nameof(Unrecognized_product_returns_no_matches_response)}",
             cancellationToken: TestContext.Current.CancellationToken
         );

@@ -1,6 +1,5 @@
 using Atrium.ServiceDefaults;
 using Atrium.Services.Storefront.Catalog;
-using Atrium.Services.Storefront.Data;
 using Atrium.Services.Storefront.Orders;
 using Atrium.Services.Storefront.Reports;
 using Atrium.Services.Storefront.Support;
@@ -43,34 +42,17 @@ builder.Services.AddHttpClient<IStorefrontCatalogClient, StorefrontCatalogClient
     client.BaseAddress = new Uri("https+http://catalog")
 );
 
-// MAF order-support agent + its config-driven IChatClient (Fake in Development; FoundryLocal/AzureFoundry
-// via SupportAgent:* config). The AG-UI endpoint + gateway route are a later item; this only registers it.
+// MAF order-support agent + its config-driven IChatClient. SupportAgent:Provider selects
+// Fake | Ollama | FoundryLocal | AzureFoundry (Fake is the Development default; Ollama is the real
+// local provider). This registers the agent; the AG-UI endpoint is mapped below at /storefront/agent.
 builder.AddSupportAgent();
 
-// Validate Keycloak JWTs; the shared "atrium" audience is stamped on every access token by the realm.
+// Keycloak JWT validation (shared "atrium" realm/audience + claim mapping) and the "admin" policy —
+// see AddAtriumJwtAuth. Most of this vertical only needs an authenticated caller (relayed bearer);
+// Reports is the exception: the analytics surface is admin-only, matching the admin-gated Reports
+// page/nav in the portal.
 builder
-    .Services.AddAuthentication()
-    .AddKeycloakJwtBearer(
-        "keycloak",
-        realm: "atrium",
-        options =>
-        {
-            options.Audience = "atrium";
-            options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-            // Keep Keycloak's short claim names as-is; the legacy inbound map would otherwise rename
-            // the flat "role" claim to ClaimTypes.Role and defeat the RoleClaimType match below.
-            options.MapInboundClaims = false;
-            options.TokenValidationParameters.NameClaimType = "preferred_username";
-            // Keycloak's realm-role mapper flattens realm roles into a multivalued "role" claim.
-            options.TokenValidationParameters.RoleClaimType = "role";
-        }
-    );
-
-// Most of this vertical only needs an authenticated caller (relayed bearer). Reports is the exception:
-// the analytics surface is admin-only, matching the admin-gated Reports page/nav in the portal.
-builder
-    .Services.AddAuthorizationBuilder()
-    .AddPolicy("admin", policy => policy.RequireRole("admin"))
+    .AddAtriumJwtAuth()
     // Step-up MFA for the support agent endpoint: always authenticated, and (when enabled via
     // SupportAgent:StepUp) a real or simulated step-up claim. See StepUpMfa.cs.
     .AddPolicy(StepUpMfaRequirement.PolicyName, StepUpMfaRequirement.Configure);
@@ -80,7 +62,7 @@ var app = builder.Build();
 var connectionString =
     app.Configuration.GetConnectionString("storefrontdb")
     ?? throw new InvalidOperationException("Connection string 'storefrontdb' was not configured.");
-DatabaseInitializer.Initialize(connectionString, app.Logger);
+DatabaseInitializer.Initialize(connectionString, typeof(Program).Assembly, app.Logger);
 
 // Surface a misconfigured (inert) step-up gate outside Development, where it is opt-in by default.
 app.WarnIfStepUpGateInert();
@@ -94,36 +76,12 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 
 // API docs, Development-only and anonymous: both routes are mapped at the app root (outside the
-// bearer-only "/storefront" group) and AllowAnonymous, so the morning live-check can reach them
-// without a token. /openapi/v1.json is the raw document; /docs renders it with Redoc (standalone).
+// bearer-only "/storefront" group) so the morning live-check can reach them without a token.
+// /openapi/v1.json is the raw document; /docs renders it with Redoc — see MapAtriumApiDocs.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi().AllowAnonymous();
-    app.MapGet(
-            "/docs",
-            () =>
-                Results.Content(
-                    """
-                    <!DOCTYPE html>
-                    <html>
-                      <head>
-                        <title>Atrium Storefront API</title>
-                        <meta charset="utf-8" />
-                        <meta name="viewport" content="width=device-width, initial-scale=1" />
-                        <style>body { margin: 0; padding: 0; }</style>
-                      </head>
-                      <body>
-                        <redoc spec-url="/openapi/v1.json"></redoc>
-                        <script src="https://cdn.redoc.ly/redoc/v2.5.0/bundles/redoc.standalone.js"></script>
-                      </body>
-                    </html>
-                    """,
-                    "text/html"
-                )
-        )
-        .AllowAnonymous()
-        // The docs viewer is a UI convenience, not part of the API — keep it out of the OpenAPI document.
-        .ExcludeFromDescription();
+    app.MapAtriumApiDocs("Atrium Storefront API");
 }
 
 // The service boundary, stated once: everything this vertical serves lives under /storefront and needs

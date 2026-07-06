@@ -68,7 +68,9 @@
 }
 
 .dialog__close:focus-visible {
-    outline: 2px solid var(--ink);
+    /* Match the system-wide :focus-visible ring (atrium.css) — an --ink ring here read as a stray
+       white box in dark mode. */
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
 

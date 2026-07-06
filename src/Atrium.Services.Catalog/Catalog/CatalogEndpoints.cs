@@ -1,5 +1,6 @@
 using Atrium.Contracts;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 
 namespace Atrium.Services.Catalog.Catalog;
@@ -10,6 +11,11 @@ namespace Atrium.Services.Catalog.Catalog;
 /// </summary>
 public static class CatalogEndpoints
 {
+    // usp_Product_Create/_Update raise this when the category name resolves to no row. The validator
+    // below normally catches it first, but the check-then-write gap is real, so the sproc's THROW is
+    // mapped to the same 400 the validator produces instead of escaping as a 500.
+    private const int UnknownCategorySqlError = 50001;
+
     public static void MapCatalogEndpoints(this IEndpointRouteBuilder app)
     {
         // The group requires an authenticated caller by default; the storefront is browsable signed-out,
@@ -43,16 +49,34 @@ public static class CatalogEndpoints
         CancellationToken ct
     )
     {
-        var error = await Validate(request.Name, request.Category, request.Price, repository, ct);
+        var logger = loggerFactory.CreateLogger(typeof(CatalogEndpoints));
+        var error = await Validate(
+            request.Name,
+            request.Category,
+            request.Price,
+            request.Blurb,
+            repository,
+            ct
+        );
         if (error is not null)
         {
-            loggerFactory
-                .CreateLogger(typeof(CatalogEndpoints))
-                .LogWarning("Product create rejected: {Reason}", error);
+            logger.LogWarning("Product create rejected: {Reason}", error);
             return TypedResults.BadRequest(error);
         }
-        // Create always yields a row (the sproc guards the category), so the result is non-null.
-        return TypedResults.Ok((await repository.CreateProductAsync(request, ct))!);
+        try
+        {
+            // The sproc guards the category with THROW 50001 (mapped below), so a non-throwing
+            // create always selects the inserted row back — the result is non-null.
+            return TypedResults.Ok((await repository.CreateProductAsync(request, ct))!);
+        }
+        catch (SqlException ex) when (ex.Number == UnknownCategorySqlError)
+        {
+            logger.LogWarning(
+                "Product create rejected: unknown category {Category}",
+                request.Category
+            );
+            return TypedResults.BadRequest($"Unknown category '{request.Category}'.");
+        }
     }
 
     private static async Task<Results<Ok<ProductDto>, NotFound, BadRequest<string>>> UpdateProduct(
@@ -64,13 +88,33 @@ public static class CatalogEndpoints
     )
     {
         var logger = loggerFactory.CreateLogger(typeof(CatalogEndpoints));
-        var error = await Validate(request.Name, request.Category, request.Price, repository, ct);
+        var error = await Validate(
+            request.Name,
+            request.Category,
+            request.Price,
+            request.Blurb,
+            repository,
+            ct
+        );
         if (error is not null)
         {
             logger.LogWarning("Product {ProductId} update rejected: {Reason}", id, error);
             return TypedResults.BadRequest(error);
         }
-        var product = await repository.UpdateProductAsync(id, request, ct);
+        ProductDto? product;
+        try
+        {
+            product = await repository.UpdateProductAsync(id, request, ct);
+        }
+        catch (SqlException ex) when (ex.Number == UnknownCategorySqlError)
+        {
+            logger.LogWarning(
+                "Product {ProductId} update rejected: unknown category {Category}",
+                id,
+                request.Category
+            );
+            return TypedResults.BadRequest($"Unknown category '{request.Category}'.");
+        }
         if (product is null)
         {
             logger.LogInformation("Product {ProductId} update matched no existing product", id);
@@ -79,11 +123,13 @@ public static class CatalogEndpoints
         return TypedResults.Ok(product);
     }
 
-    // Shared validation for writes: a real name, a positive price, and a category that actually exists.
+    // Shared validation for writes: a real name, a positive price, a blurb that fits the schema's
+    // NVARCHAR(256) NOT NULL column, and a category that actually exists.
     private static async Task<string?> Validate(
         string name,
         string category,
         decimal price,
+        string blurb,
         ICatalogRepository repository,
         CancellationToken ct
     )
@@ -96,7 +142,19 @@ public static class CatalogEndpoints
         {
             return "Price must be positive.";
         }
+        if (string.IsNullOrWhiteSpace(blurb))
+        {
+            return "Blurb is required.";
+        }
+        if (blurb.Length > 256)
+        {
+            return "Blurb must be 256 characters or fewer.";
+        }
         var categories = await repository.GetCategoriesAsync(ct);
-        return categories.Any(c => c.Name == category) ? null : $"Unknown category '{category}'.";
+        // Case-insensitive on purpose: the database compares names under its default collation
+        // (case-insensitive), so an ordinal check here would 400 input SQL happily accepts.
+        return categories.Select(c => c.Name).Contains(category, StringComparer.OrdinalIgnoreCase)
+            ? null
+            : $"Unknown category '{category}'.";
     }
 }

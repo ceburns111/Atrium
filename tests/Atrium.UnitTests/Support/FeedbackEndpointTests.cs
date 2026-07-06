@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Atrium.Contracts;
 using Atrium.Services.Storefront.Support;
 
 namespace Atrium.UnitTests.Support;
@@ -19,7 +20,7 @@ public class FeedbackEndpointTests
         ActivitySource.AddActivityListener(listener);
 
         SupportFeedback.Record(
-            new FeedbackRequest("turn-1", -1, "where is my order", "It is confirmed."),
+            new FeedbackDto("turn-1", -1, "where is my order", "It is confirmed."),
             "admin"
         );
 

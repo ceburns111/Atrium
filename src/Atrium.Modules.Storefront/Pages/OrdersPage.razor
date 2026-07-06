@@ -1,5 +1,6 @@
 @page "/storefront/orders"
 @attribute [Authorize]
+@using System.Globalization
 @inject OrdersClient Orders
 
 <PageTitle>Orders</PageTitle>
@@ -40,8 +41,10 @@ else
         <div class="card order-card">
             <div class="order-card__head">
                 <span class="order-card__id">Order #@order.Id</span>
-                <span class="order-card__date">@order.PlacedAtUtc.ToLocalTime().ToString("g")</span>
-                <span class="order-card__total">$@order.Total.ToString("N0")</span>
+                @* Rendered in Blazor Server, so ToLocalTime() would be the SERVER's timezone (UTC in a
+                   container), not the visitor's — render the stored UTC instant honestly instead. *@
+                <span class="order-card__date">@order.PlacedAtUtc.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture)</span>
+                <span class="order-card__total">@Money.Format(order.Total)</span>
             </div>
             <table class="atrium-table">
                 <tbody>
@@ -49,7 +52,7 @@ else
                     {
                         <tr>
                             <td>@line.ProductName</td>
-                            <td class="num">$@line.UnitPrice.ToString("N0")</td>
+                            <td class="num">@Money.Format(line.UnitPrice)</td>
                             <td class="num">×@line.Quantity</td>
                         </tr>
                     }

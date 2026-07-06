@@ -1,6 +1,7 @@
 using System.Data;
 using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 
 namespace Atrium.Services.Storefront.Reports;
 
@@ -12,7 +13,8 @@ public interface IReportRepository
 }
 
 /// <summary>Dapper-backed analytics reads over the order tables (sproc-only, like the order store).</summary>
-public sealed class ReportRepository(SqlConnection db) : IReportRepository
+public sealed class ReportRepository(SqlConnection db, ILogger<ReportRepository> logger)
+    : IReportRepository
 {
     public async Task<IReadOnlyList<ProductSalesRow>> GetSalesByProductAsync(
         CancellationToken ct = default
@@ -25,15 +27,24 @@ public sealed class ReportRepository(SqlConnection db) : IReportRepository
                 cancellationToken: ct
             )
         );
-        return rows.AsList();
+        var sales = rows.AsList();
+        logger.LogInformation(
+            "Sales-by-product report returned {RowCount} product row(s)",
+            sales.Count
+        );
+        return sales;
     }
 
-    public Task<int> GetOrderCountAsync(CancellationToken ct = default) =>
-        db.ExecuteScalarAsync<int>(
+    public async Task<int> GetOrderCountAsync(CancellationToken ct = default)
+    {
+        var count = await db.ExecuteScalarAsync<int>(
             new CommandDefinition(
                 "dbo.usp_Report_OrderCount",
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct
             )
         );
+        logger.LogInformation("Order-count report returned {OrderCount}", count);
+        return count;
+    }
 }

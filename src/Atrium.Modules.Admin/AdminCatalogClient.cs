@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Atrium.Contracts;
 using Atrium.Design;
 using Microsoft.Extensions.Logging;
@@ -18,10 +19,22 @@ public sealed class AdminCatalogClient(
 )
 {
     public Task<IReadOnlyList<ProductDto>> GetProductsAsync(CancellationToken ct = default) =>
-        GetAsync<IReadOnlyList<ProductDto>>("catalog/products", ct);
+        http.SendForJsonAsync<IReadOnlyList<ProductDto>>(
+            HttpMethod.Get,
+            "catalog/products",
+            tokens,
+            logger,
+            ct: ct
+        );
 
     public Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(CancellationToken ct = default) =>
-        GetAsync<IReadOnlyList<CategoryDto>>("catalog/categories", ct);
+        http.SendForJsonAsync<IReadOnlyList<CategoryDto>>(
+            HttpMethod.Get,
+            "catalog/categories",
+            tokens,
+            logger,
+            ct: ct
+        );
 
     public Task<(ProductDto? Product, string? Error)> CreateProductAsync(
         CreateProductRequest request,
@@ -34,19 +47,9 @@ public sealed class AdminCatalogClient(
         CancellationToken ct = default
     ) => WriteAsync(HttpMethod.Put, $"catalog/products/{id}", request, ct);
 
-    private async Task<T> GetAsync<T>(string url, CancellationToken ct)
-        where T : class
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Authorize(tokens);
-        using var response = await http.SendAsync(request, ct);
-        response.LogIfUnsuccessful(logger, request);
-        response.ThrowIfSessionExpired();
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<T>(ct)
-            ?? throw new InvalidOperationException();
-    }
-
+    // The write path keeps its own send loop (rather than TypedClientSendExtensions) because it
+    // translates expected statuses into inline messages instead of throwing — but it preserves the
+    // same ordering invariant: ThrowIfSessionExpired BEFORE any generic failure handling.
     private async Task<(ProductDto?, string?)> WriteAsync(
         HttpMethod method,
         string url,
@@ -89,11 +92,58 @@ public sealed class AdminCatalogClient(
         return response.StatusCode switch
         {
             HttpStatusCode.Forbidden => (null, "You need the admin role to change the catalog."),
-            HttpStatusCode.BadRequest => (null, await response.Content.ReadAsStringAsync(ct)),
+            HttpStatusCode.BadRequest => (null, await ReadBadRequestMessageAsync(response, ct)),
             HttpStatusCode.NotFound => (null, "That product no longer exists."),
             _ => throw new HttpRequestException(
                 $"Catalog write failed ({(int)response.StatusCode})."
             ),
         };
+    }
+
+    // A 400 arrives in one of two shapes: the endpoint's own validation messages are a JSON string
+    // (TypedResults.BadRequest("Unknown category '…'.")), while binding failures come back as RFC 7807
+    // problem+json. Surface the human-readable message from either (detail over title for problem+json)
+    // — never the raw JSON body — and fall back to a generic line for anything unrecognized.
+    private static async Task<string> ReadBadRequestMessageAsync(
+        HttpResponseMessage response,
+        CancellationToken ct
+    )
+    {
+        try
+        {
+            var body = await response.Content.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(body);
+            var message = doc.RootElement.ValueKind switch
+            {
+                JsonValueKind.String => doc.RootElement.GetString(),
+                JsonValueKind.Object => ProblemMessage(doc.RootElement),
+                _ => null,
+            };
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                return message;
+            }
+        }
+        catch (JsonException)
+        {
+            // Not JSON at all — fall through to the generic message.
+        }
+        return "The catalog rejected that product. Check the fields and try again.";
+    }
+
+    private static string? ProblemMessage(JsonElement problem)
+    {
+        if (
+            problem.TryGetProperty("detail", out var detail)
+            && detail.ValueKind == JsonValueKind.String
+        )
+        {
+            return detail.GetString();
+        }
+        return
+            problem.TryGetProperty("title", out var title)
+            && title.ValueKind == JsonValueKind.String
+            ? title.GetString()
+            : null;
     }
 }

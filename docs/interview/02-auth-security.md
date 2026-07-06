@@ -250,8 +250,10 @@ path, status, and "session expired" vs generic — but **never** the auth header
 
 - **The circuit has no `HttpContext`.** This is the root of the whole token-in-claim design. If you
   forget it, the whole approach looks over-engineered. It isn't — it's forced.
-- **`DelegatingHandler` runs in a different scope.** Don't claim you attach the token in a handler;
-  you don't, and the reason is the scope boundary.
+- **`DelegatingHandler` runs in a different scope.** Don't claim the typed clients attach the token in
+  a handler; they don't, and the reason is the scope boundary. The precise rule: no *factory-registered*
+  handler may read circuit state — the AI slice's `BearerTokenHandler` is legitimate because it's
+  composed manually **inside** the circuit scope (ADR-0011).
 - **`MapInboundClaims = false` must be on Portal *and* services.** Miss it anywhere roles are
   checked and you get silent 403s.
 - **`SaveTokens = true` is not redundant with the claim.** It's specifically for `id_token_hint` on

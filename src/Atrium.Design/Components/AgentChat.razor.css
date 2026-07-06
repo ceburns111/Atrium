@@ -3,8 +3,10 @@
 .agent-chat {
     display: flex;
     flex-direction: column;
-    min-height: 24rem;
-    height: 100%;
+    /* A definite height (not `100%`, which resolves to auto inside the Dialog's auto-height panel/body
+       chain) so the log below is the scroll container from the first message — otherwise the chat
+       grows per message until the whole dialog scrolls. */
+    height: min(70dvh, 40rem);
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--r-lg);
@@ -227,6 +229,9 @@
     outline-offset: 2px;
 }
 
+/* The recorded vote must read at rest — a soft accent fill, not just the opacity nudge hover
+   already applies (which made a click look like it did nothing once the pointer moved away). */
 .agent-chat__fb-btn.is-active {
     opacity: 1;
+    background: var(--accent-soft);
 }
