@@ -34,10 +34,6 @@ var storefront = builder
     .WithReference(storefrontDb)
     .WithReference(catalog)
     .WithReference(keycloak)
-    .WithEnvironment("SupportAgent__Provider", "Ollama")
-    .WithEnvironment("SupportAgent__Endpoint", "http://localhost:11434/v1")
-    .WithEnvironment("SupportAgent__Model", "qwen2.5:7b-instruct")
-    .WithEnvironment("SupportAgent__GuardrailModel", "llama3.2:3b")
     .WaitFor(storefrontDb)
     .WaitFor(keycloak)
     .WithHttpHealthCheck("/health");
