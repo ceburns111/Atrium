@@ -88,7 +88,7 @@ as the one-spot seam for real photos); `AccessTokenHolder`; `HttpClientExtension
 
 `AtriumTheme` (`src/Atrium.Design/AtriumTheme.cs`) is the single source of truth for brand identity.
 It exposes a `MudTheme` with `PaletteLight` and `PaletteDark` blocks carrying the teal brand accent,
-neutral ramp, status colors (success/warning/error), Roboto/Roboto Mono typography, and the 8px
+neutral ramp, status colors (success/warning/error), Space Grotesk (headings) / Inter (body) typography, and the 8px
 spacing scale — ported from the retired `tokens.css` value-for-value (ADR-0014).
 
 The shell's `MudThemeProvider` is initialized with `AtriumTheme.Theme` and a reactive `IsDarkMode`

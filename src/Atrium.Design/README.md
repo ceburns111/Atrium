@@ -7,7 +7,7 @@ The shared design-system Razor Class Library: MudBlazor components wired to the 
 **Design system.** Referenced by `Atrium.Portal` and every `Atrium.Modules.*` module.
 
 ## Key types
-- **`AtriumTheme`** — the shared `MudTheme` carrying brand identity (teal accent, neutral ramp, status colors, Roboto/Mono typography, 8px spacing scale) in `PaletteLight` and `PaletteDark` blocks. Single source of truth for all colors and spacing. ([ADR-0014](../../docs/adr/0014-adopt-mudblazor.md))
+- **`AtriumTheme`** — the shared `MudTheme` carrying brand identity (teal accent, neutral ramp, status colors, Space Grotesk / Inter typography, 8px spacing scale) in `PaletteLight` and `PaletteDark` blocks. Single source of truth for all colors and spacing. ([ADR-0014](../../docs/adr/0014-adopt-mudblazor.md))
 - **`ProductThumb`** — deterministic placeholder image with an `ImageUrl` param as the one-spot seam for real photos. The one custom visual component not covered by MudBlazor.
 - **Token carriage:** `AccessTokenHolder` — scoped carrier for the signed-in user's bearer token, populated by `MainLayout`.
 - **HTTP helpers (`HttpClientExtensions.cs`):** `TypedClientSendExtensions.SendForJsonAsync` — the one mandated request pipeline for module typed clients (authorize → send → log → `ThrowIfSessionExpired` → `EnsureSuccessStatusCode` → deserialize); `HttpRequestAuthorizationExtensions.Authorize`; `HttpResponseLoggingExtensions.LogIfUnsuccessful`.

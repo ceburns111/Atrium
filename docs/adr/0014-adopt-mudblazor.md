@@ -27,7 +27,7 @@ Adopt **MudBlazor** as the UI component library across the Portal shell and all 
 
 - **`AtriumTheme`** (`src/Atrium.Design/AtriumTheme.cs`): a shared `MudTheme` that carries the
   brand identity forward from `tokens.css` — teal accent, neutral ramp, status colors,
-  Roboto/Roboto Mono typography, 8px spacing scale — in `PaletteLight` and `PaletteDark` blocks.
+  Space Grotesk (headings) / Inter (body) typography, 8px spacing scale — in `PaletteLight` and `PaletteDark` blocks.
   This is the single source of truth that replaces `tokens.css`.
 - **MudBlazor replaces the custom primitives.** `Button` → `MudButton`; `Badge` → `MudChip` /
   `MudBadge`; `Field` → `MudTextField` / `MudSelect`; `Dialog` → `MudDialog` / `IDialogService`;
