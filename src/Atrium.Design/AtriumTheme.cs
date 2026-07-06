@@ -27,15 +27,6 @@ public static class AtriumTheme
         "Roboto",
         "sans-serif",
     ];
-    private static readonly string[] FontMono =
-    [
-        "JetBrains Mono",
-        "ui-monospace",
-        "SF Mono",
-        "Menlo",
-        "monospace",
-    ];
-
     public static readonly MudTheme Instance = new()
     {
         // ── Palette: Light (tokens :root) ───────────────────────────────────────

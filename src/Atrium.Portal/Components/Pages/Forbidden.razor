@@ -5,6 +5,12 @@
 
 <PageTitle>Access denied</PageTitle>
 
-<Notice Title="Access denied" Body="You don't have permission to view this page.">
-    <a class="btn btn--secondary" href="/">Return to home</a>
-</Notice>
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h5">Access denied</MudText>
+        <MudText Typo="Typo.body1">You don't have permission to view this page.</MudText>
+        <div>
+            <MudButton Variant="Variant.Outlined" Href="/">Return to home</MudButton>
+        </div>
+    </MudStack>
+</MudContainer>
