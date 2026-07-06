@@ -43,8 +43,8 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 
 // API docs, Development-only and anonymous: both routes are mapped at the app root (outside the
-// bearer-only "/catalog" group) so the morning live-check can reach them without a token.
-// /openapi/v1.json is the raw document; /docs renders it with Redoc — see MapAtriumApiDocs.
+// bearer-only "/catalog" group) /openapi/v1.json is the raw document; /docs renders it with 
+// Redoc — see MapAtriumApiDocs.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi().AllowAnonymous();

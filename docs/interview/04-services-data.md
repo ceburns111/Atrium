@@ -167,7 +167,8 @@ interface (`ICatalogRepository`, `IOrderRepository`, `IReportRepository`) is co-
 above** its implementing class, not in a separate file. The interface is kept as the **DIP seam** (a
 decorator or a hand-rolled fake stays cheap) — *not* for mockability, which is the weak justification
 here. `DatabaseInitializer.cs` is duplicated byte-for-byte in both services on purpose: a shared data
-library would couple two independently-deployable services to save ~40 lines.
+library would couple two independently-deployable services to save ~40 lines. (THIS IS NOT TRUE, Database
+initializer is in the ServiceDefaults repo -- should it be or is it actually better to have independent?)
 
 ---
 
