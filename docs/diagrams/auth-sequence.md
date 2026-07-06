@@ -17,9 +17,7 @@ Key facts every step reflects:
   `http.SendForJsonAsync(...)`, which calls `request.Authorize(tokens)` attaching `Authorization: Bearer …`
   **only when the holder is non-empty** (`src/Atrium.Design/HttpClientExtensions.cs`). **No
   factory-registered `DelegatingHandler`** — `IHttpClientFactory` builds handler chains in a separate DI
-  scope where the circuit-scoped holder is empty. Exception: the AG-UI chat client owns its `HttpClient`
-  internally and has no per-request send seam; its `BearerTokenHandler` is composed in circuit scope
-  instead ([ADR-0011](../adr/0011-circuit-scoped-bearer-handler.md)).
+  scope where the circuit-scoped holder is empty.
 - The **gateway is a pass-through** — it does no auth of its own; it forwards the request (and its
   bearer) to the target cluster.
 - Each service validates the JWT with `AddKeycloakJwtBearer(realm: "atrium", Audience = "atrium")`.

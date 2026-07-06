@@ -2,7 +2,7 @@
 
 **As of 2026-07-03.** This is the "where we are and how to pick up" note. For how the system fits
 together read [ARCHITECTURE.md](ARCHITECTURE.md); for *why* each choice was made, the
-[ADRs](adr/README.md) (0001–0012); for what was deliberately scoped out,
+[ADRs](adr/README.md) (0001–0013); for what was deliberately scoped out,
 [BEYOND-THE-DEMO.md](BEYOND-THE-DEMO.md). Build history lives in git and
 [docs/archive/](archive/) — not here.
 
@@ -10,9 +10,6 @@ together read [ARCHITECTURE.md](ARCHITECTURE.md); for *why* each choice was made
 
 - **Core platform** (portal + 3 modules + gateway + 2 services + Keycloak + Aspire) is complete and
   browser-verified. Rebuild of CozenDemo (still at `/Users/ted/code/CozenDemo`, reference only).
-- **AI support agent** shipped (merged as PR #1, 2026-07-02): MAF `ChatClientAgent` over Ollama in the
-  Storefront vertical, guardrail + OTel + cache pipeline, AG-UI chat surface in the shell, telemetry-only
-  feedback, LLM evals in `tests/Atrium.Evals`. See the ARCHITECTURE.md "AI support slice" section.
 - **Full audit + remediation** (2026-07-03): a codebase-wide audit
   ([audits/2026-07-02-full-audit.md](audits/2026-07-02-full-audit.md)) found no criticals; all
   fix-disposition findings landed (user-scoped race-safe order idempotency, full-transcript fail-closed
@@ -24,7 +21,7 @@ together read [ARCHITECTURE.md](ARCHITECTURE.md); for *why* each choice was made
 
 ## How to run
 
-**Full stack** (Docker required; Ollama required for real chat):
+**Full stack** (Docker required):
 
 ```bash
 cd src/Atrium.AppHost && aspire run
@@ -33,8 +30,7 @@ cd src/Atrium.AppHost && aspire run
 Aspire assigns **dynamic ports each run** — find the Portal with
 `lsof -iTCP -sTCP:LISTEN -P -n | grep Atrium.Po` and open `https://localhost:<portal-port>/`.
 Keycloak is fixed at `https://localhost:8080`. **Login:** `testuser` / `password` (customer) or
-`admin` / `password` (admin). The agent needs host-local Ollama with `qwen2.5:7b-instruct` (chat) and
-`llama3.2:3b` (guardrail) pulled; without it, chat turns fail closed with a refusal.
+`admin` / `password` (admin).
 
 **Gate + tests** (from the repo root; CSharpier check runs on build, so format first):
 
@@ -42,7 +38,6 @@ Keycloak is fixed at `https://localhost:8080`. **Login:** `testuser` / `password
 dotnet csharpier format . && dotnet build Atrium.slnx -v q   # expect 0 warnings / 0 errors
 dotnet test tests/Atrium.UnitTests                            # fast, no Docker
 dotnet test tests/Atrium.IntegrationTests                     # real SQL Server via Testcontainers (Docker)
-dotnet test tests/Atrium.Evals                                # LLM evals; skip when Ollama/models absent
 ```
 
 ## Known limitations (deliberate for a demo)
@@ -57,10 +52,6 @@ dotnet test tests/Atrium.Evals                                # LLM evals; skip 
   `docker volume ls -q | grep keycloak | xargs docker volume rm` (Aspire stopped). Note the realm
   export was trimmed on 2026-07-03 (unused `atrium-catalog` client removed) — a volume wipe applies it.
 - **Sign-out is a GET** (POST + antiforgery deliberately skipped; commented in Portal `Program.cs`).
-- **Feedback→trace correlation is a known gap:** thumbs telemetry carries a client-side turn id that
-  matches no server span; the practical join is turn id + user + time window (see the shipped-state
-  notes in the AI design doc).
-
 ## Gotchas that cost time (avoid re-hitting)
 
 - **Role-based auth needs `MapInboundClaims = false`** — otherwise the inbound flat `role` claim is
