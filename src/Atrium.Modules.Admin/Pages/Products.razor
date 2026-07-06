@@ -28,11 +28,12 @@
 }
 else
 {
+    @* No Bordered: vertical cell borders rendered raggedly against the flex-aligned action column;
+       horizontal row dividers + hover read cleaner and match the other tables. *@
     <MudDataGrid T="ProductDto"
                  Items="@(_products ?? [])"
                  Loading="@(_products is null)"
                  Hover="true"
-                 Bordered="true"
                  Elevation="0">
         <ToolBarContent>
             <MudSpacer />

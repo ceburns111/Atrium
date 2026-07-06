@@ -33,9 +33,13 @@
     </MudDrawer>
 
     <MudMainContent>
-        <SessionErrorBoundary @ref="_errorBoundary">
-            @Body
-        </SessionErrorBoundary>
+        @* One shared content frame: a centered max-width column with responsive gutters + vertical
+           rhythm, so every module page is padded consistently instead of bleeding to the window edge. *@
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
+            <SessionErrorBoundary @ref="_errorBoundary">
+                @Body
+            </SessionErrorBoundary>
+        </MudContainer>
     </MudMainContent>
 </MudLayout>
 

@@ -139,14 +139,14 @@ else
                         </MudItem>
                     </MudGrid>
 
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Primary"
-                               FullWidth="true"
-                               Class="mt-4"
-                               OnClick="Pay"
-                               Disabled="@_processing">
-                        @(_processing ? "Processing…" : $"Pay {Money.Format(Cart.Total)}")
-                    </MudButton>
+                    <MudStack Row Justify="Justify.FlexEnd" Class="mt-4">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="Pay"
+                                   Disabled="@_processing">
+                            @(_processing ? "Processing…" : $"Pay {Money.Format(Cart.Total)}")
+                        </MudButton>
+                    </MudStack>
                 </MudForm>
             </MudPaper>
         </MudItem>

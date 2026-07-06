@@ -56,7 +56,7 @@ else if (_products is null)
         @for (var i = 0; i < 8; i++)
         {
             <MudItem xs="12" sm="6" md="4" lg="3">
-                <MudCard>
+                <MudCard Outlined="true">
                     <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" />
                     <MudCardContent>
                         <MudSkeleton Width="70%" />
@@ -77,9 +77,11 @@ else
         @foreach (var product in _products)
         {
             <MudItem xs="12" sm="6" md="4" lg="3">
-                <MudCard>
+                @* Outlined + full-height so every card is a distinct, equal-height tile — the grid
+                   reads as a tidy row instead of squished, blended panels. *@
+                <MudCard Outlined="true" Class="d-flex flex-column" Style="height:100%">
                     <ProductThumb Name="@product.Name" />
-                    <MudCardContent>
+                    <MudCardContent Class="flex-grow-1">
                         <MudText Typo="Typo.subtitle1">@product.Name</MudText>
                         <MudText Typo="Typo.body2">@product.Blurb</MudText>
                         <MudText Typo="Typo.h6" Class="mt-2">@Money.Format(product.Price)</MudText>

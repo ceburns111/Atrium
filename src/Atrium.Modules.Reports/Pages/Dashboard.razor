@@ -72,13 +72,17 @@ else
     }
     else
     {
-        <MudChart
-            ChartType="ChartType.Bar"
-            ChartSeries="@_chartSeries"
-            XAxisLabels="@_chartLabels"
-            ChartOptions="_chartOptions"
-            Width="100%"
-            Height="350px" />
+        @* Chart lives in a full-width card so it fills the content column and aligns under the heading,
+           instead of floating centered in empty space beside a left-aligned title. *@
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudChart
+                ChartType="ChartType.Bar"
+                ChartSeries="@_chartSeries"
+                XAxisLabels="@_chartLabels"
+                ChartOptions="_chartOptions"
+                Width="100%"
+                Height="350px" />
+        </MudPaper>
     }
 }
 
