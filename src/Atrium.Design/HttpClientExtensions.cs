@@ -51,13 +51,23 @@ public static class TypedClientSendExtensions
 }
 
 /// <summary>
-/// Attaches the signed-in user's bearer token to an outgoing request. Shared by the module typed clients
-/// so token attachment is written once rather than hand-rolled per client (see <see cref="AccessTokenHolder"/>).
+/// Attaches the signed-in user's bearer token to an outgoing request — and first fails fast with
+/// <see cref="SessionExpiredException"/> when that token is already expired, so a dead session surfaces
+/// the same way whether or not the target endpoint requires auth. Shared by the module typed clients so
+/// token attachment (and the expiry short-circuit) is written once rather than hand-rolled per client
+/// (see <see cref="AccessTokenHolder"/>).
 /// </summary>
 public static class HttpRequestAuthorizationExtensions
 {
     public static void Authorize(this HttpRequestMessage request, AccessTokenHolder tokens)
     {
+        // A present-but-expired token is a dead session: fail fast before sending so expiry surfaces
+        // for every request — even one bound for an anonymous endpoint (e.g. the Admin catalog read)
+        // that would otherwise answer 200 and hide it. Anonymous callers (no token) fall through.
+        if (tokens.IsExpired)
+        {
+            throw new SessionExpiredException();
+        }
         if (!string.IsNullOrEmpty(tokens.AccessToken))
         {
             request.Headers.Authorization = new AuthenticationHeaderValue(
