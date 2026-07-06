@@ -1,6 +1,6 @@
 # ADR-0011 — Circuit-scoped bearer handler for the AG-UI chat client
 
-**Status:** Accepted · **Deciders:** Atrium build · **Context phase:** AI chat enhancements (2026-07)
+**Status:** Superseded by [ADR-0013](0013-retire-the-support-agent-slice.md) · **Deciders:** Atrium build · **Context phase:** AI chat enhancements (2026-07)
 
 ## Context
 

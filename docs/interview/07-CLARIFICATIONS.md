@@ -24,9 +24,8 @@ Concrete changes / prep to do before demoing, distinct from the study questions 
   frequently sorted/filtered columns.
 - [ ] **Walk the Keycloak admin UI manually.** Know where things live so I can explain how authz is
   configured *without* Aspire seeding it — the manual realm/client/role setup path.
-- [ ] **Remove / deactivate the MAF agent slice before the demo.** Decision made — scrap it entirely
-  (decouple and keep dormant if that's cheap, otherwise remove). It's too much surface area to defend in
-  depth and risks conflating the competence read on the areas I'm strongest in: auth, backend, architecture.
+- [x] **Remove / deactivate the MAF agent slice before the demo.** Done 2026-07 — removed from
+  `main`, preserved on `feat/support-agent`; decision + future modular-agent direction in ADR-0013.
 
 ---
 

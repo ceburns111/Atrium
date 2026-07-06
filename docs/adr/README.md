@@ -16,8 +16,9 @@ alternative we rejected. Format is a trimmed [MADR](https://adr.github.io/madr/)
 | [0008](0008-graceful-session-expiry-handling.md) | Map 401 to a typed `SessionExpiredException`; a shell `SessionErrorBoundary` prompts re-login instead of crashing the circuit | Accepted |
 | [0009](0009-service-root-route-nesting.md) | Nest routes under one service-root group; features map relative subtrees | Accepted |
 | [0010](0010-native-dialog-primitive.md) | Build the modal `Dialog` on the native `<dialog>` element (`showModal()`), not a hand-rolled overlay | Accepted |
-| [0011](0011-circuit-scoped-bearer-handler.md) | The AG-UI chat client's bearer rides a `DelegatingHandler` composed manually in the circuit scope — the one sanctioned exception to ADR-0004's rule | Accepted |
+| [0011](0011-circuit-scoped-bearer-handler.md) | The AG-UI chat client's bearer rides a `DelegatingHandler` composed manually in the circuit scope — the one sanctioned exception to ADR-0004's rule | Superseded by [0013](0013-retire-the-support-agent-slice.md) |
 | [0012](0012-shared-deployment-infrastructure.md) | Deployment infrastructure (telemetry, JWT auth, api docs, DbUp runner) is shared via `ServiceDefaults`; domain code is never shared | Accepted |
+| [0013](0013-retire-the-support-agent-slice.md) | Retire the Support agent slice from `main`; preserve on `feat/support-agent`; supersedes ADR-0011 | Accepted |
 
 These records are point-in-time. If the code and an ADR disagree, the code wins — open a new ADR that
 supersedes the old one rather than editing history.

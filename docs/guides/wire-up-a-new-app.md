@@ -261,9 +261,6 @@ public sealed class WidgetClient(HttpClient http, AccessTokenHolder tokens, ILog
 Why `AccessTokenHolder` and not a factory-registered `DelegatingHandler`: `IHttpClientFactory` builds
 handler chains in a **separate DI scope**, so a factory-registered handler reading the scoped holder
 always sees an empty token — see [ADR-0004](../adr/0004-token-propagation-and-option-b.md).
-(Exception: the AG-UI chat client can't call `request.Authorize` inline — its `HttpClient` is internal.
-`BearerTokenHandler` is composed in circuit scope instead, bypassing the factory scope problem —
-[ADR-0011](../adr/0011-circuit-scoped-bearer-handler.md).)
 `SessionExpiredException` / `ThrowIfSessionExpired()` live in `Atrium.Design`; the shell's
 `SessionErrorBoundary` turns them into a "sign in again" panel
 ([ADR-0008](../adr/0008-graceful-session-expiry-handling.md)).
@@ -385,8 +382,6 @@ Three suites (all must stay green):
   `DatabaseInitializer.Initialize`, then exercises the concrete repository (real sprocs, Dapper,
   Mapperly). References: `CatalogRepositoryTests.cs`, `OrderRepositoryTests.cs`. Add a
   `WidgetRepositoryTests` in the `[Collection(SqlServerCollection.Name)]` collection.
-- **Evals** (`tests/Atrium.Evals`, needs Ollama at `http://localhost:11434`) — LLM quality scores for
-  the Support agent. These tests self-skip when Ollama is unreachable, so CI stays green without a GPU.
 
 The integration project (`tests/Atrium.IntegrationTests/Atrium.IntegrationTests.csproj`) references the
 service projects under test — add a `<ProjectReference>` to `Atrium.Services.Widget` there so its
@@ -402,11 +397,10 @@ From the repo root (`/Users/ted/code/Atrium`):
    ```bash
    dotnet csharpier format . && dotnet build Atrium.slnx -v q
    ```
-2. **Test** (Docker required for integration; Ollama at `http://localhost:11434` for evals):
+2. **Test** (Docker required for integration):
    ```bash
    dotnet test tests/Atrium.UnitTests/Atrium.UnitTests.csproj          # fast, no external deps
    dotnet test tests/Atrium.IntegrationTests/Atrium.IntegrationTests.csproj   # Testcontainers SQL Server
-   dotnet test tests/Atrium.Evals/Atrium.Evals.csproj                  # LLM evals; skip if Ollama down
    dotnet test Atrium.slnx                                             # everything
    ```
 3. **Run the stack** (Docker required):

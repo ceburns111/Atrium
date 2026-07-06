@@ -21,20 +21,20 @@ Full picture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Project | Role |
 |---|---|
 | `src/Atrium.Portal` | Blazor Server host shell — OIDC login, module discovery (`Modularity/ModuleLoader.cs`), routing |
-| `src/Atrium.Abstractions` | The `IModule` / `NavItem` / `AgentSurface` contract the host and modules share |
-| `src/Atrium.Design` | Shared design-system RCL — tokens + primitives (incl. `AgentChat`); also `AccessTokenHolder` / session-expiry helpers / the typed-client send pipeline |
+| `src/Atrium.Abstractions` | The `IModule` / `NavItem` contract the host and modules share |
+| `src/Atrium.Design` | Shared design-system RCL — tokens + primitives; also `AccessTokenHolder` / session-expiry helpers / the typed-client send pipeline |
 | `src/Atrium.Modules.Storefront` · `.Admin` · `.Reports` | UI modules (RCLs implementing `IModule`) |
 | `src/Atrium.Contracts` | DTO-only wire contracts shared by services and modules |
 | `src/Atrium.ServiceDefaults` | Shared deployment infrastructure — telemetry, JWT auth, api docs, DbUp runner ([ADR-0012](docs/adr/0012-shared-deployment-infrastructure.md)) |
 | `src/Atrium.Services.Catalog` | Core service — owns `catalogdb` |
-| `src/Atrium.Services.Storefront` | App vertical — owns `storefrontdb`, relays a bearer to Catalog; hosts the AI **Support agent** (`Support/`) |
+| `src/Atrium.Services.Storefront` | App vertical — owns `storefrontdb`, relays a bearer to Catalog |
 | `src/Atrium.Gateway` | YARP reverse proxy (config-driven, no code) |
 | `src/Atrium.AppHost` | Single-file Aspire orchestration (`apphost.cs`) |
 
 ## Where the authoritative docs live
 
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — how the pieces fit (the reference model).
-- **[docs/adr/README.md](docs/adr/README.md)** — the ADR index; the *why* behind every choice (0001–0012).
+- **[docs/adr/README.md](docs/adr/README.md)** — the ADR index; the *why* behind every choice (0001–0013).
 - **[docs/guides/wire-up-a-new-app.md](docs/guides/wire-up-a-new-app.md)** — the end-to-end **how-to**:
   add a full vertical (service → contracts → module → gateway → Aspire → auth → tests), narrating the
   real Storefront + Catalog implementation. This is the source of truth for procedure; the skills below
