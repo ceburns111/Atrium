@@ -1,15 +1,14 @@
 # Atrium.Abstractions
 
 ## What it is
-The tiny contract between the Portal host and its UI modules. It holds the `IModule` interface and the records it exposes (`NavItem`, `AgentSurface`) and nothing else — the only types the host and the modules share by name.
+The tiny contract between the Portal host and its UI modules. It holds the `IModule` interface and the records it exposes (`NavItem`) and nothing else — the only types the host and the modules share by name.
 
 ## Role in the topology
 **Abstractions.** Referenced by `Atrium.Portal` (which discovers modules by reflection) and by every `Atrium.Modules.*` project (which implements `IModule`). Keeping it minimal is what lets the host reference modules without naming any of them.
 
 ## Key types
-- `IModule` — `Name`, `Description`, `BasePath`, optional `Accent`, optional `RequiredRole`, `NavItems`, optional `AgentSurfaces`, and `RegisterServices(IServiceCollection, IConfiguration)`. The optional members are default interface members, so a module implements only what it needs and the contract grows without breaking existing modules.
+- `IModule` — `Name`, `Description`, `BasePath`, optional `Accent`, optional `RequiredRole`, `NavItems`, and `RegisterServices(IServiceCollection, IConfiguration)`. The optional members are default interface members, so a module implements only what it needs and the contract grows without breaking existing modules.
 - `NavItem` — a `record` of `Title`, `Path`, optional `Icon`, optional `RequiredRole` for the shell nav.
-- `AgentSurface` — a `record` of `Name`, gateway-relative `Endpoint` (no leading slash), optional `StarterPrompts`, optional `Icon`; a chat surface a module contributes to the shell's assistant launcher.
 
 ## Run / test
 Not run on its own; it is compiled into the Portal and every module. Comes up with the app via `cd src/Atrium.AppHost && aspire run`. No dedicated tests — its shape is exercised by the module-discovery path at Portal startup.

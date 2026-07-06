@@ -16,9 +16,9 @@ public static class AuthExtensions
     /// Validates Keycloak-issued JWTs against the shared <c>atrium</c> realm and requires the shared
     /// <c>atrium</c> audience (stamped on every access token by the realm's audience mapper), then
     /// registers the <c>admin</c> authorization policy every service gates its back-office surface on.
-    /// Returns the <see cref="AuthorizationBuilder"/> so a host can chain service-specific policies
-    /// (Storefront adds the step-up MFA policy for the support agent). Requires service discovery to
-    /// be registered so the JWKS backchannel can resolve <c>https+http://keycloak</c>.
+    /// Returns the <see cref="AuthorizationBuilder"/> so a host can chain service-specific policies.
+    /// Requires service discovery to be registered so the JWKS backchannel can resolve
+    /// <c>https+http://keycloak</c>.
     /// </summary>
     public static AuthorizationBuilder AddAtriumJwtAuth(this WebApplicationBuilder builder)
     {
