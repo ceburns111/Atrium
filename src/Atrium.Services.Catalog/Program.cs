@@ -43,7 +43,7 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 
 // API docs, Development-only and anonymous: both routes are mapped at the app root (outside the
-// bearer-only "/catalog" group) /openapi/v1.json is the raw document; /docs renders it with 
+// bearer-only "/catalog" group) /openapi/v1.json is the raw document; /docs renders it with
 // Redoc — see MapAtriumApiDocs.
 if (app.Environment.IsDevelopment())
 {

@@ -13,7 +13,7 @@ public static class ApiDocsExtensions
     /// Maps <c>/docs</c>, rendering the host's <c>/openapi/v1.json</c> document with Redoc
     /// (standalone, from CDN). The route is mapped at the app root — outside any bearer-only group —
     /// and <c>AllowAnonymous</c>. Callers wrap it (together with <c>MapOpenApi</c>) in a Development-only
-    /// block; the viewer is a UI convenience, not part of the API, so it is excluded from the 
+    /// block; the viewer is a UI convenience, not part of the API, so it is excluded from the
     /// OpenAPI document itself.
     /// </summary>
     public static WebApplication MapAtriumApiDocs(this WebApplication app, string title)
