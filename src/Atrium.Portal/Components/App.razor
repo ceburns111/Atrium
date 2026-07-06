@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     @* Apply the saved (or system) theme before first paint so there's no flash of the wrong theme.
-       Runs ahead of Blazor; the ThemeToggle handles runtime changes and persistence thereafter. *@
+       Runs ahead of Blazor; the shell's MudThemeProvider drives runtime dark-mode changes thereafter. *@
     <script>
         (function () {
             try {

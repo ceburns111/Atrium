@@ -19,9 +19,6 @@ builder.AddAtriumTelemetry();
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddMudServices();
 
-// Design-system services available to every module.
-builder.Services.AddScoped<ToastService>();
-
 // Every module HttpClient gets service discovery (resolve "https+http://gateway") and the signed-in
 // user's bearer token, applied by default so modules don't wire it themselves.
 builder.Services.AddServiceDiscovery();

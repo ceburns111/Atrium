@@ -3,7 +3,7 @@
 @inject CatalogClient Catalog
 @inject CartService Cart
 @inject CartPersistence Persistence
-@inject ToastService Toasts
+@inject ISnackbar Snackbar
 
 <PageTitle>Storefront</PageTitle>
 
@@ -130,7 +130,7 @@ else
     private void Add(ProductDto product)
     {
         Cart.Add(product);
-        Toasts.Show($"Added {product.Name}", ToastVariant.Success);
+        Snackbar.Add($"Added {product.Name}", Severity.Success);
     }
 
     private void Refresh() => InvokeAsync(StateHasChanged);

@@ -1,7 +1,7 @@
 @page "/admin"
 @attribute [Authorize(Roles = "admin")]
 @inject AdminCatalogClient Catalog
-@inject ToastService Toasts
+@inject ISnackbar Snackbar
 
 <PageTitle>Admin</PageTitle>
 
@@ -199,13 +199,13 @@ else
 
             if (error is not null)
             {
-                Toasts.Show(error, ToastVariant.Danger);
+                Snackbar.Add(error, Severity.Error);
                 return; // keep the dialog open so the user can fix and retry
             }
 
-            Toasts.Show(
+            Snackbar.Add(
                 $"{(_editingId is null ? "Created" : "Saved")} {product!.Name}",
-                ToastVariant.Success
+                Severity.Success
             );
             _dialogOpen = false;
             await Load();
@@ -216,9 +216,9 @@ else
             // Checkout.Pay's shape: the dialog stays open with the typed edits intact so the user
             // can just retry. A 401 still bubbles as SessionExpiredException for the shell's
             // re-login prompt.
-            Toasts.Show(
+            Snackbar.Add(
                 "Something went wrong saving the product. Please try again.",
-                ToastVariant.Danger
+                Severity.Error
             );
         }
         finally
