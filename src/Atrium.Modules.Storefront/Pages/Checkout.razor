@@ -62,19 +62,22 @@ else
     <MudGrid>
         <MudItem xs="12" md="5">
             <MudPaper Outlined="true" Class="pa-4">
-                <MudText Typo="Typo.h6" Class="mb-3">Order summary</MudText>
-                <MudSimpleTable Dense="true">
-                    <tbody>
-                        @foreach (var line in Cart.Lines)
-                        {
-                            <tr>
-                                <td>@line.Product.Name</td>
-                                <td style="text-align:right">×@line.Quantity</td>
-                                <td style="text-align:right">@Money.Format(line.Product.Price * line.Quantity)</td>
-                            </tr>
-                        }
-                    </tbody>
-                </MudSimpleTable>
+                <MudText Typo="Typo.h6" Class="mb-3">Order Summary</MudText>
+                @* MudStack rows rather than a MudSimpleTable: line items become direct children of the
+                   card, so they share the pa-4 left edge and an even rhythm with the heading and Total —
+                   the table added its own cell padding on top, throwing the spacing off (last row worst). *@
+                <MudStack Spacing="3">
+                    @foreach (var line in Cart.Lines)
+                    {
+                        <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudStack Row Spacing="2" AlignItems="AlignItems.Baseline">
+                                <MudText Typo="Typo.body2">@line.Product.Name</MudText>
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary">×@line.Quantity</MudText>
+                            </MudStack>
+                            <MudText Typo="Typo.body2">@Money.Format(line.Product.Price * line.Quantity)</MudText>
+                        </MudStack>
+                    }
+                </MudStack>
                 <MudDivider Class="my-3" />
                 <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                     <MudText Typo="Typo.subtitle1">Total</MudText>
@@ -86,38 +89,35 @@ else
         <MudItem xs="12" md="7">
             <MudPaper Outlined="true" Class="pa-4">
                 <MudText Typo="Typo.h6" Class="mb-1">Payment</MudText>
-                <MudText Typo="Typo.body2" Class="mb-4">
-                    Simulated payment — no real card is charged. Use any test card (e.g. 4242 4242 4242
-                    4242); a number ending in 0002 is declined.
-                </MudText>
-
                 @if (_declineReason is not null)
                 {
                     <MudAlert Severity="Severity.Error" Class="mb-4">@_declineReason</MudAlert>
                 }
 
+                @* Fields sized to their content, not stretched to the container: cardholder on its
+                   own row, then a compact card-number / expiry / CVC line. *@
                 <MudForm>
-                    <MudTextField T="string"
-                                  Label="Cardholder name"
-                                  @bind-Value="_cardholderName"
-                                  Immediate="true"
-                                  Error="@(_cardholderError is not null)"
-                                  ErrorText="@_cardholderError"
-                                  UserAttributes="@_noAutoComplete"
-                                  Class="mb-3" />
-
-                    <MudTextField T="string"
-                                  Label="Card number"
-                                  @bind-Value="_cardNumber"
-                                  Immediate="true"
-                                  Placeholder="4242 4242 4242 4242"
-                                  Error="@(_cardError is not null)"
-                                  ErrorText="@_cardError"
-                                  UserAttributes="@_numericAttrs"
-                                  Class="mb-3" />
-
-                    <MudGrid Spacing="2">
-                        <MudItem xs="6">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" sm="8">
+                            <MudTextField T="string"
+                                          Label="Cardholder name"
+                                          @bind-Value="_cardholderName"
+                                          Immediate="true"
+                                          Error="@(_cardholderError is not null)"
+                                          ErrorText="@_cardholderError"
+                                          UserAttributes="@_noAutoComplete" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField T="string"
+                                          Label="Card number"
+                                          @bind-Value="_cardNumber"
+                                          Immediate="true"
+                                          Placeholder="4242 4242 4242 4242"
+                                          Error="@(_cardError is not null)"
+                                          ErrorText="@_cardError"
+                                          UserAttributes="@_numericAttrs" />
+                        </MudItem>
+                        <MudItem xs="6" sm="3">
                             <MudTextField T="string"
                                           Label="Expiry (MM/YY)"
                                           @bind-Value="_expiry"
@@ -127,7 +127,7 @@ else
                                           ErrorText="@_expiryError"
                                           UserAttributes="@_numericAttrs" />
                         </MudItem>
-                        <MudItem xs="6">
+                        <MudItem xs="6" sm="3">
                             <MudTextField T="string"
                                           Label="CVC"
                                           @bind-Value="_cvc"

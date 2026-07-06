@@ -9,8 +9,7 @@
     <MudText Typo="Typo.overline" Color="Color.Primary">Admin</MudText>
     <MudText Typo="Typo.h4">Products</MudText>
     <MudText Typo="Typo.body1">
-        Create and edit catalog products. Saving requires the admin role — sign in as admin to make
-        changes.
+        Create and edit catalog products. 
     </MudText>
 </MudStack>
 
@@ -28,8 +27,9 @@
 }
 else
 {
-    @* No Bordered: vertical cell borders rendered raggedly against the flex-aligned action column;
-       horizontal row dividers + hover read cleaner and match the other tables. *@
+    @* No Bordered: horizontal row dividers + hover read cleaner and match the other tables.
+       The action column right-aligns via text-right (not d-flex) so the cell stays a table-cell
+       and its bottom divider draws edge-to-edge. *@
     <MudDataGrid T="ProductDto"
                  Items="@(_products ?? [])"
                  Loading="@(_products is null)"
@@ -41,7 +41,7 @@ else
                        Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Add"
                        OnClick="StartCreate">
-                New product
+                New Product
             </MudButton>
         </ToolBarContent>
         <Columns>
@@ -59,8 +59,8 @@ else
                             CellClass="text-right">
                 <CellTemplate>@Money.Format(context.Item.Price)</CellTemplate>
             </PropertyColumn>
-            <PropertyColumn Property="x => x.Blurb" Title="Blurb" />
-            <TemplateColumn Title="" Sortable="false" CellClass="d-flex justify-end">
+            <PropertyColumn Property="x => x.Blurb" Title="Description" />
+            <TemplateColumn Title="" Sortable="false" CellClass="text-right">
                 <CellTemplate>
                     <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                    Size="Size.Small"
@@ -105,7 +105,7 @@ else
                              Format="F2"
                              Class="mb-3" />
             <MudTextField T="string"
-                          Label="Blurb"
+                          Label="Description"
                           @bind-Value="_form.Blurb"
                           Immediate="true"
                           Required="true"

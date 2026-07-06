@@ -57,7 +57,7 @@ else
                             @* Rendered in Blazor Server, so ToLocalTime() would be the SERVER's timezone (UTC in a
                                container), not the visitor's — render the stored UTC instant honestly instead. *@
                             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                @order.PlacedAtUtc.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture)
+                                @order.PlacedAtUtc.ToString("MMM d, yyyy 'at' h:mm tt 'UTC'", CultureInfo.InvariantCulture)
                             </MudText>
                             <MudText Typo="Typo.subtitle2">@Money.Format(order.Total)</MudText>
                         </MudStack>

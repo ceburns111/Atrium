@@ -8,8 +8,7 @@ public sealed class AdminModule : IModule
 {
     public string Name => "Admin";
 
-    public string Description =>
-        "Back-office catalog management — create and edit products. Saving requires the admin role.";
+    public string Description => "Back-office catalog management — create and edit products.";
 
     public string BasePath => "/admin";
 
