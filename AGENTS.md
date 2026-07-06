@@ -22,7 +22,7 @@ Full picture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 |---|---|
 | `src/Atrium.Portal` | Blazor Server host shell — OIDC login, module discovery (`Modularity/ModuleLoader.cs`), routing |
 | `src/Atrium.Abstractions` | The `IModule` / `NavItem` contract the host and modules share |
-| `src/Atrium.Design` | Shared design-system RCL — tokens + primitives; also `AccessTokenHolder` / session-expiry helpers / the typed-client send pipeline |
+| `src/Atrium.Design` | Shared design-system RCL — MudBlazor + `AtriumTheme` (`MudTheme`); also `AccessTokenHolder` / session-expiry helpers / the typed-client send pipeline |
 | `src/Atrium.Modules.Storefront` · `.Admin` · `.Reports` | UI modules (RCLs implementing `IModule`) |
 | `src/Atrium.Contracts` | DTO-only wire contracts shared by services and modules |
 | `src/Atrium.ServiceDefaults` | Shared deployment infrastructure — telemetry, JWT auth, api docs, DbUp runner ([ADR-0012](docs/adr/0012-shared-deployment-infrastructure.md)) |
@@ -34,7 +34,7 @@ Full picture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Where the authoritative docs live
 
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — how the pieces fit (the reference model).
-- **[docs/adr/README.md](docs/adr/README.md)** — the ADR index; the *why* behind every choice (0001–0013).
+- **[docs/adr/README.md](docs/adr/README.md)** — the ADR index; the *why* behind every choice (0001–0014).
 - **[docs/guides/wire-up-a-new-app.md](docs/guides/wire-up-a-new-app.md)** — the end-to-end **how-to**:
   add a full vertical (service → contracts → module → gateway → Aspire → auth → tests), narrating the
   real Storefront + Catalog implementation. This is the source of truth for procedure; the skills below
@@ -57,7 +57,7 @@ Test detail (unit vs. Testcontainers integration) is in the guide, §7.
 ## The design-system rule
 
 Never hand-roll UI. All visual work — a page, a table, styling, a new component — **defers to the
-`atrium-ui` skill**, which enforces reuse of `Atrium.Design` tokens and primitives over ad-hoc CSS.
+`atrium-ui` skill**, which enforces MudBlazor components and `AtriumTheme` over ad-hoc CSS.
 Invoke it for any Razor/component/CSS change.
 
 ## Which skill for what
