@@ -5,61 +5,83 @@
 
 <PageTitle>Orders</PageTitle>
 
-<PageHeader Eyebrow="Storefront" Title="Orders" Description="Your order history, served by the Storefront app service from its own database.">
-    <Actions>
-        <a class="btn btn--secondary" href="/storefront">Browse</a>
-    </Actions>
-</PageHeader>
+<MudStack Class="mb-6">
+    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+        <div>
+            <MudText Typo="Typo.overline" Color="Color.Primary">Storefront</MudText>
+            <MudText Typo="Typo.h4">Orders</MudText>
+            <MudText Typo="Typo.body1">
+                Your order history, served by the Storefront app service from its own database.
+            </MudText>
+        </div>
+        <MudButton Href="/storefront" Variant="Variant.Outlined" Color="Color.Secondary">Browse</MudButton>
+    </MudStack>
+</MudStack>
 
 @if (_failed)
 {
-    <Notice Title="Couldn't load your orders"
-            Body="Something interrupted the request. Please try again.">
-        <Button Variant="ButtonVariant.Secondary" OnClick="Load">Try again</Button>
-    </Notice>
+    <MudStack Class="mb-4" Spacing="2">
+        <MudAlert Severity="Severity.Error">
+            <MudText Typo="Typo.subtitle1">Couldn't load your orders</MudText>
+            <MudText Typo="Typo.body2">Something interrupted the request. Please try again.</MudText>
+        </MudAlert>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@Load">Try again</MudButton>
+    </MudStack>
 }
 else if (_orders is null)
 {
     @for (var i = 0; i < 3; i++)
     {
-        <div class="card order-card">
-            <div class="order-card__head">
-                <span class="skeleton skeleton-line"></span>
-            </div>
-            <span class="skeleton skeleton-line"></span>
-        </div>
+        <MudCard Class="mb-3">
+            <MudCardContent>
+                <MudSkeleton Width="35%" />
+                <MudSkeleton Width="75%" Class="mt-2" />
+            </MudCardContent>
+        </MudCard>
     }
 }
 else if (_orders.Count == 0)
 {
-    <p class="empty">No orders yet. <a href="/storefront">Browse products</a>.</p>
+    <MudAlert Severity="Severity.Info">
+        No orders yet. <MudLink Href="/storefront">Browse products</MudLink>.
+    </MudAlert>
 }
 else
 {
-    @foreach (var order in _orders)
-    {
-        <div class="card order-card">
-            <div class="order-card__head">
-                <span class="order-card__id">Order #@order.Id</span>
-                @* Rendered in Blazor Server, so ToLocalTime() would be the SERVER's timezone (UTC in a
-                   container), not the visitor's — render the stored UTC instant honestly instead. *@
-                <span class="order-card__date">@order.PlacedAtUtc.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture)</span>
-                <span class="order-card__total">@Money.Format(order.Total)</span>
-            </div>
-            <table class="atrium-table">
-                <tbody>
-                    @foreach (var line in order.Lines)
-                    {
-                        <tr>
-                            <td>@line.ProductName</td>
-                            <td class="num">@Money.Format(line.UnitPrice)</td>
-                            <td class="num">×@line.Quantity</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
+    <MudExpansionPanels MultiExpansion="true">
+        @foreach (var order in _orders)
+        {
+            <MudExpansionPanel>
+                <TitleContent>
+                    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="flex-grow-1 pr-2">
+                        <MudText Typo="Typo.subtitle1">Order #@order.Id</MudText>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="4">
+                            @* Rendered in Blazor Server, so ToLocalTime() would be the SERVER's timezone (UTC in a
+                               container), not the visitor's — render the stored UTC instant honestly instead. *@
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                @order.PlacedAtUtc.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture)
+                            </MudText>
+                            <MudText Typo="Typo.subtitle2">@Money.Format(order.Total)</MudText>
+                        </MudStack>
+                    </MudStack>
+                </TitleContent>
+                <ChildContent>
+                    <MudSimpleTable Dense="true" Hover="true">
+                        <tbody>
+                            @foreach (var line in order.Lines)
+                            {
+                                <tr>
+                                    <td>@line.ProductName</td>
+                                    <td style="text-align:right">@Money.Format(line.UnitPrice)</td>
+                                    <td style="text-align:right">×@line.Quantity</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </ChildContent>
+            </MudExpansionPanel>
+        }
+    </MudExpansionPanels>
 }
 
 @code {
