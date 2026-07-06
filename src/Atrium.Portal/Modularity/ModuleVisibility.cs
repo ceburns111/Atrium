@@ -4,9 +4,9 @@ using Atrium.Abstractions;
 namespace Atrium.Portal.Modularity;
 
 /// <summary>
-/// The one role gate for module-contributed UI. A module (its nav entries, home card, and agent
-/// surface) is visible when it declares no required role, or the signed-in user is in that role.
-/// Shared so NavMenu and AssistantLauncher can't drift apart on what "visible" means.
+/// The one role gate for module-contributed UI. A module (its nav entries and home card) is visible
+/// when it declares no required role, or the signed-in user is in that role. Shared so the shell's
+/// module-driven surfaces can't drift apart on what "visible" means.
 /// </summary>
 internal static class ModuleVisibility
 {

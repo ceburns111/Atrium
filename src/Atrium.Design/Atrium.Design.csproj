@@ -10,22 +10,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Agents.AI.AGUI" Version="1.12.0-preview.260629.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.9" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.9" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Atrium.Abstractions\Atrium.Abstractions.csproj" />
-    <!-- Shared wire DTOs (ADR-0006): FeedbackDto is the one feedback contract both this client and
-         the Storefront service's feedback endpoint compile against. -->
-    <ProjectReference Include="..\Atrium.Contracts\Atrium.Contracts.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Global using so Razor components (AgentChat) resolve the shared contracts without a per-file
-         @using; global usings apply to Razor-generated code in this same compilation. -->
-    <Using Include="Atrium.Contracts" />
   </ItemGroup>
 </Project>
