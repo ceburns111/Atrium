@@ -34,9 +34,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Atrium.UnitTests" />
-    <!-- The eval harness composes the REAL agent brain (system prompt + pipeline seams) so scores
-         certify what is deployed, not a hand-copied approximation. -->
-    <InternalsVisibleTo Include="Atrium.Evals" />
   </ItemGroup>
 
   <PropertyGroup>
